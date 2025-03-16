@@ -1,10 +1,10 @@
 pipeline {
     agent any
     environment {
-        VERCEL_TOKEN = credentials('vercel-token') // Mengambil token dari Jenkins Credentials
+        VERCEL_TOKEN = credentials('vercel-token') // Ambil token dari Jenkins Credentials
     }
     triggers {
-        githubPush()  // Memicu build otomatis saat ada push
+        githubPush()  // Build otomatis saat ada push ke GitHub
     }
     stages {
         stage('Checkout') {
@@ -24,6 +24,11 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying to Vercel...'
+                
+                // Jika folder .vercel tidak ada, jalankan "vercel link"
+                bat 'if not exist .vercel (npx vercel link --token %VERCEL_TOKEN%)'
+                
+                // Jalankan deploy
                 bat 'npx vercel --prod --yes --token %VERCEL_TOKEN%'
             }
         }
