@@ -6,22 +6,22 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/user/proyek.git'
+                git branch: 'master', 
+                    url: 'https://github.com/Alfaturrahman/Omahmu-web-next.git', 
+                    credentialsId: 'github-token'
             }
         }
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                // Jika pakai Node.js:
-                // sh 'npm install && npm run build'
-                // Jika pakai PHP:
-                // sh 'composer install'
+                sh 'npm install'  // Sesuaikan dengan proyekmu
+                sh 'npm run build'  // Jika proyeknya berbasis Next.js atau React
             }
         }
         stage('Deploy') {
             steps {
                 echo 'Deploying the application...'
-                // Tambahkan langkah deploy ke server jika perlu
+                // Tambahkan langkah deploy jika perlu
             }
         }
     }
