@@ -26,7 +26,7 @@ pipeline {
                 echo 'Deploying to Vercel...'
                 
                 // Jika folder .vercel tidak ada, jalankan "vercel link"
-                bat 'if not exist .vercel (npx vercel link --token %VERCEL_TOKEN%)'
+                bat 'if not exist .vercel (npx vercel link --yes --token %VERCEL_TOKEN%)'
                 
                 // Jalankan deploy
                 bat 'npx vercel --prod --yes --token %VERCEL_TOKEN%'
