@@ -24,7 +24,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo 'Deploying to Vercel...'
-                bat 'npx vercel --prod --token %VERCEL_TOKEN%'
+                bat 'npx vercel --prod --yes --token %VERCEL_TOKEN%'
             }
         }
     }
