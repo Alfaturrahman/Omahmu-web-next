@@ -1,10 +1,10 @@
 pipeline {
     agent any
     environment {
-        VERCEL_TOKEN = credentials('vercel-token') // Ambil token dari Jenkins Credentials
+        VERCEL_TOKEN = credentials('vercel-token') // Mengambil token dari Jenkins Credentials
     }
     triggers {
-        githubPush()  // Build otomatis saat ada push ke GitHub
+        githubPush() // Build otomatis saat ada push ke GitHub
     }
     stages {
         stage('Check Versions') {
@@ -14,6 +14,12 @@ pipeline {
                 bat 'node -v'
                 bat 'npm -v'
                 bat 'npx vercel --version'
+            }
+        }
+        stage('Cleanup Workspace') {
+            steps {
+                echo 'Cleaning up workspace...'
+                deleteDir() // Menghapus semua file di workspace Jenkins untuk fresh build
             }
         }
         stage('Checkout') {
@@ -39,25 +45,18 @@ pipeline {
         stage('Deploy to Vercel') {
             steps {
                 echo 'Deploying to Vercel...'
-                
-                // Pastikan `.vercel` ada, jika tidak, jalankan `vercel link`
+
+                // Hapus folder `.vercel` untuk memastikan fresh deployment
+                bat 'if exist .vercel ( rmdir /s /q .vercel )'
+
+                // Pastikan proyek Vercel terhubung dengan benar
                 bat '''
-                if not exist .vercel (
-                    echo "Linking Vercel project..."
-                    npx vercel link --yes --token %VERCEL_TOKEN%
-                ) else (
-                    echo "Vercel project already linked."
-                )
+                echo "Linking Vercel project..."
+                npx vercel link --project omahmu-web-next --yes --token %VERCEL_TOKEN%
                 '''
-                
+
                 // Deploy ke Vercel
-                bat 'npx vercel --prod --yes --token %VERCEL_TOKEN%'
-            }
-        }
-        stage('Cleanup Workspace') {
-            steps {
-                echo 'Cleaning up workspace after deployment...'
-                deleteDir()
+                bat 'npx vercel deploy --prod --yes --token %VERCEL_TOKEN%'
             }
         }
     }
