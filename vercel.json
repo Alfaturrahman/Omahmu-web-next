@@ -1,8 +1,5 @@
 {
-    "name": "omahmu-web-next",
-    "builds": [{ "src": "next.config.js", "use": "@vercel/next" }],
-    "routes": [
-      { "src": "/(.*)", "dest": "/" }
-    ]
+    "builds": [{ "src": "package.json", "use": "@vercel/next" }],
+    "routes": [{ "src": "/(.*)", "dest": "/" }]
   }
   
