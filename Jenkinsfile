@@ -14,8 +14,8 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                sh 'npm install'  // Sesuaikan dengan proyekmu
-                sh 'npm run build'  // Jika proyeknya berbasis Next.js atau React
+                bat 'npm install'  // Ganti `sh` dengan `bat`
+                bat 'npm run build'
             }
         }
         stage('Deploy') {
