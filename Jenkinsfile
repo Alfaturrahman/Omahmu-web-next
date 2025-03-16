@@ -1,5 +1,8 @@
 pipeline {
     agent any
+    environment {
+        VERCEL_TOKEN = credentials('vercel-token') // Mengambil token dari Jenkins Credentials
+    }
     triggers {
         githubPush()  // Memicu build otomatis saat ada push
     }
@@ -14,14 +17,14 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building the project...'
-                bat 'npm install'  // Ganti `sh` dengan `bat`
+                bat 'npm install'
                 bat 'npm run build'
             }
         }
         stage('Deploy') {
             steps {
-                echo 'Deploying the application...'
-                // Tambahkan langkah deploy jika perlu
+                echo 'Deploying to Vercel...'
+                bat 'npx vercel --prod --token %VERCEL_TOKEN%'
             }
         }
     }
