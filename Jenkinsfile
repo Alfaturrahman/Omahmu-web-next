@@ -49,10 +49,10 @@ pipeline {
                 // Hapus folder `.vercel` untuk memastikan fresh deployment
                 bat 'if exist .vercel ( rmdir /s /q .vercel )'
 
-                // Pastikan proyek Vercel terhubung dengan benar
+                // Pastikan proyek Vercel terhubung dengan benar (gunakan omahmu-web, bukan omahmu-web-next)
                 bat '''
                 echo "Linking Vercel project..."
-                npx vercel link --project omahmu-web-next --yes --token %VERCEL_TOKEN%
+                npx vercel link --project omahmu-web --yes --token %VERCEL_TOKEN%
                 '''
 
                 // Deploy ke Vercel
