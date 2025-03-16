@@ -16,14 +16,9 @@ pipeline {
                 bat 'npx vercel --version'
             }
         }
-        stage('Cleanup Workspace') {
-            steps {
-                echo 'Cleaning up workspace...'
-                deleteDir() // Hapus semua file di workspace Jenkins
-            }
-        }
         stage('Checkout') {
             steps {
+                echo 'Checking out code from GitHub...'
                 git branch: 'master', 
                     url: 'https://github.com/Alfaturrahman/Omahmu-web-next.git', 
                     credentialsId: 'github-token'
@@ -45,11 +40,24 @@ pipeline {
             steps {
                 echo 'Deploying to Vercel...'
                 
-                // Jika folder .vercel tidak ada, jalankan "vercel link"
-                bat 'if not exist .vercel (npx vercel link --yes --token %VERCEL_TOKEN%)'
+                // Pastikan `.vercel` ada, jika tidak, jalankan `vercel link`
+                bat '''
+                if not exist .vercel (
+                    echo "Linking Vercel project..."
+                    npx vercel link --yes --token %VERCEL_TOKEN%
+                ) else (
+                    echo "Vercel project already linked."
+                )
+                '''
                 
-                // Jalankan deploy ke production
+                // Deploy ke Vercel
                 bat 'npx vercel --prod --yes --token %VERCEL_TOKEN%'
+            }
+        }
+        stage('Cleanup Workspace') {
+            steps {
+                echo 'Cleaning up workspace after deployment...'
+                deleteDir()
             }
         }
     }
