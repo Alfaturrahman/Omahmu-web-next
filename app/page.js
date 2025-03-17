@@ -1,62 +1,57 @@
 import React from 'react';
-import './globals.css';
 
 export default function Home() {
     return (
         <div>
             {/* Header */}
-            <header className="bg-[#FFF4E8] text-white py-4 shadow-md">
-                <div className="container mx-auto flex justify-between items-center">
-                    <h1 className="text-2xl font-bold">Landing Page</h1>
+            <header style={{ backgroundColor: '#FFF4E8', color: 'white', padding: '16px', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Landing Page</h1>
                     <nav>
-                        <ul className="flex gap-6">
-                            <li><a href="#beranda" className="hover:text-gray-200 text-[#F6B543]">Beranda</a></li>
-                            <li><a href="#layanan" className="hover:text-gray-200 text-[#F6B543]">Layanan Kami</a></li>
-                            <li><a href="#kontak" className="hover:text-gray-200 text-[#F6B543]">Kontak Kami</a></li>
+                        <ul style={{ display: 'flex', gap: '24px', listStyle: 'none', margin: 0, padding: 0 }}>
+                            <li><a href="#beranda" style={{ color: '#F6B543', textDecoration: 'none' }}>Beranda</a></li>
+                            <li><a href="#layanan" style={{ color: '#F6B543', textDecoration: 'none' }}>Layanan Kami</a></li>
+                            <li><a href="#kontak" style={{ color: '#F6B543', textDecoration: 'none' }}>Kontak Kami</a></li>
                         </ul>
                     </nav>
                     <div>
-                    <a href="/Login">
-                        <button className="bg-white text-blue-600 px-4 py-2 rounded mr-2 hover:bg-gray-200 font-medium">
-                            Login
-                        </button>
-                    </a>
-                    <a href="/register">
-                        <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 font-medium">
-                            Register
-                        </button>
-                    </a>
+                        <a href="/Login">
+                            <button style={{ backgroundColor: 'white', color: 'blue', padding: '8px 16px', borderRadius: '5px', marginRight: '8px', fontWeight: '500', cursor: 'pointer' }}>Login</button>
+                        </a>
+                        <a href="/register">
+                            <button style={{ backgroundColor: 'green', color: 'white', padding: '8px 16px', borderRadius: '5px', fontWeight: '500', cursor: 'pointer' }}>Register</button>
+                        </a>
                     </div>
                 </div>
             </header>
 
             {/* Hero Section */}
-            <section id="beranda" className="bg-cover bg-center h-screen text-center flex items-center justify-center" style={{ backgroundImage: 'url(/hero.jpg)' }}>
-                <div className="bg-black bg-opacity-50 p-10 rounded-md">
-                    <h2 className="text-4xl text-white font-bold mb-4">Kelola Bisnis Kuliner Kamu ke Level <br></br>Berikutnya,Tanpa Drama!</h2>
-                    <p className="text-white mb-6">Stok Terpantau Real-Time, Transaksi Makin Cepat, Laporan Otomatis. <br></br>Kelola Semua dengan Mudah!</p>
-                    <div className="flex justify-center gap-4">
-                        <button className="bg-[#ECA641] text-white px-6 py-2 rounded">Lihat Hasil Kami</button>
-                        <button className="bg-[#EEF5F7] text-[#F6B543] px-6 py-2 rounded">Mulai Kolaborasi Sekarang</button>
+            <section id="beranda" style={{ backgroundImage: 'url(/hero.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', padding: '40px', borderRadius: '8px' }}>
+                    <h2 style={{ fontSize: '32px', color: 'white', fontWeight: 'bold', marginBottom: '16px' }}>Kelola Bisnis Kuliner Kamu ke Level Berikutnya, Tanpa Drama!</h2>
+                    <p style={{ color: 'white', marginBottom: '24px' }}>Stok Terpantau Real-Time, Transaksi Makin Cepat, Laporan Otomatis. <br />Kelola Semua dengan Mudah!</p>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+                        <button style={{ backgroundColor: '#ECA641', color: 'white', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer' }}>Lihat Hasil Kami</button>
+                        <button style={{ backgroundColor: '#EEF5F7', color: '#F6B543', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer' }}>Mulai Kolaborasi Sekarang</button>
                     </div>
                 </div>
             </section>
 
             {/* Tentang Kami Section */}
-            <section id="layanan" className="py-20 bg-gray-100">
-                <div className="container mx-auto text-center">
-                    <h3 className="text-3xl font-bold mb-8">Tentang Website Kami</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="bg-white p-6 rounded shadow-md">
-                            <h4 className="text-xl font-semibold">Sejarah</h4>
+            <section id="layanan" style={{ padding: '80px 0', backgroundColor: '#F3F4F6', textAlign: 'center' }}>
+                <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                    <h3 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '32px' }}>Tentang Website Kami</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
+                        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)' }}>
+                            <h4 style={{ fontSize: '20px', fontWeight: '600' }}>Sejarah</h4>
                             <p>Kami berdiri sejak 2023 dengan tujuan memajukan teknologi.</p>
                         </div>
-                        <div className="bg-white p-6 rounded shadow-md">
-                            <h4 className="text-xl font-semibold">Tentang Kami</h4>
+                        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)' }}>
+                            <h4 style={{ fontSize: '20px', fontWeight: '600' }}>Tentang Kami</h4>
                             <p>Kami adalah tim pengembang yang berkomitmen menghadirkan solusi terbaik.</p>
                         </div>
-                        <div className="bg-white p-6 rounded shadow-md">
-                            <h4 className="text-xl font-semibold">Visi Misi</h4>
+                        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '8px', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)' }}>
+                            <h4 style={{ fontSize: '20px', fontWeight: '600' }}>Visi Misi</h4>
                             <p>Visi: Menginspirasi dunia dengan inovasi teknologi.<br />Misi: Memberikan solusi digital yang unggul.</p>
                         </div>
                     </div>
@@ -64,12 +59,9 @@ export default function Home() {
             </section>
 
             {/* Footer */}
-            <footer id="kontak" className="bg-blue-600 text-white py-6">
-                <div className="container mx-auto text-center">
-                    <p>&copy; 2025 Landing Page. All rights reserved.</p>
-                </div>
+            <footer id="kontak" style={{ backgroundColor: '#2563EB', color: 'white', padding: '24px', textAlign: 'center' }}>
+                <p>&copy; 2025 Landing Page. All rights reserved.</p>
             </footer>
         </div>
     );
 }
-
