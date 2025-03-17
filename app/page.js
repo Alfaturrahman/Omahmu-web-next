@@ -6,7 +6,7 @@ export default function Home() {
             {/* Header */}
             <header style={{ backgroundColor: '#FFF4E8', color: 'white', padding: '16px', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Landing Page</h1>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Landing Page - Fatur</h1>
                     <nav>
                         <ul style={{ display: 'flex', gap: '24px', listStyle: 'none', margin: 0, padding: 0 }}>
                             <li><a href="#beranda" style={{ color: '#F6B543', textDecoration: 'none' }}>Beranda</a></li>
