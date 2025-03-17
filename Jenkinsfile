@@ -36,21 +36,9 @@ pipeline {
                 bat 'npm install'
             }
         }
-        stage('Check Tailwind Config') {
+        stage('Build') {
             steps {
-                echo 'Checking Tailwind CSS configuration...'
-                bat 'if not exist tailwind.config.js npx tailwindcss init -p'
-            }
-        }
-        stage('Build Tailwind CSS') {
-            steps {
-                echo 'Building Tailwind CSS...'
-                bat 'npx tailwindcss -i ./styles/globals.css -o ./public/output.css'
-            }
-        }
-        stage('Build Next.js') {
-            steps {
-                echo 'Building the Next.js project...'
+                echo 'Building the project...'
                 bat 'npm run build'
             }
         }
@@ -61,14 +49,11 @@ pipeline {
                 // Hapus folder `.vercel` untuk memastikan fresh deployment
                 bat 'if exist .vercel ( rmdir /s /q .vercel )'
 
-                // Pastikan proyek Vercel terhubung dengan benar
+                // Pastikan proyek Vercel terhubung dengan benar (gunakan omahmu-web, bukan omahmu-web-next)
                 bat '''
                 echo "Linking Vercel project..."
                 npx vercel link --project omahmu-web --yes --token %VERCEL_TOKEN%
                 '''
-
-                // Hapus cache sebelum deploy
-                bat 'npx vercel build --force --token %VERCEL_TOKEN%'
 
                 // Deploy ke Vercel
                 bat 'npx vercel deploy --prod --yes --token %VERCEL_TOKEN%'
