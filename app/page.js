@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Bars3Icon, XMarkIcon} from '@heroicons/react/24/outline';
 import { AcademicCapIcon, BellIcon, CheckCircleIcon, PresentationChartLineIcon , CreditCardIcon, StarIcon, TicketIcon } from '@heroicons/react/24/solid';
-import './globals.css';
+import '@/globals.css';
 
 export default function Home() {
     const [isOpen, setIsOpen] = useState(false);
