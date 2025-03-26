@@ -26,30 +26,28 @@ export default function Home() {
 
     return (
         <div>
-            {/* Header */}
-<<<<<<< HEAD
-            <header style={{ backgroundColor: '#FFF4E8', color: 'white', padding: '16px', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)' }}>
+           {/* Header */}
+           <header style={{ backgroundColor: '#FFF4E8', padding: '16px', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Landing Page - Fatur</h1>
-                        <button onClick={toggleSidebar}>
-                            {isOpen ? <XMarkIcon className="w-8 h-8 text-[#F6B543]" /> : <Bars3Icon className="w-8 h-8 text-[#F6B543]" />}
-                        </button>
-                    </div>
-                    <nav className="hidden lg:flex gap-6">
-                        <a href="#beranda" className="hover:text-gray-200 text-[#F6B543]">Beranda</a>
-                        <a href="#layanan" className="hover:text-gray-200 text-[#F6B543]">Layanan Kami</a>
-                        <a href="#kontak" className="hover:text-gray-200 text-[#F6B543]">Kontak Kami</a>
-                    </nav>
-                    <div className="hidden lg:block">
-                        <a href="/login">
-                            <button className="bg-[#F6B543] text-white px-4 py-2 rounded-[10px] mr-2 font-bold">Masuk</button>
-                        </a>
-                        <a href="/register">
-                            <button className="bg-white text-black px-4 py-2 rounded-[10px] hover:bg-[#F6B543] font-bold">Daftar</button>
->>>>>>> Ariffin-Dev
-                        </a>
-                    </div>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Landing Page - Ariffin</h1>
+                    <button onClick={toggleSidebar}>
+                        {isOpen ? <XMarkIcon className="w-8 h-8 text-[#F6B543]" /> : <Bars3Icon className="w-8 h-8 text-[#F6B543]" />}
+                    </button>
                 </div>
+                <nav className="hidden lg:flex gap-6">
+                    <a href="#beranda" className="hover:text-gray-200 text-[#F6B543]">Beranda</a>
+                    <a href="#layanan" className="hover:text-gray-200 text-[#F6B543]">Layanan Kami</a>
+                    <a href="#kontak" className="hover:text-gray-200 text-[#F6B543]">Kontak Kami</a>
+                </nav>
+                <div className="hidden lg:block">
+                    <a href="/login">
+                        <button className="bg-[#F6B543] text-white px-4 py-2 rounded-[10px] mr-2 font-bold">Masuk</button>
+                    </a>
+                    <a href="/register">
+                        <button className="bg-white text-black px-4 py-2 rounded-[10px] hover:bg-[#F6B543] font-bold">Daftar</button>
+                    </a>
+                </div>
+                {isOpen && (
                     <div className="lg:hidden bg-white text-black p-4 shadow-md">
                         <a href="#beranda" className="block py-2 hover:bg-gray-100">Beranda</a>
                         <a href="#layanan" className="block py-2 hover:bg-gray-100">Layanan Kami</a>
