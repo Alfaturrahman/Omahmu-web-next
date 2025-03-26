@@ -10,6 +10,14 @@ h1, h2, h3, h4, p, label, placeholder, button {
   font-family: 'Rubik', sans-serif;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
 
 @theme {
   --font-sans: var(--font-geist-sans);

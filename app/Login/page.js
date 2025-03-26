@@ -1,5 +1,6 @@
 import React from 'react';
-import '../globals.css';
+import '@/globals.css';
+import Link from "next/link";
 
 const LoginPage = () => {
     return (
@@ -45,7 +46,7 @@ const LoginPage = () => {
                             />
                         </div>
                         <a href="#" className="text-[#ECA641] text-sm">Lupa Kata Sandi?</a>
-                        <button className="w-full py-2 mt-4 text-white bg-[#ECA641] rounded hover:bg-[#e3a838]">Masuk</button>
+                        <Link href="/POS/Kasir"><button className="w-full py-2 mt-4 text-white bg-[#ECA641] rounded hover:bg-[#e3a838]">Masuk</button></Link>
                     </form>
                     <p className="mt-4 text-black text-center text-sm">
                         Tidak Punya Akun? <a href="#" className="text-[#ECA641]">Daftar Disini</a>
