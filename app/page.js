@@ -1,25 +1,20 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Bars3Icon, XMarkIcon} from '@heroicons/react/24/outline';
+import { Menu, X } from 'lucide-react';
 import { AcademicCapIcon, BellIcon, CheckCircleIcon, PresentationChartLineIcon , CreditCardIcon, StarIcon, TicketIcon } from '@heroicons/react/24/solid';
 import '@/globals.css';
 
 export default function Home() {
     const [isOpen, setIsOpen] = useState(false);
-
-    const toggleSidebar = () => {
-        setIsOpen(!isOpen);
-    };
-
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
         const handleResize = () => {
-        setIsMobile(window.innerWidth < 768); // Jika layar lebih kecil dari tablet (768px)
+            setIsMobile(window.innerWidth < 1024); // Menyesuaikan ukuran layar tablet
         };
 
-        handleResize(); // Cek ukuran layar saat pertama kali render
+        handleResize();
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
@@ -27,39 +22,54 @@ export default function Home() {
     return (
         <div>
            {/* Header */}
-           <header style={{ backgroundColor: '#FFF4E8', padding: '16px', boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: '1200px', margin: '0 auto' }}>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Landing Page - Ariffin</h1>
-                    <button onClick={toggleSidebar}>
-                        {isOpen ? <XMarkIcon className="w-8 h-8 text-[#F6B543]" /> : <Bars3Icon className="w-8 h-8 text-[#F6B543]" />}
-                    </button>
+           <header className="bg-[#FFF4E8] px-6 py-4 shadow-md flex items-center justify-between relative">
+                {/* Logo */}
+                <div className="flex items-center">
+                    <img src="/logo.png" alt="Logo" className="h-12" />
                 </div>
+                
+                {/* Navigation for large screens */}
                 <nav className="hidden lg:flex gap-6">
-                    <a href="#beranda" className="hover:text-gray-200 text-[#F6B543]">Beranda</a>
-                    <a href="#layanan" className="hover:text-gray-200 text-[#F6B543]">Layanan Kami</a>
-                    <a href="#kontak" className="hover:text-gray-200 text-[#F6B543]">Kontak Kami</a>
+                    <a href="#beranda" className="hover:text-gray-700 text-[#F6B543]">Beranda</a>
+                    <a href="#layanan" className="hover:text-gray-700 text-[#F6B543]">Layanan Kami</a>
+                    <a href="#kontak" className="hover:text-gray-700 text-[#F6B543]">Kontak Kami</a>
                 </nav>
-                <div className="hidden lg:block">
-                    <a href="/login">
-                        <button className="bg-[#F6B543] text-white px-4 py-2 rounded-[10px] mr-2 font-bold">Masuk</button>
+                
+                {/* Authentication buttons */}
+                <div className="hidden lg:flex items-center gap-2">
+                    <a href="/Login">
+                        <button className="bg-[#F6B543] text-white px-4 py-2 rounded-[10px] font-bold">Masuk</button>
                     </a>
-                    <a href="/register">
-                        <button className="bg-white text-black px-4 py-2 rounded-[10px] hover:bg-[#F6B543] font-bold">Daftar</button>
+                    <a href="/Register">
+                        <button className="bg-white text-black px-4 py-2 rounded-[10px] border-2 border-[#F6B543] font-bold">Daftar</button>
                     </a>
                 </div>
-                {isOpen && (
-                    <div className="lg:hidden bg-white text-black p-4 shadow-md">
-                        <a href="#beranda" className="block py-2 hover:bg-gray-100">Beranda</a>
-                        <a href="#layanan" className="block py-2 hover:bg-gray-100">Layanan Kami</a>
-                        <a href="#kontak" className="block py-2 hover:bg-gray-100">Kontak Kami</a>
-                        <a href="/login">
-                            <button className="bg-[#F6B543] text-white px-4 py-2 rounded-[10px] mr-2 font-bold">Masuk</button>
-                        </a>
-                        <a href="/register">
-                            <button className="bg-white text-black px-4 py-2 rounded-[10px] hover:bg-[#F6B543] border-2 border-[#F6B543] font-bold">Daftar</button>
-                        </a>
-                    </div>
+
+                {/* Mobile Menu Button */}
+                {isMobile && (
+                    <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden p-2 text-black">
+                        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
                 )}
+                
+                {/* Sidebar Overlay */}
+                <div className={`fixed inset-0 backdrop-brightness-70 z-40 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsOpen(false)}></div>
+                
+                {/* Sidebar Menu */}
+                <div className={`fixed right-0 top-0 w-64 h-full bg-white shadow-lg transform ${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform z-50 p-6 flex flex-col`}> 
+                    <button onClick={() => setIsOpen(false)} className="self-end mb-4">
+                        <X className="w-6 h-6 text-black" />
+                    </button>
+                    <a href="#beranda" className="block py-2 text-[#F6B543]">Beranda</a>
+                    <a href="#layanan" className="block py-2 text-[#F6B543]">Layanan Kami</a>
+                    <a href="#kontak" className="block py-2 text-[#F6B543]">Kontak Kami</a>
+                    <a href="/Login">
+                        <button className="w-full bg-[#F6B543] text-white px-4 py-2 rounded-[10px] mt-4 font-bold">Masuk</button>
+                    </a>
+                    <a href="/Register">
+                        <button className="w-full bg-white text-black px-4 py-2 rounded-[10px] border-2 border-[#F6B543] font-bold mt-2">Daftar</button>
+                    </a>
+                </div>
             </header>
 
             {/* Hero Image Section */}

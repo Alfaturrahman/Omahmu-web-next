@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, Monitor, Package, BarChart, Utensils, History, X } from "lucide-react";
 
 const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
-  const pathname = usePathname(); // Ambil path saat ini
+  const pathname = usePathname();
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, path: "/POS/Dashboard" },
     { name: "Kasir", icon: Monitor, path: "/POS/Kasir" },
@@ -20,7 +20,7 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
       {isOpen && <div className="fixed inset-0 backdrop-brightness-70 bg-opacity-80 z-40 lg:hidden" onClick={toggleSidebar} />}
 
       <div
-        className={`bg-white shadow-lg p-4 transition-all duration-500 flex flex-col fixed lg:relative z-50 h-full lg:h-auto 
+        className={`bg-white shadow-lg p-4 me-3 ransition-all duration-500 flex flex-col fixed lg:relative z-50 h-full lg:h-auto 
           transform ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} 
           ${isCollapsed ? "lg:w-20" : "lg:w-64"}
         `}

@@ -5,7 +5,8 @@ import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import Image from 'next/image';
-import { ShoppingCart, Trash2, X, Minus, Plus, ScanQrCode, Banknote  } from 'lucide-react';
+import { ShoppingCart, X, Minus, Plus, ScanQrCode, Banknote  } from 'lucide-react';
+import Swal from "sweetalert2";
 
 export default function Kasir() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -14,13 +15,43 @@ export default function Kasir() {
     const [cart, setCart] = useState([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [selected, setSelected] = useState(null);
+    const [showQrisModal, setShowQrisModal] = useState(false);
 
+    const showModal = () => {
+        Swal.fire({
+            icon: "warning",
+            title: "Apakah Kamu Yakin?",
+            showCancelButton: true,
+            cancelButtonText: "Batal",
+            confirmButtonText: "Selesai",
+            confirmButtonColor: "#ECA641",
+            cancelButtonColor: "#DC3545",
+            reverseButtons: true,
+        }).then((result) => {
+            if (result.isConfirmed) {
+                console.log("Selesai ditekan!");
+            }
+        });
+    };
+
+    const handlePayment = () => {
+        if (selected === "qris") {
+            setShowQrisModal(true);
+        } else {
+            Swal.fire({
+                icon: "info",
+                title: "Metode pembayaran belum tersedia",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#ECA641",
+            });
+        }
+    };
 
     const toggleSidebar = () => {
         if (window.innerWidth < 1024) {
-        setIsSidebarOpen(!isSidebarOpen);
+            setIsSidebarOpen(!isSidebarOpen);
         } else {
-        setIsCollapsed(!isCollapsed);
+            setIsCollapsed(!isCollapsed);
         }
     };
 
@@ -32,47 +63,34 @@ export default function Kasir() {
     ];
 
     const categories = ["Semua", "Makanan", "Minuman", "Favorit"];
-    
+
     const addToCart = (item) => {
         setCart((prevCart) => {
-        const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
-        if (existingItem) {
-            return prevCart.map((cartItem) =>
-            cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
-            );
-        }
-        return [...prevCart, { ...item, quantity: 1 }];
+            const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
+            if (existingItem) {
+                return prevCart.map((cartItem) =>
+                    cartItem.id === item.id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
+                );
+            }
+            return [...prevCart, { ...item, quantity: 1 }];
         });
 
-        // Buka modal jika ada item di keranjang
         setIsCartOpen(true);
     };
 
     const updateQuantity = (id, type) => {
         setCart((prevCart) => {
-          return prevCart.map((item) =>
-            item.id === id
-              ? { ...item, quantity: type === "increase" ? item.quantity + 1 : Math.max(1, item.quantity - 1) }
-              : item
-          );
-        });
-    };
-
-    const removeFromCart = (id) => {
-        setCart((prevCart) => {
-        const updatedCart = prevCart.filter((item) => item.id !== id);
-
-        // Jika keranjang kosong setelah penghapusan, tutup modal
-        if (updatedCart.length === 0) {
-            setIsCartOpen(false);
-        }
-        return updatedCart;
+            return prevCart.map((item) =>
+                item.id === id
+                    ? { ...item, quantity: type === "increase" ? item.quantity + 1 : Math.max(1, item.quantity - 1) }
+                    : item
+            );
         });
     };
 
     useEffect(() => {
         if (cart.length === 0) {
-        setIsCartOpen(false);
+            setIsCartOpen(false);
         }
     }, [cart]);
 
@@ -81,7 +99,7 @@ export default function Kasir() {
     const total = subtotal + tax;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F9F3E7] overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-white overflow-hidden">
         {/* Header */}
         <Header toggleSidebar={toggleSidebar} />
 
@@ -99,12 +117,12 @@ export default function Kasir() {
                     </h2>
 
                     {/* Tambahkan div pembungkus untuk scroll */}
-                    <div className="relative overflow-x-auto max-w-[90vw] md:max-w-[90vw] no-scrollbar">
+                    <div className="relative overflow-x-auto py-3 max-w-[90vw] md:max-w-[95vw] lg:max-w-[80vw] no-scrollbar">
                         <div className="flex space-x-3 md:space-x-4 w-max flex-nowrap">
                             {Array(8).fill(null).map((_, index) => (
                                 <div
                                     key={index}
-                                    className="bg-white p-3 md:p-4 rounded-lg shadow-md text-center min-w-[140px] md:min-w-[180px] flex-shrink-0"
+                                    className="bg-white border border-gray-300 p-3 md:p-4 rounded-lg shadow-md text-center min-w-[140px] md:min-w-[180px] flex-shrink-0"
                                 >
                                     <p className="font-semibold text-black text-sm md:text-base">
                                         No Antrian #A00{index + 1}
@@ -112,7 +130,7 @@ export default function Kasir() {
                                     <p className="text-xs md:text-sm text-black">
                                         Total Item 8x
                                     </p>
-                                    <button className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm">
+                                    <button  onClick={showModal} className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm">
                                         Selesai
                                     </button>
                                     <p className="text-xs text-black mt-2">{index + 1} menit lalu</p>
@@ -142,12 +160,31 @@ export default function Kasir() {
                     </div>
                 </div>
 
+                {showQrisModal && (
+                    <div className="fixed inset-0 backdrop-brightness-50 z-50 flex items-center justify-center">
+                        <div className="bg-white p-6 rounded-lg shadow-lg text-center w-90">
+                            <h2 className="text-lg text-black font-semibold">Pembayaran</h2>
+                            <img src="/qr.png" alt="QRIS Code" className="mx-auto my-4 w-30 h-30" />
+                            <p className="text-gray-600">Batas Pembayaran: 00.30</p>
+                            <hr className="my-2" />
+                            <p className="text-gray-600">Total Transaksi</p>
+                            <h3 className="text-xl font-bold text-black">Rp {subtotal.toLocaleString("id-ID")}</h3>
+                            <button
+                                className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
+                                onClick={() => setShowQrisModal(false)}
+                            >
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Daftar Menu */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {menuItems
                     .filter((item) => activeCategory === "Semua" || item.category === activeCategory || (activeCategory === "Favorit" && item.favorite))
                     .map((item) => (
-                        <div key={item.id} className="bg-white rounded-lg shadow-lg p-4">
+                        <div key={item.id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
                         <Image src={item.image} width={300} height={200} alt={item.name} className="rounded-lg w-full h-40 object-cover" />
                         <h3 className="font-semibold text-sm mt-2 text-black flex items-center">
                             {item.favorite && <span className="text-yellow-400 mr-1">⭐</span>}
@@ -196,14 +233,14 @@ export default function Kasir() {
                                 <Image src={item.image} width={60} height={60} alt={item.name} className="rounded-lg" />
                                 <div className="flex-1 ml-3">
                                     <p className="text-black text-sm font-medium">{item.name}</p>
-                                    <p className="text-gray-500 text-xs">Makanan</p>
+                                    <p className="text-gray-500 text-xs">{item.category}</p>
                                     <p className="text-[#ECA641] font-bold text-sm">Rp {item.price.toLocaleString("id-ID")}</p>
                                 </div>
                                 <div className="flex items-center">
-                                    <button onClick={() => updateQuantity(item.id, "decrease")} className="p-2 bg-gray-200 rounded-lg">
+                                    <button onClick={() => updateQuantity(item.id, "decrease")} className="p-2 bg-white text-[#ECA641] border border-[CAC4D0] rounded-lg">
                                         <Minus size={14} />
                                     </button>
-                                    <span className="mx-2 text-sm font-semibold">{item.quantity}</span>
+                                    <span className="mx-2 text-sm font-semibold text-black">{item.quantity}</span>
                                     <button onClick={() => updateQuantity(item.id, "increase")} className="p-2 bg-[#ECA641] text-white rounded-lg">
                                         <Plus size={14} />
                                     </button>
@@ -256,9 +293,9 @@ export default function Kasir() {
                     </div>
 
                     {/* Tombol Bayar */}
-                    <button className="mt-6 w-full bg-[#ECA641] text-white py-3 rounded-lg font-semibold">
+                    <button onClick={handlePayment} className="mt-6 w-full bg-[#ECA641] text-white py-3 rounded-lg font-semibold">
                         Bayar Sekarang
-                    </button>
+                    </button> 
                 </div>
             </div>
         </div>
