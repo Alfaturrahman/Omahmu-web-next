@@ -9,7 +9,7 @@ const LoginPage = () => {
                 {/* Sisi Kiri (Desktop) */}
                 <div className="hidden md:block w-1/2 bg-cover bg-center" style={{ backgroundImage: 'url(/login-bg.png)' }}>
                     <div className="flex flex-col items-center justify-center h-full pe-10 ps-10">
-                        <img src="/logo.png" alt="Logo" className="w-35 mb-20" />
+                        <img src="/logo.jpg" alt="Logo" className="w-45 mb-20 mix-blend-multiply" />
                         <p className="text-black text-center italic text-lg mb-60 font-medium" style={{ fontFamily: "'Tiro Devanagari Sanskrit', serif" }}>
                             "Lebih dari Sekadar Tempat Makan, Angkringan OmahMu Adalah Rumah Kedua di Setiap Suapannya"
                         </p>
