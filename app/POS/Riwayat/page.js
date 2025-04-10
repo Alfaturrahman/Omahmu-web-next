@@ -6,12 +6,13 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import '@/globals.css';
 
+
 export default function Riwayat() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-
   const itemsPerPage = 10;
+  const [activeTab, setActiveTab] = useState('dinein');
 
   const toggleSidebar = () => {
     if (window.innerWidth < 1024) {
@@ -21,14 +22,14 @@ export default function Riwayat() {
     }
   };
   
-  const data = [
-      {
-          orderCode: '15032023',
-      customerName: 'Alfaturriski',
-      orderDate: '10 MARET 2023',
-      orderStatus: 'Selesai',
-      transactionStatus: 'Cash',
-      orderType: 'DINE IN',
+  const dineInData  = [
+    {
+        orderCode: '15032023',
+        customerName: 'Alfaturriski',
+        orderDate: '10 MARET 2023',
+        orderStatus: 'Selesai',
+        transactionStatus: 'Cash',
+        orderType: 'DINE IN',
     },
     {
       orderCode: '16022023',
@@ -56,8 +57,36 @@ export default function Riwayat() {
     })),
   ];
 
-  const currentData = data.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-  const totalPages = Math.ceil(data.length / itemsPerPage);
+  const onlineData   = [
+    {
+        orderCode: '16022023',
+        customerName: 'Eka Fitri Anisa',
+        orderDate: '18 JANUARI 2023',
+        orderStatus: 'Selesai',
+        transactionStatus: 'TF',
+        orderType: 'ONLINE',
+    },
+    ...Array.from({ length: 17 }, (_, i) => ({
+      orderCode: `OC${i + 4}`,
+      customerName: `Customer ${i + 4}`,
+      orderDate: '11 MARET 2023',
+      orderStatus: i % 2 === 0 ? 'Selesai' : 'Proses',
+      transactionStatus: ['Cash', 'Qris', 'TF'][i % 3],
+      orderType: ['DINE IN', 'ONLINE'][i % 2],
+    })),
+  ];
+
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+    setCurrentPage(1);
+  };
+
+  const getData = () => {
+    return activeTab === 'dinein' ? dineInData : onlineData;
+  };
+
+  const currentData = getData().slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(getData().length / itemsPerPage);
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -66,8 +95,20 @@ export default function Riwayat() {
             <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
             <div className="p-4 md:p-6 transition-all duration-300 w-full">
                 <div className="flex justify-start gap-8 mb-4 relative">
-                    <h2 className="text-[#F6B543] font-bold pb-1 border-b-3 border-[#F6B543]">Pesan di Tempat</h2>
-                    <h2 className="text-black font-bold">Pesan Online</h2>
+                    {/* Tabs */}
+                    <div className="flex border-b mb-4">
+                        <button className={`px-4 py-2 font-medium ${ activeTab === 'dinein' ? 'border-b-2 border-yellow-500 text-yellow-600' : 'text-gray-600'}`}
+                        onClick={() => handleTabClick('dinein')}
+                        >
+                        Pesan di Tempat
+                        </button>
+                        <button className={`px-4 py-2 font-medium ${activeTab === 'online' ? 'border-b-2 border-yellow-500 text-yellow-600' : 'text-gray-600'}`}
+                        onClick={() => handleTabClick('online')}
+                        >
+                        Pesan Online
+                        </button>
+                    </div>
+
 
                     {/* Filter Kalender */}
                     <div className="relative">
@@ -80,9 +121,9 @@ export default function Riwayat() {
                 </div>
 
                 {/* Tabel */}
-                <div className="overflow-x-auto border rounded-lg">
+                <div className="overflow-x-auto rounded-lg">
                     <table className="min-w-[800px] w-full shadow-lg">
-                        <thead className="text-black text-xs md:text-[10px] lg:text-[15px] bg-gray-50">
+                        <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
                             <tr>
                             {['NO', 'KODE PESANAN', 'NAMA CUSTOMER', 'TANGGAL PESANAN', 'STATUS PESANAN', 'STATUS TRANSAKSI', 'DETAIL PESANAN', 'TIPE PESANAN'].map((header, index) => (
                                 <th key={index} className="py-3 px-4 relative whitespace-nowrap">
@@ -96,7 +137,7 @@ export default function Riwayat() {
                         </thead>
                         <tbody>
                             {currentData.map((item, index) => (
-                            <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
+                            <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative border-y border-gray-500">
                                 <td className="py-3 px-4 relative">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
                                 <td className="py-3 px-4 relative">{item.orderCode}</td>
                                 <td className="py-3 px-4 relative">{item.customerName}</td>
@@ -131,7 +172,7 @@ export default function Riwayat() {
 
                 {/* Pagination */}
                 <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-gray-600">
-                    <span>Menampilkan {currentPage * itemsPerPage - itemsPerPage + 1} hingga {Math.min(currentPage * itemsPerPage, data.length)} dari {data.length} entri</span>
+                    <span>Menampilkan {currentPage * itemsPerPage - itemsPerPage + 1} hingga {Math.min(currentPage * itemsPerPage, getData().length)} dari {getData().length} entri</span>
                     <div className="flex gap-2">
                         <button 
                             className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'cursor-not-allowed' : 'bg-[#ECA641] text-white'}`} 
