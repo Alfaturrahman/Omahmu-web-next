@@ -2,12 +2,35 @@
 
 import { useEffect, useState } from 'react';
 import { Menu, X } from 'lucide-react';
+import Image from 'next/image';
 import { AcademicCapIcon, BellIcon, CheckCircleIcon, PresentationChartLineIcon , CreditCardIcon, StarIcon, TicketIcon } from '@heroicons/react/24/solid';
+import { CheckCircle, XCircle, Instagram, Youtube, MessageSquare } from 'lucide-react';
 import '@/globals.css';
 
 export default function Home() {
     const [isOpen, setIsOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+
+    const basicFeatures = [
+        { label: '1–5 Pengguna', included: true },
+        { label: '1 Cabang', included: true },
+        { label: 'Maksimal 500 Produk', included: true },
+        { label: 'Laporan Penjualan Dasar', included: true },
+        { label: 'Dukungan Email', included: true },
+        { label: 'Bantuan AI', included: false },
+        { label: 'Rekomendasi Menu Otomatis', included: false },
+        { label: 'Live Chat Dukungan', included: false },
+    ];
+    
+    const proFeatures = [
+    { label: 'Tidak Terbatas Pengguna', included: true },
+    { label: 'Tidak Terbatas Cabang', included: true },
+    { label: 'Tidak Terbatas Produk', included: true },
+    { label: 'Laporan Penjualan Lengkap & Analitik', included: true },
+    { label: 'Bantuan AI (Rekomendasi Menu, Harga, Tren Penjualan)', included: true },
+    { label: 'Live Chat Dukungan 24/7', included: true },
+    { label: 'Integrasi API', included: true },
+    ];
 
     useEffect(() => {
         const handleResize = () => {
@@ -22,55 +45,56 @@ export default function Home() {
     return (
         <div>
            {/* Header */}
-           <header className="bg-[#FFF4E8] px-6 py-4 shadow-md flex items-center justify-between relative">
-                {/* Logo */}
-                <div className="flex items-center">
-                    <img src="/logo.png" alt="Logo" className="h-12" />
-                </div>
-                
-                {/* Navigation for large screens */}
-                <nav className="hidden lg:flex gap-6">
+           <header className="bg-white px-6 py-4 shadow-md flex items-center justify-between relative">
+            {/* Logo */}
+            <div className="flex items-center">
+                <img src="/logo.jpg" alt="Logo" className="h-18 mix-blend-multiply" />
+            </div>
+
+            {/* Navigation + Auth Buttons for large screens */}
+            <div className="hidden lg:flex items-center gap-2">
+                <nav className="flex gap-6">
                     <a href="#beranda" className="hover:text-gray-700 text-[#F6B543]">Beranda</a>
-                    <a href="#layanan" className="hover:text-gray-700 text-[#F6B543]">Layanan Kami</a>
-                    <a href="#kontak" className="hover:text-gray-700 text-[#F6B543]">Kontak Kami</a>
+                    <a href="#tentang-kami" className="hover:text-gray-700 text-[#F6B543]">Tentang Kami</a>
+                    <a href="#fitur-kami" className="hover:text-gray-700 text-[#F6B543]">Fitur Kami</a>
                 </nav>
-                
-                {/* Authentication buttons */}
-                <div className="hidden lg:flex items-center gap-2">
+                <div className="flex items-center gap-2 ml-10">
                     <a href="/Login">
                         <button className="bg-[#F6B543] text-white px-4 py-2 rounded-[10px] font-bold">Masuk</button>
                     </a>
                     <a href="/Register">
-                        <button className="bg-white text-black px-4 py-2 rounded-[10px] border-2 border-[#F6B543] font-bold">Daftar</button>
+                        <button className="bg-white text-black px-4 py-2 rounded-[10px] border-2 border-gray-400 font-bold">Daftar</button>
                     </a>
                 </div>
+            </div>
 
-                {/* Mobile Menu Button */}
-                {isMobile && (
-                    <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden p-2 text-black">
-                        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                    </button>
-                )}
-                
-                {/* Sidebar Overlay */}
-                <div className={`fixed inset-0 backdrop-brightness-70 z-40 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsOpen(false)}></div>
-                
-                {/* Sidebar Menu */}
-                <div className={`fixed right-0 top-0 w-64 h-full bg-white shadow-lg transform ${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform z-50 p-6 flex flex-col`}> 
-                    <button onClick={() => setIsOpen(false)} className="self-end mb-4">
-                        <X className="w-6 h-6 text-black" />
-                    </button>
-                    <a href="#beranda" className="block py-2 text-[#F6B543]">Beranda</a>
-                    <a href="#layanan" className="block py-2 text-[#F6B543]">Layanan Kami</a>
-                    <a href="#kontak" className="block py-2 text-[#F6B543]">Kontak Kami</a>
-                    <a href="/Login">
-                        <button className="w-full bg-[#F6B543] text-white px-4 py-2 rounded-[10px] mt-4 font-bold">Masuk</button>
-                    </a>
-                    <a href="/Register">
-                        <button className="w-full bg-white text-black px-4 py-2 rounded-[10px] border-2 border-[#F6B543] font-bold mt-2">Daftar</button>
-                    </a>
-                </div>
-            </header>
+            {/* Mobile Menu Button */}
+            {isMobile && (
+                <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden p-2 text-black">
+                    {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+            )}
+
+            {/* Sidebar Overlay */}
+            <div className={`fixed inset-0 backdrop-brightness-70 z-40 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsOpen(false)}></div>
+
+            {/* Sidebar Menu */}
+            <div className={`fixed right-0 top-0 w-64 h-full bg-white shadow-lg transform ${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform z-50 p-6 flex flex-col`}>
+                <button onClick={() => setIsOpen(false)} className="self-end mb-4">
+                    <X className="w-6 h-6 text-black" />
+                </button>
+                <a href="#beranda" className="block py-2 text-[#F6B543]">Beranda</a>
+                <a href="#tentang-kami" className="block py-2 text-[#F6B543]">Tentang Kami</a>
+                <a href="#fitur-kami" className="block py-2 text-[#F6B543]">Fitur Kami</a>
+                <a href="/Login">
+                    <button className="w-full bg-[#F6B543] text-white px-4 py-2 rounded-[10px] mt-4 font-bold">Masuk</button>
+                </a>
+                <a href="/Register">
+                    <button className="bg-white text-black px-4 py-2 rounded-[10px] border-2 border-gray-400 font-bold">Daftar</button>
+                </a>
+            </div>
+        </header>
+
 
             {/* Hero Image Section */}
             <section id="beranda" className="flex items-start justify-start bg-cover bg-center h-screen pt-20 px-6 md:px-10" style={{ backgroundImage: 'url(/landing-page.png)' }}>
@@ -133,8 +157,8 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* Layanan Kami */}
-            <section className="bg-[#FDF4EB] py-16 px-6 text-center">
+            {/* Fitur Kami */}
+            <section id="fitur-kami" className="bg-[#FDF4EB] py-16 px-6 text-center">
                 <div className="max-w-4xl mx-auto">
                     <h2 className="text-1xl md:text-2xl lg:text-3xl font-semibold text-[#F4A933]">Mengapa Memilih <span className="font-bold text-black">POSVANA</span></h2>
                     <div className="w-30 md:w-55 lg:w-70 h-1 bg-[#F6B543] mx-auto my-2"></div>
@@ -191,16 +215,29 @@ export default function Home() {
             </section>
             
             {/* Fitur */}
-            <section className="px-6 py-12 md:px-12 lg:px-24 bg-white">
-                <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start gap-12">
+            <section className="relative px-6 py-12 md:px-12 lg:px-24 bg-white overflow-hidden">
+                {/* KANAN: Mockup Mobile */}
+                    {!isMobile && (
+                        <div className="hidden md:block absolute top-0 right-0 h-full flex items-center">
+                        <img
+                            src="/mockup-mobile.png"
+                            alt="Mockup Ponsel"
+                            width={350}
+                            height={600}
+                            className="object-contain"
+                        />
+                        </div>
+                    )}
+
+                <div className="relative z-10 max-w-6xl mx-auto flex flex-col md:flex-row items-start gap-12">
                     {/* KIRI: Judul, Deskripsi & Daftar Fitur */}
                     <div className="w-full md:w-1/2">
                         {/* Judul & Deskripsi */}
-                        <h2 className="text-center text-lg md:text-2xl lg:text-3xl font-bold text-[#ECA641]">
+                        <h2 className="text-center text-2xl md:text-2xl lg:text-3xl font-bold text-[#ECA641]">
                             Sistem Pemesanan Fleksibel di <span className="text-black">POSVANA</span>
                         </h2>
                         <div className="w-40 md:w-50 lg:w-100 h-1 bg-[#F6B543] mx-auto my-2"></div>
-                        <p className="text-gray-600 text-sm md:text-base mb-6">
+                        <p className="text-gray-600 text-lg md:text-base mb-6">
                             Kami menyediakan sistem pemesanan yang memudahkan pelanggan dan pemilik angkringan! 
                             Dengan fitur lengkap dan fleksibel, pelanggan bisa:
                         </p>
@@ -210,60 +247,47 @@ export default function Home() {
                             <div className="flex items-start gap-3">
                             <CheckCircleIcon className="w-6 h-6 text-green-500" />
                             <div>
-                                <h3 className="text-md font-semibold text-gray-900">Melihat Pesanan</h3>
-                                <p className="text-sm text-gray-600">Cek daftar menu, jumlah, dan total harga sebelum checkout.</p>
+                                <h3 className="text-xl font-semibold text-gray-900">Melihat Pesanan</h3>
+                                <p className="text-lg text-gray-600">Cek daftar menu, jumlah, dan total harga sebelum checkout.</p>
                             </div>
                             </div>
                             <div className="flex items-start gap-3">
                             <CheckCircleIcon className="w-6 h-6 text-green-500" />
                             <div>
-                                <h3 className="text-md font-semibold text-gray-900">Pilih Metode Pemesanan</h3>
-                                <p className="text-sm text-gray-600">Pre-order atau makan di tempat sesuai kenyamanan pelanggan.</p>
+                                <h3 className="text-xl font-semibold text-gray-900">Pilih Metode Pemesanan</h3>
+                                <p className="text-lg text-gray-600">Pre-order atau makan di tempat sesuai kenyamanan pelanggan.</p>
                             </div>
                             </div>
                             <div className="flex items-start gap-3">
                             <CheckCircleIcon className="w-6 h-6 text-green-500" />
                             <div>
-                                <h3 className="text-md font-semibold text-gray-900">Pilih Pengambilan Pesanan</h3>
-                                <p className="text-sm text-gray-600">Pilih tanggal dan jam sesuai kebutuhan.</p>
+                                <h3 className="text-xl font-semibold text-gray-900">Pilih Pengambilan Pesanan</h3>
+                                <p className="text-lg text-gray-600">Pilih tanggal dan jam sesuai kebutuhan.</p>
                             </div>
                             </div>
                             <div className="flex items-start gap-3">
                             <CheckCircleIcon className="w-6 h-6 text-green-500" />
                             <div>
-                                <h3 className="text-md font-semibold text-gray-900">Atur Waktu Pengambilan</h3>
-                                <p className="text-sm text-gray-600">Bisa diantar langsung atau ambil sendiri.</p>
+                                <h3 className="text-xl font-semibold text-gray-900">Atur Waktu Pengambilan</h3>
+                                <p className="text-lg text-gray-600">Bisa diantar langsung atau ambil sendiri.</p>
                             </div>
                             </div>
                             <div className="flex items-start gap-3">
                             <CheckCircleIcon className="w-6 h-6 text-green-500" />
                             <div>
-                                <h3 className="text-md font-semibold text-gray-900">Pembayaran Praktis dengan QRIS</h3>
-                                <p className="text-sm text-gray-600">Bebas repot dengan metode pembayaran digital.</p>
+                                <h3 className="text-xl font-semibold text-gray-900">Pembayaran Praktis dengan QRIS</h3>
+                                <p className="text-lg text-gray-600">Bebas repot dengan metode pembayaran digital.</p>
                             </div>
                             </div>
                             <div className="flex items-start gap-3">
                             <CheckCircleIcon className="w-6 h-6 text-green-500" />
                             <div>
-                                <h3 className="text-md font-semibold text-gray-900">Notifikasi Pesanan</h3>
-                                <p className="text-sm text-gray-600">Pemilik angkringan akan mendapatkan notifikasi otomatis setiap ada pesanan baru.</p>
+                                <h3 className="text-xl font-semibold text-gray-900">Notifikasi Pesanan</h3>
+                                <p className="text-lg text-gray-600">Pemilik angkringan akan mendapatkan notifikasi otomatis setiap ada pesanan baru.</p>
                             </div>
                             </div>
                         </div>
                     </div>
-
-                    {/* KANAN: Mockup Mobile */}
-                    {!isMobile && (
-                        <div className="w-full md:w-1/2 flex justify-center">
-                            <img 
-                                src="/mockup-mobile.png" 
-                                alt="Mockup Ponsel" 
-                                width={350} 
-                                height={600} 
-                                className="object-contain"
-                            />
-                        </div>
-                    )}
                 </div>
             </section>
             
@@ -397,10 +421,144 @@ export default function Home() {
                     )}
                 </div>
             </section>
+        
+            {/* Pricing Plans */}
+            <div className="min-h-screen bg-[#FFF4E8] py-16 px-4 md:px-8 lg:px-16">
+                <div className="text-center mb-12">
+                    <h1 className="text-3xl md:text-4xl font-bold text-[#F6B543]">Tersedia Paket di POSVANA</h1>
+                    <div className="w-24 h-1 bg-[#F6B543] mx-auto mt-2 mb-4 rounded-full" />
+                    <p className="text-gray-600 text-sm md:text-base">Pilih paket sesuai kebutuhan Bisnis Anda</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                    {/* Paket Basic */}
+                    <div className="max-w-sm w-full rounded-xl shadow-xl overflow-hidden bg-[linear-gradient(180deg,_rgba(255,151,0,0.3)_0%,_white_30%)]">
+                        <div className="p-6">
+                            <h2 className="text-xl font-semibold text-black mb-1">Paket 1 (Basic)</h2>
+                            <p className="text-2xl font-bold text-black mb-4">Gratis</p>
+
+                            <ul className="space-y-2 mb-6">
+                                {basicFeatures.map((item, idx) => (
+                                <li key={idx} className="flex items-start gap-2 text-sm text-black">
+                                    {item.included ? (
+                                    <CheckCircle className="text-green-500 w-5 h-5 mt-0.5" />
+                                    ) : (
+                                    <XCircle className="text-red-500 w-5 h-5 mt-0.5" />
+                                    )}
+                                    <span>{item.label}</span>
+                                </li>
+                                ))}
+                            </ul>
+
+                            <button className="w-full bg-[#F6B543] hover:bg-[#e6a730] transition text-white font-semibold py-2 rounded-lg">
+                                Pilih Paket
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Paket Pro */}
+                    <div className="max-w-sm w-full rounded-xl shadow-xl overflow-hidden bg-[linear-gradient(180deg,_rgba(255,151,0,0.3)_0%,_white_30%)]">
+                        <div className="p-6">
+                            <h2 className="text-xl font-semibold text-black mb-1">Paket 2 Pro (AI Enchanced)</h2>
+                            <p className="text-2xl font-bold text-black mb-4">150.000 / Bulan</p>
+
+                            <ul className="space-y-2 mb-6">
+                                {proFeatures.map((item, idx) => (
+                                <li key={idx} className="flex items-start gap-2 text-sm text-black">
+                                    {item.included ? (
+                                    <CheckCircle className="text-green-500 w-5 h-5 mt-0.5" />
+                                    ) : (
+                                    <XCircle className="text-red-500 w-5 h-5 mt-0.5" />
+                                    )}
+                                    <span>{item.label}</span>
+                                </li>
+                                ))}
+                            </ul>
+
+                            <button className="w-full bg-[#F6B543] hover:bg-[#e6a730] transition text-white font-semibold py-2 rounded-lg">
+                                Pilih Paket
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+                
+            {/* CTA Section */}
+            <div className="relative h-[500px] flex items-center justify-center text-center text-white">
+                {/* Background Image */}
+                <Image
+                    src="/cta-section.png"
+                    alt="Hero Background"
+                    fill
+                    className="object-cover brightness-50"
+                    priority
+                />
+
+                {/* Overlay Content */}
+                <div className="z-10 px-4">
+                    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6 leading-snug">
+                    Jadikan usaha Anda lebih profesional dengan <br />
+                    sistem yang membantu bisnis berkembang pesat!
+                    </h1>
+                    <button className="bg-[#F6B543] text-white font-semibold px-6 py-3 rounded-lg shadow-md hover:bg-yellow-500 transition-all">
+                    Mulai Kolaborasi Sekarang
+                    </button>
+                </div>
+            </div>
 
             {/* Footer */}
-            <footer id="kontak" style={{ backgroundColor: '#2563EB', color: 'white', padding: '24px', textAlign: 'center' }}>
-                <p>&copy; 2025 Landing Page. All rights reserved.</p>
+            <footer className="bg-[#fef4ea] px-8 py-6 text-sm text-black">
+                {/* Copyright */}
+                <div className="text-end text-xs mb-4">
+                    Copyright © 2025 Posvana08
+                </div>
+
+                <div className="border-t border-black pt-6 grid grid-cols-1 md:grid-cols-3 gap-6 my-5">
+                    {/* Logo dan Tagline */}
+                    <div className="flex items-start gap-4">
+                    <img src="/logo.jpg" alt="Posvana Logo" className="w-40 object-contain mix-blend-multiply"/>
+                    <div className="font-semibold text-2xl">
+                        <p>Mudah, Cepat, dan</p>
+                        <p>Nyaman untuk</p>
+                        <p>Bisnis Kuliner Anda</p>
+                    </div>
+                    </div>
+
+                    {/* Kontak */}
+                    <div className="space-y-2">
+                    <p><strong>Alamat</strong> <br />
+                        Jl. Ahmad Yani, Tlk. Tering, Kec. Batam Kota,<br />
+                        Kota Batam, Kepulauan Riau 29461
+                    </p>
+                    <p><strong>Kontak</strong> <br /> 085960657391</p>
+                    <p><strong>Email</strong> <br /> posvana_08@gmail.com</p>
+                    </div>
+
+                    {/* Sosial Media */}
+                    <div className="flex items-start justify-end gap-3 mt-4 md:mt-0">
+                        <Image
+                            src="ig.svg"
+                            alt="WhatsApp"
+                            width={30}
+                            height={30}
+                            className="cursor-pointer hover:scale-110 transition"
+                        />
+                        <Image
+                            src="wa.svg"
+                            alt="WhatsApp"
+                            width={30}
+                            height={30}
+                            className="cursor-pointer hover:scale-110 transition"
+                        />
+                        <Image
+                            src="yt.svg"
+                            alt="WhatsApp"
+                            width={30}
+                            height={30}
+                            className="cursor-pointer hover:scale-110 transition"
+                        />
+                    </div>
+                </div>
             </footer>
         </div>
     );
