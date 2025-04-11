@@ -23,7 +23,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F9F3E7]">
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
       <Header toggleSidebar={toggleSidebar} />
 
@@ -33,7 +33,7 @@ export default function Home() {
         <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
         {/* Konten Dashboard */}
-        <div className={`flex-1 flex flex-col lg:flex-row gap-6 p-6 transition-all duration-300`}>
+        <div className={`flex-1 flex flex-col lg:flex-row gap-6 p-3 transition-all duration-300`}>
           {/* Kolom 1: Ringkasan & Grafik Penjualan */}
           <div className="flex-1 space-y-6">
             <SummaryCards />
