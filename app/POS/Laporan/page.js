@@ -46,7 +46,7 @@ export default function Home() {
             <div className="flex flex-1 relative">
                 <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
                 
-                <div className="flex-1 flex flex-col gap-6 p-6 transition-all duration-300">
+                <div className="flex-1 flex flex-col overflow-x-auto gap-6 p-6 transition-all duration-300">
                     {/* Stat Card */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <StatCard title="Total Pemasukan" value="RP 1.000.000,00" />
@@ -76,8 +76,8 @@ export default function Home() {
                     </div>
 
                     {/* Tabel */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full max-w-full shadow-lg">
+                    <div className="w-full overflow-x-auto">
+                        <table className="min-w-[900px] w-full shadow-lg">
                             <thead className="text-black text-xs md:text-[10px] lg:text-[15px]">
                                 <tr>
                                     {['NO', 'MENU PESANAN', 'TIPE MENU', 'HARGA MODAL', 'HARGA JUAL', 'JUMLAH TERJUAL', 'TOTAL PENJUALAN', 'NET PROFIT'].map((header, index) => (

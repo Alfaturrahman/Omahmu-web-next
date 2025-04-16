@@ -46,55 +46,71 @@ export default function Home() {
         <div>
            {/* Header */}
            <header className="bg-white px-6 py-4 shadow-md flex items-center justify-between relative">
-            {/* Logo */}
-            <div className="flex items-center">
-                <img src="/logo.jpg" alt="Logo" className="h-18 mix-blend-multiply" />
-            </div>
+                {/* Logo */}
+                <div className="flex items-center">
+                    <img src="/logo.jpg" alt="Logo" className="h-18 mix-blend-multiply" />
+                </div>
 
-            {/* Navigation + Auth Buttons for large screens */}
-            <div className="hidden lg:flex items-center gap-2">
-                <nav className="flex gap-6">
+                {/* Navigation + Auth Buttons for large screens */}
+                <div className="hidden lg:flex items-center gap-2">
+                    <nav className="flex gap-6">
                     <a href="#beranda" className="hover:text-gray-700 text-[#F6B543]">Beranda</a>
                     <a href="#tentang-kami" className="hover:text-gray-700 text-[#F6B543]">Tentang Kami</a>
                     <a href="#fitur-kami" className="hover:text-gray-700 text-[#F6B543]">Fitur Kami</a>
-                </nav>
-                <div className="flex items-center gap-2 ml-10">
+                    </nav>
+                    <div className="flex items-center gap-2 ml-10">
                     <a href="/Login">
-                        <button className="bg-[#F6B543] text-white px-4 py-2 rounded-[10px] font-bold">Masuk</button>
+                        <button className="bg-[#F6B543] text-white px-4 py-2 rounded-[10px] font-bold">
+                        Masuk
+                        </button>
                     </a>
                     <a href="/Register">
-                        <button className="bg-white text-black px-4 py-2 rounded-[10px] border-2 border-gray-400 font-bold">Daftar</button>
+                        <button className="bg-white text-black px-4 py-2 rounded-[10px] border-2 border-gray-400 font-bold">
+                        Daftar
+                        </button>
+                    </a>
+                    </div>
+                </div>
+
+                {/* Mobile Menu Button */}
+                {isMobile && (
+                    <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden p-2 text-black">
+                    {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
+                )}
+
+                {/* Sidebar Overlay */}
+                <div
+                    className={`fixed inset-0 backdrop-brightness-70 z-40 transition-opacity ${
+                    isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                    }`}
+                    onClick={() => setIsOpen(false)}
+                ></div>
+
+                {/* Sidebar Menu */}
+                <div
+                    className={`fixed right-0 top-0 w-64 h-full bg-white shadow-lg transform ${
+                    isOpen ? 'translate-x-0' : 'translate-x-full'
+                    } transition-transform z-50 p-6 flex flex-col`}
+                >
+                    <button onClick={() => setIsOpen(false)} className="self-end mb-4">
+                    <X className="w-6 h-6 text-black" />
+                    </button>
+                    <a href="#beranda" className="block py-2 text-[#F6B543]">Beranda</a>
+                    <a href="#tentang-kami" className="block py-2 text-[#F6B543]">Tentang Kami</a>
+                    <a href="#fitur-kami" className="block py-2 text-[#F6B543]">Fitur Kami</a>
+                    <a href="/Login">
+                    <button className="w-full bg-[#F6B543] text-white px-4 py-2 rounded-[10px] mt-4 font-bold">
+                        Masuk
+                    </button>
+                    </a>
+                    <a href="/Register">
+                    <button className="bg-white text-black px-4 py-2 rounded-[10px] border-2 border-gray-400 font-bold">
+                        Daftar
+                    </button>
                     </a>
                 </div>
-            </div>
-
-            {/* Mobile Menu Button */}
-            {isMobile && (
-                <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden p-2 text-black">
-                    {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                </button>
-            )}
-
-            {/* Sidebar Overlay */}
-            <div className={`fixed inset-0 backdrop-brightness-70 z-40 transition-opacity ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setIsOpen(false)}></div>
-
-            {/* Sidebar Menu */}
-            <div className={`fixed right-0 top-0 w-64 h-full bg-white shadow-lg transform ${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform z-50 p-6 flex flex-col`}>
-                <button onClick={() => setIsOpen(false)} className="self-end mb-4">
-                    <X className="w-6 h-6 text-black" />
-                </button>
-                <a href="#beranda" className="block py-2 text-[#F6B543]">Beranda</a>
-                <a href="#tentang-kami" className="block py-2 text-[#F6B543]">Tentang Kami</a>
-                <a href="#fitur-kami" className="block py-2 text-[#F6B543]">Fitur Kami</a>
-                <a href="/Login">
-                    <button className="w-full bg-[#F6B543] text-white px-4 py-2 rounded-[10px] mt-4 font-bold">Masuk</button>
-                </a>
-                <a href="/Register">
-                    <button className="bg-white text-black px-4 py-2 rounded-[10px] border-2 border-gray-400 font-bold">Daftar</button>
-                </a>
-            </div>
-        </header>
-
+            </header>
 
             {/* Hero Image Section */}
             <section id="beranda" className="flex items-start justify-start bg-cover bg-center h-screen pt-20 px-6 md:px-10" style={{ backgroundImage: 'url(/landing-page.png)' }}>
@@ -218,7 +234,7 @@ export default function Home() {
             <section className="relative px-6 py-12 md:px-12 lg:px-24 bg-white overflow-hidden">
                 {/* KANAN: Mockup Mobile */}
                     {!isMobile && (
-                        <div className="hidden md:block absolute top-0 right-0 h-full flex items-center">
+                        <div className="hidden md:block absolute top-0 right-0 h-full items-center">
                         <img
                             src="/mockup-mobile.png"
                             alt="Mockup Ponsel"
@@ -422,7 +438,6 @@ export default function Home() {
                 </div>
             </section>
         
-            {/* Pricing Plans */}
             <div className="min-h-screen bg-[#FFF4E8] py-16 px-4 md:px-8 lg:px-16">
                 <div className="text-center mb-12">
                     <h1 className="text-3xl md:text-4xl font-bold text-[#F6B543]">Tersedia Paket di POSVANA</h1>
@@ -430,58 +445,59 @@ export default function Home() {
                     <p className="text-gray-600 text-sm md:text-base">Pilih paket sesuai kebutuhan Bisnis Anda</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto justify-items-center">
                     {/* Paket Basic */}
-                    <div className="max-w-sm w-full rounded-xl shadow-xl overflow-hidden bg-[linear-gradient(180deg,_rgba(255,151,0,0.3)_0%,_white_30%)]">
-                        <div className="p-6">
-                            <h2 className="text-xl font-semibold text-black mb-1">Paket 1 (Basic)</h2>
-                            <p className="text-2xl font-bold text-black mb-4">Gratis</p>
+                    <div className="w-full max-w-sm rounded-xl shadow-xl overflow-hidden bg-[linear-gradient(180deg,_rgba(255,151,0,0.3)_0%,_white_30%)]">
+                    <div className="p-6">
+                        <h2 className="text-xl font-semibold text-black mb-1">Paket 1 (Basic)</h2>
+                        <p className="text-2xl font-bold text-black mb-4">Gratis</p>
 
-                            <ul className="space-y-2 mb-6">
-                                {basicFeatures.map((item, idx) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm text-black">
-                                    {item.included ? (
-                                    <CheckCircle className="text-green-500 w-5 h-5 mt-0.5" />
-                                    ) : (
-                                    <XCircle className="text-red-500 w-5 h-5 mt-0.5" />
-                                    )}
-                                    <span>{item.label}</span>
-                                </li>
-                                ))}
-                            </ul>
+                        <ul className="space-y-2 mb-6">
+                        {basicFeatures.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-black">
+                            {item.included ? (
+                                <CheckCircle className="text-green-500 w-5 h-5 mt-0.5" />
+                            ) : (
+                                <XCircle className="text-red-500 w-5 h-5 mt-0.5" />
+                            )}
+                            <span>{item.label}</span>
+                            </li>
+                        ))}
+                        </ul>
 
-                            <button className="w-full bg-[#F6B543] hover:bg-[#e6a730] transition text-white font-semibold py-2 rounded-lg">
-                                Pilih Paket
-                            </button>
-                        </div>
+                        <button className="w-full bg-[#F6B543] hover:bg-[#e6a730] transition text-white font-semibold py-2 rounded-lg">
+                        Pilih Paket
+                        </button>
+                    </div>
                     </div>
 
                     {/* Paket Pro */}
-                    <div className="max-w-sm w-full rounded-xl shadow-xl overflow-hidden bg-[linear-gradient(180deg,_rgba(255,151,0,0.3)_0%,_white_30%)]">
-                        <div className="p-6">
-                            <h2 className="text-xl font-semibold text-black mb-1">Paket 2 Pro (AI Enchanced)</h2>
-                            <p className="text-2xl font-bold text-black mb-4">150.000 / Bulan</p>
+                    <div className="w-full max-w-sm rounded-xl shadow-xl overflow-hidden bg-[linear-gradient(180deg,_rgba(255,151,0,0.3)_0%,_white_30%)]">
+                    <div className="p-6">
+                        <h2 className="text-xl font-semibold text-black mb-1">Paket 2 Pro (AI Enchanced)</h2>
+                        <p className="text-2xl font-bold text-black mb-4">150.000 / Bulan</p>
 
-                            <ul className="space-y-2 mb-6">
-                                {proFeatures.map((item, idx) => (
-                                <li key={idx} className="flex items-start gap-2 text-sm text-black">
-                                    {item.included ? (
-                                    <CheckCircle className="text-green-500 w-5 h-5 mt-0.5" />
-                                    ) : (
-                                    <XCircle className="text-red-500 w-5 h-5 mt-0.5" />
-                                    )}
-                                    <span>{item.label}</span>
-                                </li>
-                                ))}
-                            </ul>
+                        <ul className="space-y-2 mb-6">
+                        {proFeatures.map((item, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-black">
+                            {item.included ? (
+                                <CheckCircle className="text-green-500 w-5 h-5 mt-0.5" />
+                            ) : (
+                                <XCircle className="text-red-500 w-5 h-5 mt-0.5" />
+                            )}
+                            <span>{item.label}</span>
+                            </li>
+                        ))}
+                        </ul>
 
-                            <button className="w-full bg-[#F6B543] hover:bg-[#e6a730] transition text-white font-semibold py-2 rounded-lg">
-                                Pilih Paket
-                            </button>
-                        </div>
+                        <button className="w-full bg-[#F6B543] hover:bg-[#e6a730] transition text-white font-semibold py-2 rounded-lg">
+                        Pilih Paket
+                        </button>
+                    </div>
                     </div>
                 </div>
             </div>
+
                 
             {/* CTA Section */}
             <div className="relative h-[500px] flex items-center justify-center text-center text-white">

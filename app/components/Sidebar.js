@@ -12,6 +12,9 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
     { name: "Laporan Keuntungan", icon: BarChart, path: "/POS/Laporan" },
     { name: "Daftar Menu", icon: Utensils, path: "/POS/Menu" },
     { name: "Riwayat Pesanan", icon: History, path: "/POS/Riwayat" },
+    { name: "Dashboard", icon: LayoutDashboard, path: "/Superadmin/Dashboard" },
+    { name: "Pengajuan Toko", icon: Monitor, path: "/Superadmin/PengajuanToko" },
+    { name: "Daftar Paket", icon: Package, path: "/Superadmin/DaftarPaket" },
   ];
 
   return (
