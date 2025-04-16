@@ -16,6 +16,9 @@ const Header = ({ toggleSidebar }) => {
       "/POS/Laporan": "Laporan Keuntungan",
       "/POS/Menu": "Menu",
       "/POS/Riwayat": "Riwayat Pesanan",
+      "/Superadmin/Dashboard": "Dashboard",
+      "/Superadmin/PengajuanToko": "Pengajuan Toko",
+      "/Superadmin/DaftarPaket": "Daftar Paket",
     };
     return pageTitles[path] || "Halaman Tidak Diketahui";
   };
