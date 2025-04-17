@@ -3,18 +3,16 @@
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import React, { useState } from 'react';
-import {
-  Search, Filter, Plus, MoreVertical, Package, Utensils, Beer, X, UploadCloud 
-} from 'lucide-react';
+import { Search, Filter, Plus, MoreVertical, Package, Utensils, Beer, X, UploadCloud } from 'lucide-react';
 
 const Produk = () => {
-  const [menuIndex, setMenuIndex] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const toggleSidebar = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -25,14 +23,19 @@ const Produk = () => {
   };
 
   const [products, setProducts] = useState([
-    { id: "P001", category:"Makanan", name: "TEMPE MENDOAN", stock: 0, price: 7000, image: "/kopi-susu.png", active: true },
-    { id: "P002",  category:"Makanan", name: "SATE AYAM", stock: 10, price: 7000, image: "/produk/sate.jpg", active: true },
-    { id: "P003",  category:"Makanan", name: "TELUR PUYUH", stock: 40, price: 7000, image: "/produk/telur.jpg", active: true },
-    { id: "P004", category:"Minuman", name: "ES TEH", stock: 40, price: 7000, image: "/produk/esteh.jpg", active: true },
-    { id: "P005", category:"Minuman", name: "KOPI SUSU", stock: 40, price: 7000, image: "/produk/kopi.jpg", active: false },
-    { id: "M002", category:"Minuman", name: "TEH TARIK", stock: 10, price: 7000, image: "/produk/tehtarik.jpg", active: true },
+    { id: "P001", category: "Makanan", name: "TEMPE MENDOAN", stock: 0, price: 7000, image: "/kopi-susu.png", active: true },
+    { id: "P002", category: "Makanan", name: "SATE KAMBING", stock: 10, price: 7000, image: "/sate-kambing.png", active: true },
+    { id: "P003", category: "Makanan", name: "TELUR PUYUH", stock: 40, price: 7000, image: "/telur-puyuh.png", active: true },
+    { id: "P004", category: "Minuman", name: "ES TEH", stock: 40, price: 7000, image: "/es-teh.png", active: true },
+    { id: "P005", category: "Minuman", name: "KOPI SUSU", stock: 40, price: 7000, image: "/kopi-susu.png", active: false },
+    { id: "M002", category: "Minuman", name: "TEH TARIK", stock: 10, price: 7000, image: "/teh-tarik.png", active: true },
   ]);
 
+  const filteredProducts = products.filter((product) => {
+    const matchSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCategory = selectedCategory ? product.category === selectedCategory : true;
+    return matchSearch && matchCategory;
+  });
 
   const toggleActive = (id) => {
     setProducts(products.map(product =>
@@ -40,13 +43,6 @@ const Produk = () => {
     ));
   };
 
-  const [formData, setFormData] = useState({
-    name: '',
-    stock: '',
-    price: '',
-    image: null
-  });
-  
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
@@ -59,6 +55,10 @@ const Produk = () => {
       setPreviewImage(null);
     }
   };
+
+  const handleStatCardClick = (category) => {
+    setSelectedCategory(category);
+  };
   
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -70,9 +70,9 @@ const Produk = () => {
         <div className="flex-1 p-4 sm:p-6 overflow-auto">
           {/* Statistik Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <StatCard title="Total Produk" value="100" icon={Package} />
-            <StatCard title="Total Makanan" value="50" icon={Utensils} />
-            <StatCard title="Total Minuman" value="50" icon={Beer} />
+            <StatCard title="Total Produk" value="100" icon={Package} onClick={() => handleStatCardClick(null)} />
+            <StatCard title="Total Makanan" value="50" icon={Utensils} onClick={() => handleStatCardClick("Makanan")} />
+            <StatCard title="Total Minuman" value="50" icon={Beer} onClick={() => handleStatCardClick("Minuman")} />
           </div>
 
           {/* Search & Filter */}
@@ -83,12 +83,15 @@ const Produk = () => {
                 <input
                   type="text"
                   placeholder="Cari berdasarkan nama produk"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="ml-2 w-full focus:outline-none text-black"
                 />
               </div>
+
               <div className="relative">
                 <button
-                  className="border border-gray-500 text-black flex items-center justify-center bg-[#F3F3F3] px-4 py-2 rounded-lg text-sm"
+                  className="border border-gray-500 text-black flex items-center justify-center bg-white px-4 py-2 rounded-lg text-sm"
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                 >
                   Filter <Filter size={18} className="ml-2" />
@@ -96,6 +99,15 @@ const Produk = () => {
 
                 {isFilterOpen && (
                   <div className="absolute top-full left-0 mt-2 w-40 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+                    <button
+                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
+                      onClick={() => {
+                        setSelectedCategory(null);
+                        setIsFilterOpen(false);
+                      }}
+                    >
+                      Semua
+                    </button>
                     <button
                       className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
                       onClick={() => {
@@ -129,15 +141,12 @@ const Produk = () => {
 
           {/* Produk Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products
-              .filter(product => {
-                // Filter produk berdasarkan kategori yang dipilih
-                if (selectedCategory) {
-                  return product.category === selectedCategory;
-                }
-                return true;
-              })
-              .map((product) => (
+            {filteredProducts.length === 0 ? (
+              <div className="col-span-4 text-center text-lg text-gray-500">
+                Tidak ada data yang sesuai
+              </div>
+            ) : (
+              filteredProducts.map((product) => (
                 <div
                   key={product.id}
                   className="w-full max-w-xs mx-auto rounded-lg border shadow-sm overflow-hidden bg-white flex flex-col"
@@ -166,10 +175,6 @@ const Produk = () => {
                       />
                       <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:left-[2px] after:top-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
                     </label>
-
-                    <button className="text-gray-500">
-                      <MoreVertical size={16} />
-                    </button>
                   </div>
 
                   <div className="flex justify-center mt-2">
@@ -190,8 +195,10 @@ const Produk = () => {
                     RP {product.price.toLocaleString('id-ID')},00
                   </div>
                 </div>
-              ))}
+              ))
+            )}
           </div>
+
 
           {/* MODAL Tambah Data */}
           {isModalOpen && (
@@ -238,22 +245,21 @@ const Produk = () => {
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
+                    <div>
                         <label className="block text-sm font-medium text-black">Tipe Produk</label>
                         <select className="w-full border text-black border-gray-300 rounded-md px-4 py-2">
                           <option>Pilih Salah Satu</option>
                           <option>Makanan</option>
                           <option>Minuman</option>
                         </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-black">Keterangan</label>
-                        <select className="w-full border text-black border-gray-300 rounded-md px-4 py-2">
-                          <option>Aktif</option>
-                          <option>Tidak Aktif</option>
-                        </select>
-                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-black">Keterangan</label>
+                      <select className="w-full border text-black border-gray-300 rounded-md px-4 py-2">
+                        <option>Aktif</option>
+                        <option>Tidak Aktif</option>
+                      </select>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -301,7 +307,7 @@ const Produk = () => {
 
                     <textarea
                       placeholder="Deskripsi produk"
-                      className="w-full border text-black border-gray-300 rounded-md px-4 py-2 h-[100px]"
+                      className="w-full border text-black border-gray-300 rounded-md px-4 py-2 h-[145px]"
                     ></textarea>
                   </div>
 
@@ -327,9 +333,9 @@ const Produk = () => {
 
 export default Produk;
 
-function StatCard({ icon: Icon = Package, title, value }) {
+function StatCard({ icon: Icon = Package, title, value, onClick }) {
   return (
-    <div className="bg-[#FFF4E8] text-black px-6 py-4 rounded-xl shadow flex items-center gap-4 h-[100px]">
+    <div className="bg-[#FFF4E8] text-black px-6 py-4 rounded-xl shadow flex items-center gap-4 h-[100px] cursor-pointer" onClick={onClick}>
       <div className="bg-[#F6B543] p-3 rounded-lg">
         <Icon size={28} className="text-white" />
       </div>

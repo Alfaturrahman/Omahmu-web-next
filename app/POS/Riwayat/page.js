@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye } from 'lucide-react';
+import { Eye, X } from "lucide-react";
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import '@/globals.css';
@@ -13,6 +13,10 @@ export default function Riwayat() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [activeTab, setActiveTab] = useState('dinein');
+  const [showModal, setShowModal] = useState(false);
+
+  const handleOpenModal = () => setShowModal(true);
+  const handleCloseModal = () => setShowModal(false);
 
   const toggleSidebar = () => {
     if (window.innerWidth < 1024) {
@@ -93,7 +97,7 @@ export default function Riwayat() {
       <Header toggleSidebar={toggleSidebar} />
         <div className="flex flex-1 relative">
             <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
-            <div className="p-4 md:p-6 transition-all duration-300 w-full">
+            <div className="flex-1 p-4 sm:p-6 transition-all duration-300 w-full">
                 <div className="flex justify-start gap-8 mb-4 relative">
                     {/* Tabs */}
                     <div className="flex border-b mb-4">
@@ -161,7 +165,7 @@ export default function Riwayat() {
                                 </span>
                                 </td>
                                 <td className="py-3 px-4 relative">
-                                <Eye className="cursor-pointer w-30" />
+                                    <Eye className="cursor-pointer w-30" onClick={handleOpenModal}/>
                                 </td>
                                 <td className="py-3 px-4 relative">{item.orderType}</td>
                             </tr>
@@ -169,6 +173,112 @@ export default function Riwayat() {
                         </tbody>
                     </table>
                 </div>
+
+                {showModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-brightness-50">
+                        <div className="bg-white text-black rounded-lg w-[90%] md:w-[500px] max-h-[90vh] overflow-y-auto p-4 sm:p-6 relative">
+                            {/* Header */}
+                            <div className="flex justify-between items-cente pb-4">
+                                <h2 className="text-xl font-bold text-center w-full">Detail Pesanan</h2>
+                                <button className="absolute right-6" onClick={handleCloseModal}>
+                                    <X className="w-5 h-5 cursor-pointer" />
+                                </button>
+                            </div>
+
+                            {/* Body */}
+                            <div className="mt-4 space-y-4 text-sm">
+                                <div className="flex flex-row justify-between gap-2">
+                                    <div className='border-2 border-gray-300 p-2 rounded-md'>
+                                        <p className="text-xs text-gray-500">Nama Customer</p>
+                                        <p className="font-medium">Alfatturrizki</p>
+                                    </div>
+                                    <div className='border-2 border-gray-300 p-2 rounded-md text-right'>
+                                        <p className="text-xs text-gray-500">Tanggal Pemesanan</p>
+                                        <p className="font-medium">10 Maret 2023</p>
+                                    </div>
+                                </div>
+
+
+                                <div className="mt-4 pt-2">
+                                    <div className="flex justify-between">
+                                        <p className="font-semibold text-black">Detail Pesanan</p>
+                                        <p className="font-semibold text-xs md:text-sm text-gray-500">Kode Pesanan : 15032023</p>
+                                    </div>
+
+                                    {/* Item 1 */}
+                                    <div className="flex gap-3 mt-4">
+                                        <img
+                                            src="/sate-kambing.png"
+                                            alt="Kopi Susu"
+                                            className="w-20 h-16 rounded object-cover"
+                                        />
+
+                                        <div className="flex justify-between w-full">
+                                            {/* Nama dan Kategori */}
+                                            <div className="flex flex-col justify-start">
+                                            <p className="font-semibold ">Sate kambing</p>
+                                            <p className="text-gray-500 text-xs">Makanan</p>
+                                            </div>
+
+                                            {/* Harga di bawah kanan */}
+                                            <div className="flex flex-row gap-2 justify-end items-end">
+                                                <p className="font-bold text-sm">1x</p>
+                                                <p className="font-bold text-sm">Rp 15.000,00</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                    {/* Item 2 */}
+                                    <div className="flex gap-3 mt-4 pt-2 border-t">
+                                        <img
+                                            src="/kopi-susu.png"
+                                            alt="Kopi Susu"
+                                            className="w-20 h-16 rounded object-cover"
+                                        />
+
+                                        <div className="flex justify-between w-full">
+                                            {/* Nama dan Kategori */}
+                                            <div className="flex flex-col justify-start">
+                                            <p className="font-semibold">Kopi Susu</p>
+                                            <p className="text-gray-500 text-xs">Minuman</p>
+                                            </div>
+
+                                            {/* Harga di bawah kanan */}
+                                            <div className="flex flex-row gap-2 justify-end items-end">
+                                                <p className="font-bold text-sm">1x</p>
+                                                <p className="font-bold text-sm">Rp 7.000,00</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+                                    {/* Total Section */}
+                                    <div className="mt-5 border-t pt-2 text-sm">
+                                        <div className="flex justify-between">
+                                            <span>Item</span>
+                                            <span className='font-semibold  text-black'>2 (items)</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Subtotal</span>
+                                            <span className='font-semibold  text-black'>Rp 22.000,00</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span>Keterangan</span>
+                                            <span className='font-semibold text-black'>Dine In</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer */}
+                            <div className="flex flex-row justify-between border-t mt-5 py-3 text-right font-semibold">
+                                <p>Total</p>
+                                <p>Rp 22.0000,00</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Pagination */}
                 <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-gray-600">

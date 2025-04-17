@@ -1,11 +1,14 @@
 "use client";
+
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, Bell, User, LogOut } from "lucide-react";
+import { useRouter } from 'next/navigation'
 
 const Header = ({ toggleSidebar }) => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname(); // Dapatkan path halaman saat ini
+  const router = useRouter()
 
   // Konversi path URL ke judul halaman yang lebih user-friendly
   const getPageTitle = (path) => {
@@ -53,7 +56,7 @@ const Header = ({ toggleSidebar }) => {
           {/* Avatar Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center focus:outline-none"
+            className="w-10 h-10 rounded-full bg-gray-300 flex items-center justify-center focus:outline-none cursor-pointer"
           >
             <span className="text-white font-bold">A</span>
           </button>
@@ -68,9 +71,12 @@ const Header = ({ toggleSidebar }) => {
 
               <div className="py-2">
                 {/* Profil */}
-                <button className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg">
-                  <User className="w-4 h-4 mr-2" />
-                  Profil
+                <button
+                    onClick={() => router.push('/POS/Profile')}
+                    className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Profil
                 </button>
 
                 {/* Logout */}
