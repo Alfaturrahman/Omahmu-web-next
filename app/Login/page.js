@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { loginUser } from '../../services/authService'; // Import the loginUser function
 import '@/globals.css';
 
 const LoginPage = () => {
@@ -10,8 +11,9 @@ const LoginPage = () => {
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({ email: '', password: '' });
     const [successMessage, setSuccessMessage] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         
         let formErrors = { email: '', password: '' };
@@ -36,10 +38,45 @@ const LoginPage = () => {
         } else {
             setErrors({ email: '', password: '' });
             setSuccessMessage('Login berhasil!');
-            console.log('Login Berhasil');
+            setLoading(true);
+
+            try {
+                // Send login data to the API
+                const response = await loginUser({ email, password });
+                console.log(response.data); // Check the response
+
+                const token = response.data.token;
+                const role_id = response.data.user.role_id;
+
+                localStorage.setItem('token', token); // Store the JWT token in localStorage (or use sessionStorage)
+                setLoading(false);
+
+                // Redirect based on role_id
+                if (role_id === 2) {
+                    // Store owner (role_id = 2)
+                    router.push('/POS/Kasir');
+                } else if (role_id === 3) {
+                    // Customer (role_id = 3)
+                    router.push('/dashboard');
+                } else {
+                    // Default or fallback route if role_id is not recognized
+                    router.push('/');
+                }
+            } catch (error) {
+                setLoading(false);
+                setSuccessMessage('');
+                if (error.response?.data?.message) {
+                    setErrors({ email: '', password: error.response.data.message });
+                } else {
+                    setErrors({ email: '', password: 'Login gagal, silakan coba lagi.' });
+                }
+            } finally {
+                // Clear the email and password fields after submission (success or failure)
+                setEmail('');
+                setPassword('');
+            }
         }
     };
-    
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-[#FFF4E8] p-4">
@@ -96,7 +133,9 @@ const LoginPage = () => {
                             {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
                         </div>
                         <a href="#" className="text-[#ECA641] text-sm">Lupa Kata Sandi?</a>
-                        <button type="submit" className="w-full py-2 mt-4 text-white bg-[#ECA641] rounded hover:bg-[#e3a838]">Masuk</button>
+                        <button type="submit" className="w-full py-2 mt-4 text-white bg-[#ECA641] rounded hover:bg-[#e3a838]" disabled={loading}>
+                            {loading ? "Loading..." : "Masuk"}
+                        </button>
                     </form>
                     <p className="mt-4 text-black text-center text-sm">
                         Tidak Punya Akun? <a href="#" className="text-[#ECA641]">Daftar Disini</a>
