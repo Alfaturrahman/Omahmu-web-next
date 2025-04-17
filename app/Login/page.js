@@ -138,7 +138,7 @@ const LoginPage = () => {
                         </button>
                     </form>
                     <p className="mt-4 text-black text-center text-sm">
-                        Tidak Punya Akun? <a href="#" className="text-[#ECA641]">Daftar Disini</a>
+                        Tidak Punya Akun? <a href="/Role" className="text-[#ECA641]">Daftar Disini</a>
                     </p>
                 </div>
             </div>

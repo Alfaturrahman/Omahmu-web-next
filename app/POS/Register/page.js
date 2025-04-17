@@ -106,13 +106,13 @@ const Register = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#FFF4E8] p-4">
-      <div className="flex flex-col md:flex-row w-full max-w-md md:max-w-4xl rounded-2xl shadow-lg overflow-hidden">
+        <div className="flex flex-col md:flex-row w-full max-w-md md:max-w-4xl h-auto md:h-150 rounded-2xl shadow-lg overflow-hidden">
         {/* Kiri */}
         <div className="hidden md:block w-1/2 bg-cover bg-center" style={{ backgroundImage: 'url(/login-bg.png)' }}>
           <div className="flex flex-col items-center justify-center h-full px-10">
-            <img src="/logo.jpg" alt="Logo" className="w-35 mb-20 mix-blend-multiply" />
-            <p className="text-black text-center italic text-lg mb-60 font-medium font-serif">
-              "Lebih dari Sekadar Tempat Makan, Angkringan OmahMu Adalah Rumah Kedua di Setiap Suapannya"
+            <img src="/logo.jpg" alt="Logo" className="w-45 mb-20 mix-blend-multiply" />
+            <p className="text-black text-center italic text-lg mb-60 font-medium" style={{ fontFamily: "'Tiro Devanagari Sanskrit', serif" }}>
+                "Lebih dari Sekadar Tempat Makan, Angkringan OmahMu Adalah Rumah Kedua di Setiap Suapannya"
             </p>
           </div>
         </div>
@@ -120,7 +120,7 @@ const Register = () => {
         {/* Form */}
         <div className="w-full md:w-1/2 bg-white p-6 md:p-10 overflow-y-auto max-h-screen">
           <div className="md:hidden flex justify-center mb-4">
-            <img src="/logo.png" alt="Logo" className="w-28" />
+            <img src="/logo.jpg" alt="Logo" className="w-28" />
           </div>
           <h2 className="text-center text-black text-2xl font-bold mb-2">Daftar</h2>
           <p className="text-center text-black mb-6">Selamat Datang di <span className="text-[#F6B543] font-bold">Posvana</span></p>
@@ -183,6 +183,11 @@ const Register = () => {
                 placeholder="Masukkan deskripsi toko"
                 className="w-full p-2 text-[#71717A] border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-[#ECA641]"
               />
+            </div>
+                
+            <div>
+                <label className="text-black block mb-1 font-bold">Surat Pernyataan Keabsahan Data</label>
+                <a href="/document.pdf" download className="text-[#ECA641] hover:underline text-sm">⬇️ Download document.pdf</a>
             </div>
 
             {/* Paket */}
