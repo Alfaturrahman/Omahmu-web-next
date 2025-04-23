@@ -6,7 +6,6 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import '@/globals.css';
 
-
 export default function Riwayat() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -93,10 +92,11 @@ export default function Riwayat() {
   const totalPages = Math.ceil(getData().length / itemsPerPage);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="h-screen flex flex-col bg-white">
       <Header toggleSidebar={toggleSidebar} />
-        <div className="flex flex-1 relative">
+        <div className="flex flex-1 relative h-full overflow-hidden">
             <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+            
             <div className="flex-1 p-4 sm:p-6 transition-all duration-300 w-full">
                 <div className="flex justify-start gap-8 mb-4 relative">
                     {/* Tabs */}
@@ -126,7 +126,7 @@ export default function Riwayat() {
 
                 {/* Tabel */}
                 <div className="overflow-x-auto rounded-lg">
-                    <table className="min-w-[800px] w-full shadow-lg">
+                    <table className="max-w-[800px] w-full shadow-lg">
                         <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
                             <tr>
                             {['NO', 'KODE PESANAN', 'NAMA CUSTOMER', 'TANGGAL PESANAN', 'STATUS PESANAN', 'STATUS TRANSAKSI', 'DETAIL PESANAN', 'TIPE PESANAN'].map((header, index) => (
@@ -141,31 +141,43 @@ export default function Riwayat() {
                         </thead>
                         <tbody>
                             {currentData.map((item, index) => (
-                            <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative border-y border-gray-500">
-                                <td className="py-3 px-4 relative">{index + 1 + (currentPage - 1) * itemsPerPage}</td>
-                                <td className="py-3 px-4 relative">{item.orderCode}</td>
-                                <td className="py-3 px-4 relative">{item.customerName}</td>
-                                <td className="py-3 px-4 relative">{item.orderDate}</td>
-                                <td className="py-3 px-4 relative">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    item.orderStatus === 'Selesai' ? 'bg-green-100 text-green-600' :
-                                    item.orderStatus === 'Proses' ? 'bg-yellow-100 text-yellow-600' :
-                                    'bg-gray-200 text-gray-600'
-                                }`}>
-                                    {item.orderStatus}
-                                </span>
+                            <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
+                                <td className="py-3 px-4 relative">{index + 1 + (currentPage - 1) * itemsPerPage}
+                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                </td>
+                                
+                                <td className="py-3 px-4 relative">{item.orderCode}
+                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                </td>
+                                <td className="py-3 px-4 relative">{item.customerName}
+                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                </td>
+                                <td className="py-3 px-4 relative">{item.orderDate}
+                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                 </td>
                                 <td className="py-3 px-4 relative">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    item.transactionStatus === 'Cash' ? 'bg-green-200 text-green-700' :
-                                    item.transactionStatus === 'Qris' ? 'bg-blue-200 text-blue-700' :
-                                    'bg-red-200 text-red-700'
-                                }`}>
-                                    {item.transactionStatus}
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        item.orderStatus === 'Selesai' ? 'bg-green-100 text-green-600' :
+                                        item.orderStatus === 'Proses' ? 'bg-yellow-100 text-yellow-600' :
+                                        'bg-gray-200 text-gray-600'
+                                    }`}>
+                                        {item.orderStatus}
+                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                    </span>
+                                </td>
+                                <td className="py-3 px-4 relative">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        item.transactionStatus === 'Cash' ? 'bg-green-200 text-green-700' :
+                                        item.transactionStatus === 'Qris' ? 'bg-blue-200 text-blue-700' :
+                                        'bg-red-200 text-red-700'
+                                    }`}>
+                                        {item.transactionStatus}
+                                    <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                 </span>
                                 </td>
                                 <td className="py-3 px-4 relative">
                                     <Eye className="cursor-pointer w-30" onClick={handleOpenModal}/>
+                                    <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                 </td>
                                 <td className="py-3 px-4 relative">{item.orderType}</td>
                             </tr>

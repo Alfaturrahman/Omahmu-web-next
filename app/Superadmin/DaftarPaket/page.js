@@ -17,6 +17,8 @@ export default function DaftarPaket() {
     const [openMenuIndex, setOpenMenuIndex] = useState(null)
     const openModal = () => setIsModalOpen(true);
     const [isClient, setIsClient] = useState(false);
+    const [errors, setErrors] = useState({});
+
 
     useEffect(() => {
         setIsClient(true);
@@ -96,10 +98,30 @@ export default function DaftarPaket() {
     };
   
     const handleSubmit = () => {
-      console.log('Data dikirim:', formData);
-      setIsModalOpen(false);
+        const newErrors = {};
+    
+        if (!formData.nama) newErrors.nama = 'Nama paket wajib diisi';
+        if (!formData.durasi) newErrors.durasi = 'Durasi wajib diisi';
+        if (!formData.harga) newErrors.harga = 'Harga wajib diisi';
+        if (!formData.deskripsi) newErrors.deskripsi = 'Deskripsi wajib diisi';
+        if (!formData.fitur || formData.fitur.length === 0) newErrors.fitur = 'Minimal pilih 1 fitur';
+    
+        if (Object.keys(newErrors).length === 0) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Berhasil!',
+                text: 'Data paket berhasil ditambahkan.',
+                confirmButtonColor: '#F6B543', 
+            });
+    
+            console.log('Data dikirim:', formData);
+            setIsModalOpen(false);
+        } else {
+            setErrors(newErrors);
+        }
     };
-
+    
+    
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
@@ -154,6 +176,7 @@ export default function DaftarPaket() {
                                 className="w-full border rounded-md px-3 py-2"
                                 placeholder="Masukkan Nama Paket"
                             />
+                            {errors.nama && <p className="text-red-500 text-xs mt-1">{errors.nama}</p>}
                         </div>
 
                         {/* Durasi */}
@@ -167,6 +190,8 @@ export default function DaftarPaket() {
                                 className="w-full border rounded-md px-3 py-2"
                                 placeholder="Durasi (dalam bulan)"
                             />
+                            {errors.durasi && <p className="text-red-500 text-xs mt-1">{errors.durasi}</p>}
+
                         </div>
 
                         {/* Harga */}
@@ -180,6 +205,8 @@ export default function DaftarPaket() {
                                 className="w-full border rounded-md px-3 py-2"
                                 placeholder="Harga Paket (Rp)"
                             />
+                            {errors.harga && <p className="text-red-500 text-xs mt-1">{errors.harga}</p>}
+
                         </div>
 
                         {/* Deskripsi */}
@@ -193,14 +220,14 @@ export default function DaftarPaket() {
                                 className="w-full border rounded-md px-3 py-2"
                                 placeholder="Masukkan Deskripsi Paket"
                             />
+                            {errors.deskripsi && <p className="text-red-500 text-xs mt-1">{errors.deskripsi}</p>}
+
                         </div>
 
                         {/* Fitur (Multi Select) */}
                         <div>
                             <label className="block text-xs font-semibold mb-1">Fitur Paket</label>
-                            <Select
-                                isMulti
-                                name="fitur"
+                            <Select isMulti name="fitur"
                                 options=
                                 {[
                                     { value: '1-5 Pengguna', label: '1-5 Pengguna' },
@@ -248,9 +275,9 @@ export default function DaftarPaket() {
                                     ...base,
                                     color: 'black',
                                     }),
-                                }}
+                            }}
                             />
-
+                            {errors.fitur && <p className="text-red-500 text-xs mt-1">{errors.fitur}</p>}
                         </div>
                     </div>
 

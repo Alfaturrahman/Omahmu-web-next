@@ -5,7 +5,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import Flag from "react-world-flags";
 import { Upload } from 'lucide-react';
-import { registerStoreOwner } from '../../../services/authService'; // pastikan path sesuai
+import { registerStoreOwner } from '../../../services/authService';
 
 const countryFlags = {
   ID: { code: "+62", label: "ID" },
@@ -203,32 +203,6 @@ const Register = () => {
                 <option value="1">Basic</option>
                 <option value="2">Premium</option>
               </select>
-            </div>
-
-            <div>
-
-            {/* Tanggal Mulai dan Berakhir */}
-            <label htmlFor="start_date" className="text-black block mb-1 font-bold">Tanggal Mulai</label>
-            <input
-                type="date"
-                id="start_date"
-                name="start_date"
-                value={formData.start_date}
-                onChange={handleChange}
-                className="w-full p-2 text-[#71717A] border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#ECA641]"
-            />
-            </div>
-
-            <div>
-            <label htmlFor="end_date" className="text-black block mb-1 font-bold">Tanggal Berakhir</label>
-            <input
-                type="date"
-                id="end_date"
-                name="end_date"
-                value={formData.end_date}
-                onChange={handleChange}
-                className="w-full p-2 text-[#71717A] border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#ECA641]"
-            />
             </div>
 
             {/* Uploads */}

@@ -133,13 +133,22 @@ export default function ProfilToko() {
                 icon: 'success',
                 title: 'Berhasil!',
                 text: 'Data berhasil disimpan!',
+                confirmButtonColor: '#F6B543', 
             });
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#FFF4EC] flex justify-center items-center px-4 py-10 text-black">
-            <div className="bg-white w-full max-w-6xl rounded-lg shadow-md p-6 flex flex-col gap-6">
+        <div className="h-screen bg-[#FFF4EC] flex justify-center items-center px-4 py-10 text-black">
+            <div className="absolute inset-0 pointer-events-none">
+                <img
+                src="/bg-profil.png"
+                alt="Background"
+                className="w-full h-full object-cover"
+                />
+            </div>
+
+            <div className="bg-white w-full max-w-6xl rounded-lg shadow-md p-6 flex flex-col gap-6 z-20">
                 {/* Head */}
                 <div className="flex items-center gap-3">
                     <button onClick={() => router.back()}>
@@ -212,27 +221,35 @@ export default function ProfilToko() {
                             {errors.alamat && <p className="text-red-500 text-sm">{errors.alamat}</p>}
                         </div>
 
-                        <div>
-                            <label className="font-semibold block mb-1">Jam Operasional</label>
-                            <div className="flex gap-2">
+                        <div className="flex items-center gap-4">
+                            {/* Jam Buka */}
+                            <div className="flex flex-col w-full">
+                                <label className="font-semibold text-black mb-1">Jam Buka</label>
                                 <input
-                                    name="jamBuka"
-                                    type="time"
-                                    value={formData.jamBuka}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                name="jamBuka"
+                                type="time"
+                                value={formData.jamBuka}
+                                onChange={handleInputChange}
+                                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
                                 />
-                                <span className="self-center">-</span>
-                                <input
-                                    name="jamTutup"
-                                    type="time"
-                                    value={formData.jamTutup}
-                                    onChange={handleInputChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
-                                />
+                                {errors.jamBuka && <p className="text-red-500 text-sm">{errors.jamBuka}</p>}
                             </div>
-                            {errors.jamBuka && <p className="text-red-500 text-sm">{errors.jamBuka}</p>}
-                            {errors.jamTutup && <p className="text-red-500 text-sm">{errors.jamTutup}</p>}
+
+                            {/* Strip Pemisah */}
+                            <span className="text-black font-semibold mt-6">-</span>
+
+                            {/* Jam Tutup */}
+                            <div className="flex flex-col w-full">
+                                <label className="font-semibold text-black mb-1">Jam Tutup</label>
+                                <input
+                                name="jamTutup"
+                                type="time"
+                                value={formData.jamTutup}
+                                onChange={handleInputChange}
+                                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-400"
+                                />
+                                {errors.jamTutup && <p className="text-red-500 text-sm">{errors.jamTutup}</p>}
+                            </div>
                         </div>
 
                         <div>

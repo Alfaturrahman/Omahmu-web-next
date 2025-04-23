@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, Bell, User, LogOut } from "lucide-react";
+import { Menu, Bell, User, LogOut, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation'
 
 const Header = ({ toggleSidebar }) => {
@@ -22,6 +22,9 @@ const Header = ({ toggleSidebar }) => {
       "/Superadmin/Dashboard": "Dashboard",
       "/Superadmin/PengajuanToko": "Pengajuan Toko",
       "/Superadmin/DaftarPaket": "Daftar Paket",
+      "/Cust/Dashboard": "Dashboard",
+      "/Cust/Kasir": "Kasir",
+      "/Cust/Log": "Log Pemesanan",
     };
     return pageTitles[path] || "Halaman Tidak Diketahui";
   };
@@ -77,6 +80,14 @@ const Header = ({ toggleSidebar }) => {
                   >
                     <User className="w-4 h-4 mr-2" />
                     Profil
+                </button>
+
+                <button
+                    onClick={() => router.push('/POS/GantiSandi')}
+                    className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg"
+                  >
+                    <Lock className="w-4 h-4 mr-2" />
+                    Ganti Kata Sandi
                 </button>
 
                 {/* Logout */}

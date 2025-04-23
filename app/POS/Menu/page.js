@@ -24,22 +24,30 @@ export default function Kasir() {
         { id: 2, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
         { id: 3, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
         { id: 4, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
+        { id: 5, name: "Sate Kambing", price: 15000, image: "/sate-kambing.png", category: "Makanan", favorite: true },
+        { id: 6, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
+        { id: 7, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
+        { id: 8, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
+        { id: 9, name: "Sate Kambing", price: 15000, image: "/sate-kambing.png", category: "Makanan", favorite: true },
+        { id: 10, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
+        { id: 11, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
+        { id: 12, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
     ];
 
     const categories = ["Semua", "Makanan", "Minuman", "Favorit"];
 
   return (
-    <div className="min-h-screen flex flex-col bg-white overflow-hidden">
+    <div className="h-screen flex flex-col bg-white overflow-hidden">
         {/* Header */}
         <Header toggleSidebar={toggleSidebar} />
 
         {/* Wrapper untuk Sidebar & Konten */}
-        <div className="flex flex-1 relative">
+        <div className="flex flex-1 relative h-full overflow-hidden">
             {/* Sidebar */}
             <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-            {/* Konten Kasir */}
-            <div className="p-4 md:p-6 transition-all duration-300">
+            {/* Konten Utama */}
+            <div className={`flex-1 flex flex-col gap-6 p-3 overflow-y-auto min-h-0 transition-all duration-300`}>
                 {/* Kategori Menu */}
                 <div className="mb-6">
                     <h2 className="text-lg md:text-xl text-black font-semibold mb-3">Menu Pesanan</h2>

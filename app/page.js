@@ -21,7 +21,7 @@ export default function Home() {
         { label: 'Rekomendasi Menu Otomatis', included: false },
         { label: 'Live Chat Dukungan', included: false },
     ];
-    
+
     const proFeatures = [
     { label: 'Tidak Terbatas Pengguna', included: true },
     { label: 'Tidak Terbatas Cabang', included: true },
@@ -45,27 +45,27 @@ export default function Home() {
     return (
         <div>
            {/* Header */}
-           <header className="bg-white px-6 py-4 shadow-md flex items-center justify-between relative">
+           <header className="fixed top-0 left-0 right-0 bg-white shadow-md px-6 py-4 z-50 flex items-center justify-between">
                 {/* Logo */}
                 <div className="flex items-center">
-                    <img src="/logo.jpg" alt="Logo" className="h-18 mix-blend-multiply" />
+                    <img src="/logo.jpg" alt="Logo" className="h-14 mix-blend-multiply" />
                 </div>
 
-                {/* Navigation + Auth Buttons for large screens */}
-                <div className="hidden lg:flex items-center gap-2">
-                    <nav className="flex gap-6">
-                    <a href="#beranda" className="hover:text-gray-700 text-[#F6B543]">Beranda</a>
-                    <a href="#tentang-kami" className="hover:text-gray-700 text-[#F6B543]">Tentang Kami</a>
-                    <a href="#fitur-kami" className="hover:text-gray-700 text-[#F6B543]">Fitur Kami</a>
+                {/* Navigation + Auth Buttons (Desktop) */}
+                <div className="hidden lg:flex items-center gap-8">
+                    <nav className="flex gap-6 text-[#F6B543] font-medium">
+                    <a href="#beranda" className="hover:text-gray-700">Beranda</a>
+                    <a href="#tentang-kami" className="hover:text-gray-700">Tentang Kami</a>
+                    <a href="#fitur-kami" className="hover:text-gray-700">Fitur Kami</a>
                     </nav>
-                    <div className="flex items-center gap-2 ml-10">
+                    <div className="flex gap-2">
                     <a href="/Login">
-                        <button className="bg-[#F6B543] text-white px-4 py-2 rounded-[10px] font-bold">
+                        <button className="bg-[#F6B543] text-white px-4 py-2 rounded-[10px] font-bold cursor-pointer">
                         Masuk
                         </button>
                     </a>
-                    <a href="/Register">
-                        <button className="bg-white text-black px-4 py-2 rounded-[10px] border-2 border-gray-400 font-bold">
+                    <a href="/Role">
+                        <button className="bg-white text-black px-4 py-2 border-2 border-gray-400 rounded-[10px] font-bold cursor-pointer">
                         Daftar
                         </button>
                     </a>
@@ -74,24 +74,24 @@ export default function Home() {
 
                 {/* Mobile Menu Button */}
                 {isMobile && (
-                    <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden p-2 text-black">
+                    <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden text-black">
                     {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                     </button>
                 )}
 
                 {/* Sidebar Overlay */}
                 <div
-                    className={`fixed inset-0 backdrop-brightness-70 z-40 transition-opacity ${
+                    className={`fixed inset-0 backdrop-brightness-50 z-40 transition-opacity duration-300 ${
                     isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
                     }`}
                     onClick={() => setIsOpen(false)}
-                ></div>
+                />
 
                 {/* Sidebar Menu */}
                 <div
-                    className={`fixed right-0 top-0 w-64 h-full bg-white shadow-lg transform ${
+                    className={`fixed top-0 right-0 h-full w-64 bg-white shadow-lg z-50 transform transition-transform duration-300 p-6 flex flex-col ${
                     isOpen ? 'translate-x-0' : 'translate-x-full'
-                    } transition-transform z-50 p-6 flex flex-col`}
+                    }`}
                 >
                     <button onClick={() => setIsOpen(false)} className="self-end mb-4">
                     <X className="w-6 h-6 text-black" />
@@ -105,37 +105,44 @@ export default function Home() {
                     </button>
                     </a>
                     <a href="/Register">
-                    <button className="bg-white text-black px-4 py-2 rounded-[10px] border-2 border-gray-400 font-bold">
+                    <button className="w-full bg-white text-black px-4 py-2 mt-2 border-2 border-gray-400 rounded-[10px] font-bold">
                         Daftar
                     </button>
                     </a>
                 </div>
             </header>
 
-            {/* Hero Image Section */}
-            <section id="beranda" className="flex items-start justify-start bg-cover bg-center h-screen pt-20 px-6 md:px-10" style={{ backgroundImage: 'url(/landing-page.png)' }}>
+            {/* Hero Section */}
+            <section
+            id="beranda"
+            className="pt-[90px] h-screen bg-cover bg-center px-6 md:px-10 flex items-center justify-start"
+            style={{ backgroundImage: 'url(/landing-page.png)' }}
+            >
                 <div className="max-w-4xl">
                     <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-4 leading-snug">
-                        Kelola Bisnis Kuliner Kamu <br />
-                        ke Level Berikutnya, <br />
-                        <span className="text-[#F6B543]">Tanpa Drama!</span>
+                    Kelola Bisnis Kuliner Kamu <br />
+                    ke Level Berikutnya, <br />
+                    <span className="text-[#F6B543]">Tanpa Drama!</span>
                     </h3>
-                    <p className="text-gray-600 text-base sm:text-lg md:text-xl mb-8 max-w-xl break-words">
-                        Stok selalu terpantau secara real-time, transaksi jadi lebih cepat dan efisien,
-                        serta laporan keuangan tersusun otomatis tanpa ribet. Kini, mengelola bisnis kuliner
-                        jadi lebih mudah, praktis, dan tanpa drama!
+                    <p className="text-gray-600 text-base sm:text-lg md:text-xl mb-8 max-w-xl">
+                    Stok selalu terpantau secara real-time, transaksi jadi lebih cepat dan efisien,
+                    serta laporan keuangan tersusun otomatis tanpa ribet. Kini, mengelola bisnis kuliner
+                    jadi lebih mudah, praktis, dan tanpa drama!
                     </p>
                     <div className="flex gap-4 flex-col sm:flex-row">
-                        <button className="bg-[#F6B543] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#e0a738]">
+                    <a href="#fitur-kami">
+                        <button className="bg-[#F6B543] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#e0a738] cursor-pointer">
                             Lihat Fitur Kami
                         </button>
-                        <button className="bg-[#71717A] text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800">
+                    </a>
+                    <a href="/Login">
+                        <button className="bg-[#71717A] text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 cursor-pointer">
                             Mulai Kolaborasi Sekarang &rarr;
                         </button>
+                    </a>
                     </div>
                 </div>
             </section>
-
 
             {/* Tentang Kami Section */}
             <section id="tentang-kami" className="flex items-center justify-center py-20 bg-white">
@@ -229,7 +236,7 @@ export default function Home() {
                     </div>
                 </div>
             </section>
-            
+
             {/* Fitur */}
             <section className="relative px-6 py-12 md:px-12 lg:px-24 bg-white overflow-hidden">
                 {/* KANAN: Mockup Mobile */}
@@ -306,7 +313,7 @@ export default function Home() {
                     </div>
                 </div>
             </section>
-            
+
             {/* Fitur 2*/}
             <section className="px-6 py-12 md:px-12 lg:px-24 bg-[#F8EDE3]">
                 <div className="max-w-5xl mx-auto text-center mb-8">
@@ -374,7 +381,7 @@ export default function Home() {
                     </div>
                 </div>
             </section>
-            
+
             {/* Fitur 3 */}
             <section className="px-6 py-12 md:px-12 lg:px-24 bg-white">
                 <div className="max-w-6xl mx-auto text-center">
@@ -437,7 +444,8 @@ export default function Home() {
                     )}
                 </div>
             </section>
-        
+
+            {/* Daftar Paket */}
             <div className="min-h-screen bg-[#FFF4E8] py-16 px-4 md:px-8 lg:px-16">
                 <div className="text-center mb-12">
                     <h1 className="text-3xl md:text-4xl font-bold text-[#F6B543]">Tersedia Paket di POSVANA</h1>
@@ -498,7 +506,6 @@ export default function Home() {
                 </div>
             </div>
 
-                
             {/* CTA Section */}
             <div className="relative h-[500px] flex items-center justify-center text-center text-white">
                 {/* Background Image */}

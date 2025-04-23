@@ -23,6 +23,8 @@ export default function Home() {
         { name: "Jus Alpukat", category: "Minuman", price: "RP 7.000,00", sellingPrice: "RP 12.000,00", quantity: "90", totalSales: "RP 1.080.000,00", profit: "RP 450.000,00" },
         { name: "Kopi Hitam", category: "Minuman", price: "RP 5.000,00", sellingPrice: "RP 10.000,00", quantity: "120", totalSales: "RP 1.200.000,00", profit: "RP 600.000,00" },
         { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
+        { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
+        { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
     ];
 
     const filteredData = data.filter((item) =>
@@ -41,12 +43,15 @@ export default function Home() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-white">
+        <div className="h-screen flex flex-col bg-white">
             <Header toggleSidebar={toggleSidebar} />
-            <div className="flex flex-1 relative">
+            
+            {/* Wrapper Sidebar dan Konten Utama */}
+            <div className="flex flex-1 relative h-full overflow-hidden">
                 <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
                 
-                <div className="flex-1 flex flex-col overflow-x-auto gap-6 p-6 transition-all duration-300">
+                {/* Konten Utama */}
+                <div className={`flex-1 flex flex-col gap-6 p-3 overflow-y-auto max-h-screen transition-all duration-300`}>
                     {/* Stat Card */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <StatCard title="Total Pemasukan" value="RP 1.000.000,00" />
@@ -77,35 +82,38 @@ export default function Home() {
 
                     {/* Tabel */}
                     <div className="w-full overflow-x-auto">
-                        <table className="min-w-[900px] w-full shadow-lg">
-                            <thead className="text-black text-xs md:text-[10px] lg:text-[15px]">
-                                <tr>
-                                    {['NO', 'MENU PESANAN', 'TIPE MENU', 'HARGA MODAL', 'HARGA JUAL', 'JUMLAH TERJUAL', 'TOTAL PENJUALAN', 'NET PROFIT'].map((header, index) => (
-                                        <th key={index} className="py-3 px-4 relative">
-                                            {header}
-                                            {index !== 7 && (
-                                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                            )}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {displayedData.map((item, index) => (
-                                    <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                        {[index + 1 + (currentPage - 1) * itemsPerPage, item.name, item.category, item.price, item.sellingPrice, item.quantity, item.totalSales, item.profit].map((value, idx) => (
-                                            <td key={idx} className="py-3 px-4 relative">
-                                                {value}
-                                                {idx !== 7 && (
+                        <div className="max-h-full overflow-y-auto">
+                            <table className="min-w-[900px] w-full shadow-lg">
+                                <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
+                                    <tr>
+                                        {['NO', 'MENU PESANAN', 'TIPE MENU', 'HARGA MODAL', 'HARGA JUAL', 'JUMLAH TERJUAL', 'TOTAL PENJUALAN', 'NET PROFIT'].map((header, index) => (
+                                            <th key={index} className="py-3 px-4 relative">
+                                                {header}
+                                                {index !== 7 && (
                                                     <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                                 )}
-                                            </td>
+                                            </th>
                                         ))}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {displayedData.map((item, index) => (
+                                        <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
+                                            {[index + 1 + (currentPage - 1) * itemsPerPage, item.name, item.category, item.price, item.sellingPrice, item.quantity, item.totalSales, item.profit].map((value, idx) => (
+                                                <td key={idx} className="py-3 px-4 relative">
+                                                    {value}
+                                                    {idx !== 7 && (
+                                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                                    )}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
                     
                     {/* Pagenation */}
                     <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-gray-600">

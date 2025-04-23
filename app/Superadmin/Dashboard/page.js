@@ -23,17 +23,17 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="h-screen flex flex-col bg-white">
       {/* Header */}
       <Header toggleSidebar={toggleSidebar} />
 
       {/* Wrapper untuk Sidebar & Konten */}
-      <div className="flex flex-1 relative">
+        <div className="flex flex-1 relative h-full overflow-hidden">
         {/* Sidebar */}
         <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
         {/* Konten Dashboard */}
-        <div className={`flex-1 flex flex-col gap-6 p-3 transition-all duration-300`}>
+        <div className={`flex-1 flex flex-col gap-6 p-3 overflow-y-auto min-h-0 transition-all duration-300`}>
             {/* Judul dan Search Bar */}
             <div className="w-full flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center p-5">
                 <h1 className="text-base md:text-md lg:text-lg font-semibold text-black">
@@ -75,50 +75,53 @@ export default function Home() {
             </div>
 
             {/* List Toko */}
-            <div className="w-full flex flex-wrap justify-between px-4">
-                {/* Card Toko */}
-                {[1, 2, 3].map((_, i) => (
-                    <div key={i} className="w-full md:w-[350px] bg-white border border-gray-400 rounded-xl p-4 text-left mb-4">
-                        {/* Gambar Logo */}
-                        <img
-                            src="/Logo-Toko.png"
-                            alt="Logo Toko"
-                            className="w-full p-3 h-auto mx-auto"
-                        />
+            <div className="w-full flex flex-wrap justify-start gap-8 md:gap-4 lg:gap-8 px-4">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((_, i) => (
+                <div
+                key={i}
+                className="w-full sm:w-[48%] lg:w-[30%] xl:w-[22%] bg-white border border-gray-300 rounded-xl p-4 text-left"
+                >
+                {/* Gambar Logo */}
+                <img
+                    src="/Logo-Toko.png"
+                    alt="Logo Toko"
+                    className="w-full p-3 h-auto mx-auto"
+                />
 
-                        {/* Nama Toko */}
-                        <h3 className="mt-4 font-semibold text-black">
-                            AngkringanOmahmu – Batam Center
-                        </h3>
+                {/* Nama Toko */}
+                <h3 className="mt-4 font-semibold text-black text-base md:text-lg">
+                    AngkringanOmahmu – Batam Center
+                </h3>
 
-                        {/* Jam Operasional */}
-                        <div className="flex items-center text-gray-500 text-sm mt-1 mb-4">
-                            <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 mr-1"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                            />
-                            </svg>
-                            06.00pm - 1.00am
-                        </div>
+                {/* Jam Operasional */}
+                <div className="flex items-center text-gray-500 text-sm mt-1 mb-4">
+                    <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 mr-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                    </svg>
+                    06.00pm - 1.00am
+                </div>
 
-                        {/* Tombol */}
-                        <div className="flex justify-end">
-                            <button className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 rounded">
-                                Pantau Toko
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                {/* Tombol */}
+                <div className="flex justify-end">
+                    <button className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded">
+                    Pantau Toko
+                    </button>
+                </div>
+                </div>
+            ))}
             </div>
+
 
         </div>
       </div>

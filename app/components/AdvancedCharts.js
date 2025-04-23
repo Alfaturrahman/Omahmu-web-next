@@ -21,9 +21,9 @@ const COLORS = ['#ECA641', '#BFBFBF'];
 
 export default function AdvancedCharts() {
   return (
-    <div className="flex flex-col items-center justify-center gap-6">
+    <div className="flex flex-col md:flex-row lg:flex-col items-center justify-center gap-6">
       {/* Grafik Batang */}
-      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow flex flex-col items-center justify-center w-full max-w-md">
+      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full max-w-md">
         <h3 className="text-center text-black font-bold mb-2">Penjualan Terlaris</h3>
         <ResponsiveContainer width="100%" height={250}>
           <BarChart data={barData}>
@@ -38,7 +38,7 @@ export default function AdvancedCharts() {
       </div>
 
       {/* Grafik Pie */}
-      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow flex flex-col items-center justify-center w-full max-w-lg">
+      <div className="bg-[#FFF4E8] rounded-lg p-3 shadow-lg flex flex-col items-center justify-center w-full max-w-lg">
         <h2 className="text-sm font-semibold text-center text-black mb-2">Distribusi Produk</h2>
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>

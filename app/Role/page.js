@@ -29,31 +29,35 @@ const Register = () => {
         </div>
 
         {/* Sisi Kanan */}
-        <div className="w-full md:w-1/2 bg-white p-6 md:p-10 flex flex-col justify-center [&::-webkit-scrollbar]:hidden scrollbar-hide">
+        <div className="w-full md:w-1/2 bg-white p-6 md:p-10 flex flex-col justify-center">
           {/* Logo (Mobile) */}
           <div className="md:hidden flex justify-center mb-6">
-            <img src="/logo.png" alt="Logo" className="w-28" />
+            <img src="/logo.jpg" alt="Logo" className="w-28" />
           </div>
 
-          {/* Opsi Role */}
-          <h2 className="text-2xl font-semibold mb-4 text-center text-black">Pilih Jenis Pengguna</h2>
-          <div className="flex flex-col gap-4">
-            <div
-              onClick={() => handleCardClick("customer")}
-              className="cursor-pointer p-6 rounded-xl bg-gray-50 border-gray-200 border-2 hover:shadow-md hover:bg-[#FFF4E8] transition-all"
-            >
-              <h3 className="text-lg font-bold mb-2 text-black">Customer</h3>
-              <p className="text-sm text-gray-600">Saya ingin memesan makanan dan menikmati layanan Angkringan OmahMu.</p>
-            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-black text-center mb-2">Pilih Jenis Pengguna</h2>
+            <p className="text-sm text-gray-600 text-center mb-6">
+              Kamu ingin memesan makanan atau mengelola angkringan? <br />
+              Yuk pilih sesuai kebutuhanmu!
+            </p>
 
-            <div
-              onClick={() => handleCardClick("owner")}
-              className="cursor-pointer p-6 rounded-xl border-2 bg-gray-50 border-gray-200 hover:shadow-md hover:bg-[#FFF4E8] transition-all"
-            >
-              <h3 className="text-lg font-bold mb-2 text-black">Pemilik Toko</h3>
-              <p className="text-sm text-gray-600">Saya adalah pemilik angkringan dan ingin mengelola toko saya.</p>
+            <div className="flex flex-col gap-4 w-full max-w-sm">
+              <button
+                onClick={() => handleCardClick("customer")}
+                className="bg-[#F4A950] hover:bg-[#e9962f] text-white font-semibold py-3 cursor-pointer rounded-lg transition-all"
+              >
+                Pelanggan
+              </button>
+
+              <div className="text-center text-gray-500 text-sm">Atau</div>
+
+              <button
+                onClick={() => handleCardClick("owner")}
+                className="bg-[#F4A950] hover:bg-[#e9962f] text-white font-semibold py-3 cursor-pointer rounded-lg transition-all"
+              >
+                Pemilik Toko
+              </button>
             </div>
-          </div>
         </div>
       </div>
     </div>

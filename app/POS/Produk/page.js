@@ -13,6 +13,76 @@ const Produk = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [errors, setErrors] = useState({});
+  
+  const [formData, setFormData] = useState({
+    kodeProduk: '',
+    stok: '',
+    namaProduk: '',
+    tipeProduk: '',
+    keterangan: '',
+    hargaModal: '',
+    hargaJual: '',
+    deskripsi: '',
+    image: null,
+  });
+
+  const validateForm = () => {
+      let formErrors = {};
+      let isValid = true;
+
+      if (!formData.kodeProduk) {
+          formErrors.kodeProduk = 'Kode Produk tidak boleh kosong';
+          isValid = false;
+      }
+      if (!formData.stok) {
+          formErrors.stok = 'Stok tidak boleh kosong';
+          isValid = false;
+      }
+      if (!formData.namaProduk) {
+          formErrors.namaProduk = 'Nama Produk tidak boleh kosong';
+          isValid = false;
+      }
+      if (!formData.tipeProduk) {
+          formErrors.tipeProduk = 'Tipe Produk harus dipilih';
+          isValid = false;
+      }
+      if (!formData.keterangan) {
+          formErrors.keterangan = 'Keterangan harus dipilih';
+          isValid = false;
+      }
+      if (!formData.hargaModal) {
+          formErrors.hargaModal = 'Harga Modal tidak boleh kosong';
+          isValid = false;
+      }
+      if (!formData.hargaJual) {
+          formErrors.hargaJual = 'Harga Jual tidak boleh kosong';
+          isValid = false;
+      }
+      if (!formData.deskripsi) {
+          formErrors.deskripsi = 'Deskripsi tidak boleh kosong';
+          isValid = false;
+      }
+      if (!formData.image) {
+          formErrors.image = 'Gambar produk harus diupload';
+          isValid = false;
+      }
+
+      setErrors(formErrors);
+      return isValid;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validateForm()) {
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: 'Data berhasil disimpan!',
+            confirmButtonColor: '#F6B543',
+        });
+    }
+  };
 
   const toggleSidebar = () => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -61,13 +131,13 @@ const Produk = () => {
   };
   
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="h-screen flex flex-col bg-white">
       <Header toggleSidebar={toggleSidebar} />
 
-      <div className="flex flex-1 relative">
+      <div className="flex flex-1 relative h-full overflow-hidden">
         <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-        <div className="flex-1 p-4 sm:p-6 overflow-auto">
+        <div className="flex-1 p-4 sm:p-6 overflow-y-auto min-h-0">
           {/* Statistik Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <StatCard title="Total Produk" value="100" icon={Package} onClick={() => handleStatCardClick(null)} />
@@ -199,7 +269,6 @@ const Produk = () => {
             )}
           </div>
 
-
           {/* MODAL Tambah Data */}
           {isModalOpen && (
             <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
@@ -223,16 +292,23 @@ const Produk = () => {
                         <input
                           type="text"
                           placeholder="Masukkan Kode Produk (#MK001)"
-                          className="w-full text-black border border-gray-300 rounded-md px-4 py-2"
+                          className={`w-full text-black border ${errors.kodeProduk ? 'border-red-500' : 'border-gray-300'} rounded-md px-4 py-2`}
+                          value={formData.kodeProduk}
+                          onChange={(e) => setFormData({ ...formData, kodeProduk: e.target.value })}
                         />
+                        {errors.kodeProduk && <p className="text-red-500 text-sm">{errors.kodeProduk}</p>}
                       </div>
+                      
                       <div>
                         <label className="block text-sm font-medium text-black">Stok</label>
                         <input
                           type="number"
                           placeholder="Masukkan Stok Produk"
-                          className="w-full border text-black border-gray-300 rounded-md px-4 py-2"
+                          className={`w-full border ${errors.stok ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                          value={formData.stok}
+                          onChange={(e) => setFormData({ ...formData, stok: e.target.value })}
                         />
+                        {errors.stok && <p className="text-red-500 text-sm">{errors.stok}</p>}
                       </div>
                     </div>
 
@@ -241,25 +317,37 @@ const Produk = () => {
                       <input
                         type="text"
                         placeholder="Masukkan Nama Produk"
-                        className="w-full border text-black border-gray-300 rounded-md px-4 py-2"
+                        className={`w-full border ${errors.namaProduk ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                        value={formData.namaProduk}
+                        onChange={(e) => setFormData({ ...formData, namaProduk: e.target.value })}
                       />
+                      {errors.namaProduk && <p className="text-red-500 text-sm">{errors.namaProduk}</p>}
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-black">Tipe Produk</label>
-                        <select className="w-full border text-black border-gray-300 rounded-md px-4 py-2">
-                          <option>Pilih Salah Satu</option>
-                          <option>Makanan</option>
-                          <option>Minuman</option>
-                        </select>
+                      <label className="block text-sm font-medium text-black">Tipe Produk</label>
+                      <select
+                        className={`w-full border ${errors.tipeProduk ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                        value={formData.tipeProduk}
+                        onChange={(e) => setFormData({ ...formData, tipeProduk: e.target.value })}
+                      >
+                        <option>Pilih Salah Satu</option>
+                        <option>Makanan</option>
+                        <option>Minuman</option>
+                      </select>
+                      {errors.tipeProduk && <p className="text-red-500 text-sm">{errors.tipeProduk}</p>}
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-black">Keterangan</label>
-                      <select className="w-full border text-black border-gray-300 rounded-md px-4 py-2">
+                      <select className={`w-full border ${errors.tipeProduk ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                      value={formData.keterangan}
+                      onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
+                      >
                         <option>Aktif</option>
                         <option>Tidak Aktif</option>
                       </select>
+                      {errors.keterangan && <p className="text-red-500 text-sm">{errors.keterangan}</p>}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -268,16 +356,23 @@ const Produk = () => {
                         <input
                           type="text"
                           placeholder="Masukkan Harga Modal"
-                          className="w-full border text-black border-gray-300 rounded-md px-4 py-2"
+                          className={`w-full border ${errors.hargaModal ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                          value={formData.hargaModal}
+                          onChange={(e) => setFormData({ ...formData, hargaModal: e.target.value })}
                         />
+                        {errors.hargaModal && <p className="text-red-500 text-sm">{errors.hargaModal}</p>}
                       </div>
+                      
                       <div>
                         <label className="block text-sm font-medium text-black">Harga Jual</label>
                         <input
                           type="text"
                           placeholder="Masukkan Harga Jual"
-                          className="w-full border text-black border-gray-300 rounded-md px-4 py-2"
+                          className={`w-full border ${errors.hargaJual ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                          value={formData.hargaJual}
+                          onChange={(e) => setFormData({ ...formData, hargaJual: e.target.value })}
                         />
+                        {errors.hargaJual && <p className="text-red-500 text-sm">{errors.hargaJual}</p>}
                       </div>
                     </div>
                   </div>
@@ -307,13 +402,17 @@ const Produk = () => {
 
                     <textarea
                       placeholder="Deskripsi produk"
-                      className="w-full border text-black border-gray-300 rounded-md px-4 py-2 h-[145px]"
+                      className={`w-full border ${errors.deskripsi ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                      value={formData.deskripsi}
+                      onChange={(e) => setFormData({ ...formData, deskripsi: e.target.value })}
                     ></textarea>
+                    {errors.deskripsi && <p className="text-red-500 text-sm">{errors.deskripsi}</p>}
                   </div>
 
                   {/* Tombol Simpan */}
                   <div className="md:col-span-2 flex justify-end">
                     <button
+                      onClick={handleSubmit}
                       type="submit"
                       className="px-6 py-2 rounded-lg bg-[#F6B543] text-white font-medium hover:bg-[#e2a530]"
                     >

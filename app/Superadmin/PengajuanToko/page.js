@@ -34,12 +34,12 @@ export default function DaftarPaket() {
     const [filteredData, setFilteredData] = useState(data);
 
     const statuses = ['', 'Selesai', 'Diproses', 'Ditolak'];
-    
+
     const totalPengajuan = data.length;
     const totalDiproses = data.filter(item => item.status === 'Diproses').length;
     const totalSelesai = data.filter(item => item.status === 'Selesai').length;
     const totalDitolak = data.filter(item => item.status === 'Ditolak').length;
-    
+
     useEffect(() => {
         console.log("Filtering:", { selectedStatus, selectedDate });
         let filtered = data;
@@ -60,8 +60,8 @@ export default function DaftarPaket() {
 
     const handleSelectStatus = (status) => {
         setSelectedStatus(status);
-      };
-    
+    };
+
     const handleClearFilter = () => {
         setSelectedStatus("");
         setSelectedDate("");
@@ -118,21 +118,21 @@ export default function DaftarPaket() {
                         {/* Filter Dropdown */}
                         {showFilter && (
                             <div className="absolute right-5 top-[90px] bg-white border rounded-md shadow-md w-60 p-4 z-50">
-                                <div className="mb-2">
+                                <div className="mb-4">
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Status
                                     </label>
-                                    {statuses.map((status, i) => (
-                                        <button
-                                        key={i}
-                                        onClick={() => handleSelectStatus(status)}
-                                        className={`w-full text-left px-3 py-1 rounded hover:bg-gray-100 text-sm text-black ${
-                                            selectedStatus === status ? "bg-gray-200 font-semibold" : ""
-                                        }`}
-                                        >
-                                        {status === "" ? "Semua Status" : status}
-                                        </button>
-                                    ))}
+                                    <select
+                                        value={selectedStatus}
+                                        onChange={(e) => handleSelectStatus(e.target.value)}
+                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    >
+                                        {statuses.map((status, i) => (
+                                        <option key={i} value={status}>
+                                            {status === "" ? "Semua Status" : status}
+                                        </option>
+                                        ))}
+                                    </select>
                                 </div>
 
                                 <div className="mb-2">
@@ -155,7 +155,7 @@ export default function DaftarPaket() {
                             </div>
                         )}
                 </div>
-                
+
                 {/* Stat Card */}
                 <div className="w-full flex flex-wrap justify-between">
                     {/* Total Pengajuan */}
@@ -198,12 +198,12 @@ export default function DaftarPaket() {
                 {/* Tabel */}
                 <div className="w-full overflow-x-auto rounded-lg">
                     <table className="min-w-[800px] w-full shadow-lg">
-                        <thead className="text-black text-xs md:text-[10px] lg:text-[15px]">
+                        <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
                             <tr>
                             {['NO', 'KODE PENGAJUAN', 'EMAIL PENGAJUAN', 'PAKET', 'TANGGAL PENGAJUAN', 'STATUS', 'STATUS PEMBAYARAN', 'DETAIL'].map((header, index) => (
                                 <th key={index} className="py-3 px-4 relative">
                                 {header}
-                                {index !== 6 && (
+                                {index !== 7 && (
                                     <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                 )}
                                 </th>
@@ -213,26 +213,38 @@ export default function DaftarPaket() {
                         <tbody>
                             {displayedData.map((item, index) => (
                             <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                <td className="py-3 px-4">{item.no}</td>
-                                <td className="py-3 px-4">{item.kode}</td>
-                                <td className="py-3 px-4 uppercase">{item.email}</td>
-                                <td className="py-3 px-4">{item.paket}</td>
-                                <td className="py-3 px-4">{item.tanggal}</td>
-                                <td className="py-3 px-4">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[item.status]}`}>
-                                    {item.status}
-                                </span>
+                                <td className="py-3 px-4 relative">{item.no}
+                                    <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                </td>
+                                <td className="py-3 px-4 relative">{item.kode}
+                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                </td>
+                                <td className="py-3 px-4 relative uppercase">{item.email}
+                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                </td>
+                                <td className="py-3 px-4 relative">{item.paket}
+                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                </td>
+                                <td className="py-3 px-4 relative">{item.tanggal}
+                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                </td>
+                                <td className="py-3 px-4 relative">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[item.status]}`}>
+                                        {item.status}
+                                    </span>
+                                    <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                </td>
+                                <td className="py-3 px-4 relative">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[item.statuspembayaran]}`}>
+                                        {item.statuspembayaran}
+                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                    </span>
                                 </td>
                                 <td className="py-3 px-4">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[item.statuspembayaran]}`}>
-                                    {item.statuspembayaran}
-                                </span>
-                                </td>
-                                <td className="py-3 px-4">
-                                <Eye
-                                    className="w-5 h-5 text-gray-600 hover:text-gray-800 mx-auto cursor-pointer"
-                                    onClick={() => setSelectedItem(item)}
-                                />
+                                    <Eye
+                                        className="w-5 h-5 text-gray-600 hover:text-gray-800 mx-auto cursor-pointer"
+                                        onClick={() => setSelectedItem(item)}
+                                    />
                                 </td>
                             </tr>
                             ))}

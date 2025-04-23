@@ -19,7 +19,7 @@ const data = [
 
 export default function ChartSection() {
   return (
-    <div className="bg-[#FFF4E8] p-4 rounded-lg shadow">
+    <div className="bg-[#FFF4E8] p-4 rounded-lg shadow-lg">
       <h2 className="text-lg text-black font-semibold text-center mb-4">Grafik Penjualan Bulan Ini</h2>
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={data}>
