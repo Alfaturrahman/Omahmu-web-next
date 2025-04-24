@@ -58,8 +58,8 @@ const Register = () => {
         payload.append('package_id', formData.paket);
         payload.append('submission_code', "SUBM-001" ); // misalnya: 'SUBM-001'
         payload.append('no_virtual_account', "VA123456");         // misalnya: 'VA123456'
-        payload.append('start_date', formData.start_date);   
-        payload.append('end_date', formData.end_date);      
+        payload.append('start_date', "2025-04-24");   
+        payload.append('end_date', "2025-04-24");      
         payload.append('password', 'securePassword123');
         
         payload.append('store_picture', uploads.fotoToko);

@@ -7,8 +7,9 @@ import Image from 'next/image';
 import Swal from "sweetalert2";
 import { ShoppingCart, X, Minus, Plus, ScanQrCode, Banknote  } from 'lucide-react';
 import '@/globals.css';
+import withAuth from 'hoc/withAuth';
 
-export default function Kasir() {
+function Kasir() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [activeCategory, setActiveCategory] = useState("Semua");
@@ -448,3 +449,5 @@ export default function Kasir() {
         </div>
     );
 }
+
+export default withAuth(Kasir, ['2']); 

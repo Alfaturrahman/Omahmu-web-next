@@ -48,16 +48,23 @@ const LoginPage = () => {
                 const token = response.data.token;
                 const role_id = response.data.user.role_id;
 
+                console.log("role yang dilempar", role_id);
+                
+
                 localStorage.setItem('token', token); // Store the JWT token in localStorage (or use sessionStorage)
+                localStorage.setItem('role_id', role_id); // Store the JWT token in localStorage (or use sessionStorage)
                 setLoading(false);
 
                 // Redirect based on role_id
-                if (role_id === 2) {
+                if (role_id === 1) {
                     // Store owner (role_id = 2)
+                    router.push('/Superadmin/Dashboard');
+                } else if (role_id === 2) {
+                    // Customer (role_id = 3)
                     router.push('/POS/Kasir');
                 } else if (role_id === 3) {
                     // Customer (role_id = 3)
-                    router.push('/dashboard');
+                    router.push('/Cust/Dashboard');
                 } else {
                     // Default or fallback route if role_id is not recognized
                     router.push('/');

@@ -5,8 +5,9 @@ import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import { Filter, Search } from "lucide-react";
+import withAuth from 'hoc/withAuth';
 
-export default function Home() {
+function Home() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Untuk mobile
     const [isCollapsed, setIsCollapsed] = useState(false); // Untuk desktop
     const [search, setSearch] = useState("");
@@ -152,3 +153,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default withAuth(Home, ['3']); 

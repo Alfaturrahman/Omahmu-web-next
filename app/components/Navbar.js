@@ -9,7 +9,12 @@ const Header = ({ toggleSidebar }) => {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname(); // Dapatkan path halaman saat ini
   const router = useRouter()
-
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role_id');
+    router.push('/Login');
+  };
+  
   // Konversi path URL ke judul halaman yang lebih user-friendly
   const getPageTitle = (path) => {
     const pageTitles = {
@@ -91,7 +96,7 @@ const Header = ({ toggleSidebar }) => {
                 </button>
 
                 {/* Logout */}
-                <button className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 rounded-lg text-red-500">
+                <button onClick={handleLogout} className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 rounded-lg text-red-500">
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </button>
