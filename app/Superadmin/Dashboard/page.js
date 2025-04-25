@@ -1,23 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
+import withAuth from 'hoc/withAuth';
+import * as apiService from 'services/authService';
 import { Filter, Search } from "lucide-react";
 
-export default function Home() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Untuk mobile
-  const [isCollapsed, setIsCollapsed] = useState(false); // Untuk desktop
+function SuperadminDashboard() {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [search, setSearch] = useState("");
+  const [toko, setToko] = useState([]);
+  const [jumlahToko, setJumlahToko] = useState({
+    total: 0,
+    aktif: 0,
+    tidakAktif: 0,
+  });
 
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const result = await apiService.getData('/superadmin/dashboard_data_store/');
+        setToko(result.data.List_toko_terdaftar);
+        setJumlahToko({
+          total: result.data.jumlah_toko_terdaftar,
+          aktif: result.data.jumlah_toko_terdaftar_aktif,
+          tidakAktif: result.data.jumlah_toko_terdaftar_tidak_aktif,
+        });
+      } catch (err) {
+        console.error(err.message);
+      }
+    }
+
+    fetchData();
+  }, []);
 
   const toggleSidebar = () => {
     if (window.innerWidth < 1024) {
-      // Jika layar kecil (mobile/tablet), buka/tutup sidebar overlay
       setIsSidebarOpen(!isSidebarOpen);
     } else {
-      // Jika layar besar (desktop), collapse/expand sidebar
       setIsCollapsed(!isCollapsed);
     }
   };
@@ -58,73 +81,78 @@ export default function Home() {
                 {/* Total Toko Terdaftar */}
                 <div className="w-full md:w-[200px] bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm mb-4">
                     <h2 className="text-[#F28C20] font-semibold mb-2">Total Toko Terdaftar</h2>
-                    <p className="text-2xl font-bold text-black">100</p>
+                    <p className="text-2xl font-bold text-black">{jumlahToko.total}</p>
                 </div>
 
                 {/* Toko Aktif */}
                 <div className="w-full md:w-[200px] bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm mb-4">
                     <h2 className="text-[#F28C20] font-semibold mb-2">Toko Aktif</h2>
-                    <p className="text-2xl font-bold text-black">80</p>
+                    <p className="text-2xl font-bold text-black">{jumlahToko.aktif}</p>
                 </div>
 
                 {/* Toko Nonaktif */}
                 <div className="w-full md:w-[200px] bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm mb-4">
                     <h2 className="text-[#F28C20] font-semibold mb-2">Toko Nonaktif</h2>
-                    <p className="text-2xl font-bold text-black">10</p>
+                    <p className="text-2xl font-bold text-black">{jumlahToko.tidakAktif}</p>
                 </div>
             </div>
 
             {/* List Toko */}
             <div className="w-full flex flex-wrap justify-start gap-8 md:gap-4 lg:gap-8 px-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((_, i) => (
+            {toko
+              .filter((item) => item.store_name.toLowerCase().includes(search.toLowerCase()))
+              .map((store, i) => (
                 <div
-                key={i}
-                className="w-full sm:w-[48%] lg:w-[30%] xl:w-[22%] bg-white border border-gray-300 rounded-xl p-4 text-left"
+                  key={i}
+                  className="w-full sm:w-[48%] lg:w-[30%] xl:w-[22%] bg-white border border-gray-300 rounded-xl p-4 text-left"
                 >
-                {/* Gambar Logo */}
-                <img
-                    src="/Logo-Toko.png"
-                    alt="Logo Toko"
+                  <img
+                    src={`http://localhost:8000/media/${store.store_picture}`}
+                    alt={store.store_name}
                     className="w-full p-3 h-auto mx-auto"
-                />
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "/Logo-Toko.png"; // fallback lokal
+                    }}
+                  />
+                  <h3 className="mt-4 font-semibold text-black text-base md:text-lg">
+                    {store.store_name}
+                  </h3>
 
-                {/* Nama Toko */}
-                <h3 className="mt-4 font-semibold text-black text-base md:text-lg">
-                    AngkringanOmahmu – Batam Center
-                </h3>
+                  <div className="text-gray-500 text-sm mt-1 mb-4">
+                    Pemilik: {store.name_owner}
+                  </div>
 
-                {/* Jam Operasional */}
-                <div className="flex items-center text-gray-500 text-sm mt-1 mb-4">
+                  <div className="flex items-center text-gray-500 text-sm mt-1 mb-4">
                     <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
                     >
-                    <path
+                      <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
+                      />
                     </svg>
-                    06.00pm - 1.00am
-                </div>
+                    Aktif: {store.start_date?.split('T')[0]} – {store.end_date?.split('T')[0]}
+                  </div>
 
-                {/* Tombol */}
-                <div className="flex justify-end">
+                  <div className="flex justify-end">
                     <button className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded">
-                    Pantau Toko
+                      Pantau Toko
                     </button>
-                </div>
+                  </div>
                 </div>
             ))}
             </div>
-
-
         </div>
       </div>
     </div>
   );
 }
+
+export default withAuth(SuperadminDashboard,['1']);
