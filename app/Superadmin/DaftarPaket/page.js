@@ -9,8 +9,11 @@ import { Dialog } from '@headlessui/react';
 import Select from 'react-select';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2'
+import withAuth from 'hoc/withAuth';
+import * as apiService from 'services/authService';
 
-export default function DaftarPaket() {
+
+function DaftarPaket() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,11 +21,22 @@ export default function DaftarPaket() {
     const openModal = () => setIsModalOpen(true);
     const [isClient, setIsClient] = useState(false);
     const [errors, setErrors] = useState({});
+    const [paketList, setPaketList] = useState([]);
 
-
-    useEffect(() => {
+    const fetchPaketList = async () => {
+        try {
+          const result = await apiService.getData('/superadmin/list_package/');
+          setPaketList(result.data);
+          console.log("tessssssss", result);
+        } catch (err) {
+          console.error('Gagal ambil data paket:', err.message);
+        }
+      };
+      
+      useEffect(() => {
         setIsClient(true);
-    }, []);
+        fetchPaketList();
+      }, []);
     
     const closeModal = () => {
         setIsModalOpen(false);
@@ -44,7 +58,7 @@ export default function DaftarPaket() {
         console.log(`Edit Paket ${index + 1}`)
     }
 
-    const handleDelete = (index) => {
+    const handleDelete = (packageId) => {
         Swal.fire({
           title: 'Apakah Kamu yakin?',
           text: 'Paket ini akan dihapus dan tindakan ini tidak bisa dibatalkan!',
@@ -54,14 +68,22 @@ export default function DaftarPaket() {
           cancelButtonColor: '#aaa',
           confirmButtonText: 'Ya, hapus!',
           cancelButtonText: 'Batal',
-        }).then((result) => {
+        }).then(async (result) => {
           if (result.isConfirmed) {
-            // Lakukan proses hapus di sini
-            console.log(`Paket ${index + 1} dihapus`)
-            Swal.fire('Terhapus!', 'Paket berhasil dihapus.', 'success')
+            try {
+              await apiService.deleteData(`/superadmin/delete_package/${packageId}/`); // ganti sesuai service kamu
+      
+              Swal.fire('Terhapus!', 'Paket berhasil dihapus.', 'success');
+      
+              // Refresh data setelah hapus
+              fetchPaketList(); // pastikan fungsi ini ada
+      
+            } catch (err) {
+              Swal.fire('Gagal!', err.message || 'Terjadi kesalahan saat menghapus.', 'error');
+            }
           }
-        })
-    }
+        });
+      };
       
     const [formData, setFormData] = useState({
       nama: '',
@@ -96,31 +118,71 @@ export default function DaftarPaket() {
     const handleFiturChange = (selected) => {
       setFormData(prev => ({ ...prev, fitur: selected }));
     };
+
+    const formattedPrice = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(Number(formData.harga));
   
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const newErrors = {};
-    
+      
+        // Validasi field
         if (!formData.nama) newErrors.nama = 'Nama paket wajib diisi';
         if (!formData.durasi) newErrors.durasi = 'Durasi wajib diisi';
         if (!formData.harga) newErrors.harga = 'Harga wajib diisi';
         if (!formData.deskripsi) newErrors.deskripsi = 'Deskripsi wajib diisi';
         if (!formData.fitur || formData.fitur.length === 0) newErrors.fitur = 'Minimal pilih 1 fitur';
-    
-        if (Object.keys(newErrors).length === 0) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil!',
-                text: 'Data paket berhasil ditambahkan.',
-                confirmButtonColor: '#F6B543', 
-            });
-    
-            console.log('Data dikirim:', formData);
-            setIsModalOpen(false);
-        } else {
-            setErrors(newErrors);
+      
+        if (Object.keys(newErrors).length > 0) {
+          setErrors(newErrors);
+          return;
         }
-    };
-    
+      
+        try {
+          // Siapkan payload untuk dikirim
+          const payload = {
+            package_name: formData.nama,
+            duration: Number(formData.durasi),
+            price: formattedPrice,
+            description: formData.deskripsi,
+            fitur: formData.fitur.map(f => f.value), // hanya ambil value dari select
+          };
+      
+          // Kirim ke backend
+          await apiService.postData('/superadmin/insert_package/', payload);
+      
+          // Success!
+          Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: 'Data paket berhasil ditambahkan.',
+            confirmButtonColor: '#F6B543',
+          });
+      
+          // Reset form dan tutup modal
+          setFormData({
+            nama: '',
+            durasi: '',
+            harga: '',
+            deskripsi: '',
+            fitur: [],
+          });
+          setIsModalOpen(false);
+          setErrors({});
+      
+          // Refresh list paket
+          fetchPaketList(); // pastikan ini dideklarasikan di luar handleSubmit
+        } catch (err) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: err.message || 'Terjadi kesalahan saat menyimpan data.',
+          });
+        }
+      };
     
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -303,72 +365,75 @@ export default function DaftarPaket() {
             
             {/* Card Paket Langganan */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-5 pb-10">
-                {[1, 2].map((paket, index) => (
+                {paketList.map((paket, index) => (
                     <div key={index} className="bg-[#FFF3E6] rounded-xl p-6 shadow-sm relative">
                     {/* Titik tiga icon */}
                     <div className="absolute top-4 right-4">
-                        <button
+                      <button
                         onClick={() => toggleMenu(index)}
                         className="text-gray-600 hover:text-black focus:outline-none"
-                        >
+                      >
                         <EllipsisVerticalIcon className="h-5 w-5" />
-                        </button>
-
-                        {/* Dropdown menu */}
-                        {openMenuIndex === index && (
+                      </button>
+                  
+                      {openMenuIndex === index && (
                         <div className="absolute right-0 mt-2 w-28 bg-white rounded shadow-md z-10">
-                            <button
+                          <button
                             onClick={() => handleEdit(index)}
                             className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100"
-                            >
+                          >
                             Edit
-                            </button>
-                            <button
-                                onClick={() => handleDelete(index)}
-                                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                                >
-                                Hapus
-                            </button>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(paket.package_id)}
+                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                            >
+                            Hapus
+                          </button>
                         </div>
-                        )}
+                      )}
                     </div>
-
-                    {/* Konten Paket */}
+                  
+                    {/* Nama Paket */}
                     <h2 className="text-lg font-semibold text-center text-black mb-4">
-                        {index === 0 ? 'Paket 1 (Basic)' : 'Paket 2 (AI Enhanced)'}
+                      {paket.package_name}
                     </h2>
+                  
+                    {/* Deskripsi */}
+                    <p className="text-sm text-center text-gray-700 mb-4">{paket.description}</p>
+                  
+                    {/* Simulasi fitur (sementara hardcoded) */}
                     <ul className="space-y-2 text-sm text-black">
-                        {index === 0 ? (
+                      {index === 0 ? (
                         <>
-                            <li>✅ 1-5 Pengguna</li>
-                            <li>✅ 1 Cabang</li>
-                            <li>✅ Maksimal 500 Produk</li>
-                            <li>✅ Laporan Penjualan Dasar</li>
-                            <li>✅ Dukungan Email</li>
-                            <li className="text-red-500">❌ Bantuan AI</li>
-                            <li className="text-red-500">❌ Rekomendasi Menu Otomatis</li>
-                            <li className="text-red-500">❌ Live Chat Dukungan</li>
+                          <li>✅ 1-5 Pengguna</li>
+                          <li>✅ 1 Cabang</li>
+                          <li>✅ Maksimal 500 Produk</li>
+                          <li>✅ Laporan Penjualan Dasar</li>
+                          <li>✅ Dukungan Email</li>
+                          <li className="text-red-500">❌ Bantuan AI</li>
+                          <li className="text-red-500">❌ Rekomendasi Menu Otomatis</li>
+                          <li className="text-red-500">❌ Live Chat Dukungan</li>
                         </>
-                        ) : (
+                      ) : (
                         <>
-                            <li>✅ Tidak Terbatas Pengguna</li>
-                            <li>✅ Tidak Terbatas Cabang</li>
-                            <li>✅ Tidak Terbatas Produk</li>
-                            <li>✅ Laporan Penjualan Lengkap & Analitik</li>
-                            <li>✅ Bantuan AI (Rekomendasi Menu, Harga, Tren Penjualan)</li>
-                            <li>✅ Live Chat Dukungan 24/7</li>
-                            <li>✅ Integrasi API</li>
+                          <li>✅ Tidak Terbatas Pengguna</li>
+                          <li>✅ Tidak Terbatas Cabang</li>
+                          <li>✅ Tidak Terbatas Produk</li>
+                          <li>✅ Laporan Penjualan Lengkap & Analitik</li>
+                          <li>✅ Bantuan AI (Rekomendasi Menu, Harga, Tren Penjualan)</li>
+                          <li>✅ Live Chat Dukungan 24/7</li>
+                          <li>✅ Integrasi API</li>
                         </>
-                        )}
+                      )}
                     </ul>
-
-                    {/* Harga (hanya di Paket 2 misalnya) */}
-                    {index === 1 && (
-                        <div className="absolute bottom-4 right-4 text-black font-semibold text-sm">
-                        Rp150.000/bulan
-                        </div>
-                    )}
+                  
+                    {/* Harga dari API */}
+                    <div className="absolute bottom-4 right-4 text-black font-semibold text-sm">
+                      {paket.price}
                     </div>
+                  </div>
+                  
                 ))}
             </div>
 
@@ -377,3 +442,5 @@ export default function DaftarPaket() {
     </div>
   );
 }
+
+export default withAuth(DaftarPaket,['1'])
