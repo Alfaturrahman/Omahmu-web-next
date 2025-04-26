@@ -10,6 +10,9 @@ export default function Home() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [search, setSearch] = useState("");
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState("All"); // Default: filter kategori ke "All"
+    const [sortOrder, setSortOrder] = useState(""); // Default: tidak ada sort
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
 
@@ -27,9 +30,30 @@ export default function Home() {
         { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
     ];
 
-    const filteredData = data.filter((item) =>
-        item.name.toLowerCase().includes(search.toLowerCase())
-    );
+    // Fungsi untuk convert "RP 1.000.000,00" menjadi angka 1000000
+    const parseRupiah = (value) => {
+        if (!value) return 0;
+        return parseInt(value.replace(/[^\d]/g, ""));
+    };
+
+    // Proses filter dan sort
+    const filteredData = data
+        .filter((item) => {
+            const matchName = item.name.toLowerCase().includes(search.toLowerCase());
+            const matchCategory = selectedCategory === "All" || item.category === selectedCategory; // Filter kategori "All" artinya tidak ada filter kategori
+            return matchName && matchCategory;
+        })
+        .sort((a, b) => {
+            const aSales = parseRupiah(a.totalSales); // Urut berdasarkan totalSales
+            const bSales = parseRupiah(b.totalSales);
+
+            if (sortOrder === "asc") {
+                return aSales - bSales; // TotalSales terendah ke tertinggi
+            } else if (sortOrder === "desc") {
+                return bSales - aSales; // TotalSales tertinggi ke terendah
+            }
+            return 0; // Kalo nggak ada sortOrder, yaudah default
+        });
 
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
     const displayedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -63,10 +87,73 @@ export default function Home() {
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
                         <h2 className="text-xl sm:text-2xl text-black font-bold">Laporan Keuntungan Produk</h2>
                         <div className="flex items-center gap-2">
-                            <button className="flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md">
-                                <Filter className="w-5 h-5 mr-2 text-black" />
-                                Filter
-                            </button>
+                            <div className="relative"> {/* Tambahkan div relative disini */}
+                                <button
+                                    onClick={() => setIsFilterOpen(!isFilterOpen)}
+                                    className="flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md"
+                                >
+                                    <Filter className="w-5 h-5 mr-2 text-black" />
+                                    Filter
+                                </button>
+
+                                {isFilterOpen && (
+                                    <div className="absolute left-0 z-10 mt-2 w-48 text-black bg-white border border-gray-200 rounded-lg shadow-md">
+                                        <ul className="py-1">
+                                            <li
+                                                onClick={() => {
+                                                    setSelectedCategory("All");
+                                                    setSortOrder("");
+                                                    setIsFilterOpen(false);
+                                                }}
+                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                            >
+                                                Semua Kategori
+                                            </li>
+
+                                            <li
+                                                onClick={() => {
+                                                    setSelectedCategory("Makanan");
+                                                    setSortOrder("");
+                                                    setIsFilterOpen(false);
+                                                }}
+                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                            >
+                                                Makanan
+                                            </li>
+                                            <li
+                                                onClick={() => {
+                                                    setSelectedCategory("Minuman");
+                                                    setSortOrder("");
+                                                    setIsFilterOpen(false);
+                                                }}
+                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                            >
+                                                Minuman
+                                            </li>
+                                            <hr className="my-1 text-gray-500 border border-gray-500"/>
+                                            <li
+                                                onClick={() => {
+                                                    setSortOrder("asc");
+                                                    setIsFilterOpen(false);
+                                                }}
+                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                            >
+                                                Harga Terendah
+                                            </li>
+                                            <li
+                                                onClick={() => {
+                                                    setSortOrder("desc");
+                                                    setIsFilterOpen(false);
+                                                }}
+                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                            >
+                                                Harga Tertinggi
+                                            </li>
+                                        </ul>
+                                    </div>
+                                )}
+                            </div>
+
                             <div className="relative w-full sm:w-72">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black" />
                                 <input
@@ -81,67 +168,73 @@ export default function Home() {
                     </div>
 
                     {/* Tabel */}
-                    <div className="w-full overflow-x-auto">
-                        <div className="max-h-full overflow-y-auto">
-                            <table className="min-w-[900px] w-full shadow-lg">
-                                <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
-                                    <tr>
-                                        {['NO', 'MENU PESANAN', 'TIPE MENU', 'HARGA MODAL', 'HARGA JUAL', 'JUMLAH TERJUAL', 'TOTAL PENJUALAN', 'NET PROFIT'].map((header, index) => (
-                                            <th key={index} className="py-3 px-4 relative">
-                                                {header}
-                                                {index !== 7 && (
-                                                    <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                                )}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {displayedData.map((item, index) => (
-                                        <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                            {[index + 1 + (currentPage - 1) * itemsPerPage, item.name, item.category, item.price, item.sellingPrice, item.quantity, item.totalSales, item.profit].map((value, idx) => (
-                                                <td key={idx} className="py-3 px-4 relative">
-                                                    {value}
-                                                    {idx !== 7 && (
+                    <div className="w-full flex flex-col h-[600px] overflow-hidden">
+                        {/* Table Area */}
+                        <div className="flex-1 overflow-x-auto overflow-y-auto">
+                            {filteredData.length === 0 ? (
+                                <div className="text-center py-4 text-gray-500">
+                                    Tidak ada data yang sesuai
+                                </div>
+                            ) : (
+                                <table className="min-w-[900px] w-full shadow-lg">
+                                    <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
+                                        <tr>
+                                            {['NO', 'MENU PESANAN', 'TIPE MENU', 'HARGA MODAL', 'HARGA JUAL', 'JUMLAH TERJUAL', 'TOTAL PENJUALAN', 'NET PROFIT'].map((header, index) => (
+                                                <th key={index} className="py-3 px-4 relative">
+                                                    {header}
+                                                    {index !== 7 && (
                                                         <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                                     )}
-                                                </td>
+                                                </th>
                                             ))}
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {displayedData.map((item, index) => (
+                                            <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
+                                                {[index + 1 + (currentPage - 1) * itemsPerPage, item.name, item.category, item.price, item.sellingPrice, item.quantity, item.totalSales, item.profit].map((value, idx) => (
+                                                    <td key={idx} className="py-3 px-4 relative">
+                                                        {value}
+                                                        {idx !== 7 && (
+                                                            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                                        )}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
                     </div>
 
-                    
                     {/* Pagenation */}
-                    <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-gray-600">
+                    <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-gray-600 p-2">
                         <span>Menampilkan {currentPage * itemsPerPage - itemsPerPage + 1} hingga {Math.min(currentPage * itemsPerPage, filteredData.length)} dari {filteredData.length} entri</span>
                         <div className="flex gap-2">
+                        <button 
+                            className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'cursor-not-allowed' : 'bg-[#ECA641] text-white'}`} 
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Sebelumnya
+                        </button>
+                        {[...Array(totalPages)].map((_, i) => (
                             <button 
-                                className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'cursor-not-allowed' : 'bg-[#ECA641] text-white'}`} 
-                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                disabled={currentPage === 1}
+                            key={i} 
+                            className={`px-4 py-2 rounded-md ${currentPage === i + 1 ? 'bg-[#ECA641] text-white' : 'bg-gray-300'}`} 
+                            onClick={() => setCurrentPage(i + 1)}
                             >
-                                Sebelumnya
+                            {i + 1}
                             </button>
-                            {[...Array(totalPages)].map((_, i) => (
-                                <button 
-                                    key={i} 
-                                    className={`px-4 py-2 rounded-md ${currentPage === i + 1 ? 'bg-[#ECA641] text-white' : 'bg-gray-300'}`} 
-                                    onClick={() => setCurrentPage(i + 1)}
-                                >
-                                    {i + 1}
-                                </button>
-                            ))}
-                            <button 
-                                className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'cursor-not-allowed' : 'bg-[#ECA641] text-white'}`} 
-                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                disabled={currentPage === totalPages}
-                            >
-                                Selanjutnya
-                            </button>
+                        ))}
+                        <button 
+                            className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'cursor-not-allowed' : 'bg-[#ECA641] text-white'}`} 
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Selanjutnya
+                        </button>
                         </div>
                     </div>
                 </div>

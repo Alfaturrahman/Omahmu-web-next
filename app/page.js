@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { AcademicCapIcon, BellIcon, CheckCircleIcon, PresentationChartLineIcon , CreditCardIcon, StarIcon, TicketIcon } from '@heroicons/react/24/solid';
 import { CheckCircle, XCircle, Instagram, Youtube, MessageSquare } from 'lucide-react';
 import '@/globals.css';
+import gambar from "public/side.png"
 
 export default function Home() {
     const [isOpen, setIsOpen] = useState(false);
@@ -115,34 +116,42 @@ export default function Home() {
             {/* Hero Section */}
             <section
             id="beranda"
-            className="pt-[90px] h-screen bg-cover bg-center px-6 md:px-10 flex items-center justify-start"
-            style={{ backgroundImage: 'url(/landing-page.png)' }}
+            className="pt-[90px] min-h-screen bg-cover bg-center"
+            style={{ backgroundImage: 'url(/landing-page1.png)' }}
             >
-                <div className="max-w-4xl">
-                    <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-4 leading-snug">
+            <div className="flex flex-col-reverse lg:flex-row justify-between w-full h-full">
+                <div className="w-full mt-3 lg:mt-14 px-6 md:px-10 flex flex-col">
+                <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-black mb-4 leading-snug">
                     Kelola Bisnis Kuliner Kamu <br />
                     ke Level Berikutnya, <br />
                     <span className="text-[#F6B543]">Tanpa Drama!</span>
-                    </h3>
-                    <p className="text-gray-600 text-base sm:text-lg md:text-xl mb-8 max-w-xl">
+                </h3>
+                <p className="text-gray-600 text-base sm:text-lg md:text-xl mb-8 max-w-xl">
                     Stok selalu terpantau secara real-time, transaksi jadi lebih cepat dan efisien,
                     serta laporan keuangan tersusun otomatis tanpa ribet. Kini, mengelola bisnis kuliner
                     jadi lebih mudah, praktis, dan tanpa drama!
-                    </p>
-                    <div className="flex gap-4 flex-col sm:flex-row">
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
                     <a href="#fitur-kami">
-                        <button className="bg-[#F6B543] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#e0a738] cursor-pointer">
-                            Lihat Fitur Kami
-                        </button>
+                    <button className="bg-[#F6B543] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#e0a738] cursor-pointer w-full sm:w-auto">
+                        Lihat Fitur Kami
+                    </button>
                     </a>
                     <a href="/Login">
-                        <button className="bg-[#71717A] text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 cursor-pointer">
-                            Mulai Kolaborasi Sekarang &rarr;
-                        </button>
+                    <button className="bg-[#71717A] text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 cursor-pointer w-full sm:w-auto">
+                        Mulai Kolaborasi Sekarang &rarr;
+                    </button>
                     </a>
-                    </div>
                 </div>
+                </div>
+
+                {/* Gambar Tanulblok */}
+                <div className="w-full flex justify-center items-center p-6 lg:p-0">
+                <Image src={gambar} alt="Ilustrasi Kolaborasi" className="max-w-full h-auto" />
+                </div>
+            </div>
             </section>
+
 
             {/* Tentang Kami Section */}
             <section id="tentang-kami" className="flex items-center justify-center py-20 bg-white">
