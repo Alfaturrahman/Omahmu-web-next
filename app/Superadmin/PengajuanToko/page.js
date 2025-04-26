@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
+import Swal from "sweetalert2";
 import { Filter, Eye } from "lucide-react";
+import withAuth from 'hoc/withAuth';
+import * as apiService from 'services/authService';
 
-export default function DaftarPaket() {
+function DaftarPengajuanToko() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState('');
@@ -14,24 +17,96 @@ export default function DaftarPaket() {
     const [showFilter, setShowFilter] = useState(false);
     const itemsPerPage = 10;
     const [selectedItem, setSelectedItem] = useState(null);
+    const [storeDetail, setStoreDetail] = useState(null);
     const [selectedDate, setSelectedDate] = useState('');
-
-    const data = [
-        { no: 1, kode: '121314', email: 'ALFATURRISKI@GMAIL.COM', paket: 'PAKET 1', tanggal: '2025-03-03', status: 'Selesai', statuspembayaran: 'Lunas' },
-        { no: 2, kode: '132412', email: 'BUSTANULARIFFIN@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Diproses', statuspembayaran: 'Belum Lunas' },
-        { no: 3, kode: '132343', email: 'EKAFITRIANISA@GMAIL.COM', paket: 'PAKET 1', tanggal: '2025-03-03', status: 'Ditolak', statuspembayaran: 'Belum Lunas' },
-        { no: 4, kode: '142421', email: 'HADIANNELVI@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Selesai', statuspembayaran: 'Lunas' },
-        { no: 5, kode: '908976', email: 'EKAFITRIANISA@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Diproses', statuspembayaran: 'Belum Lunas' },
-        { no: 6, kode: '675478', email: 'BUSTANULARIFFIN@GMAIL.COM', paket: 'PAKET 1', tanggal: '2025-03-03', status: 'Selesai', statuspembayaran: 'Lunas' },
-        { no: 7, kode: '0293875', email: 'EKAFITRIANISA@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Diproses', statuspembayaran: 'Belum Lunas' },
-        { no: 8, kode: '0932211', email: 'BUSTANULARIFFIN@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Ditolak', statuspembayaran: 'Belum Lunas' },
-        { no: 9, kode: '0293875', email: 'EKAFITRIANISA@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Diproses', statuspembayaran: 'Lunas' },
-        { no: 10, kode: '0932211', email: 'ALFATURRISKI@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Ditolak', statuspembayaran: 'Belum Lunas' },
-        { no: 11, kode: '0293875', email: 'EKAFITRIANISA@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Diproses', statuspembayaran: 'Lunas' },
-        { no: 12, kode: '0932211', email: 'ALFATURRISKI@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Ditolak', statuspembayaran: 'Belum Lunas' },
-    ];
-
+    const [data, setData] = useState([]);
     const [filteredData, setFilteredData] = useState(data);
+    const [storeId, setStoreId] = useState(null); // Atau props storeId jika itu berasal dari luar
+
+    const listStoreOwner = async () => {
+        try {
+            const result = await apiService.getData('/superadmin/show_store_owners/');
+            console.log("Full API response:", result);
+
+            // Cek apakah result.data dan result.data.data ada
+            if (result && result.data && Array.isArray(result.data)) {
+                const rawData = result.data;
+                const mappedData = rawData.map((item, index) => ({
+                    no: index + 1,
+                    kode: item.submission_code,
+                    storeid: item.store_id,
+                    email: item.email,
+                    paket: `PAKET ${item.package_id}`,
+                    tanggal: item.created_at ? item.created_at.slice(0, 10) : 'Tanggal tidak tersedia', // Periksa validitas created_at
+                    status: item.account_status === "Done" ? "Selesai" : (item.account_status === "In Progress" ? "Diproses" : "Ditolak"),
+                    statuspembayaran: item.payment_status ? "Lunas" : "Belum Lunas"
+                }));
+                setData(mappedData);
+            } else {
+                console.error("Data tidak tersedia atau formatnya tidak sesuai:", result?.data?.data);
+            }
+        } catch (err) {
+            console.error('Gagal ambil data Store Owner:', err.message);
+        }
+    };
+
+    const getStoreDetail = async (storeId) => {
+        try {
+            const result = await apiService.getData(`/superadmin/detail_store_owners/?store_id=${storeId}`);
+            console.log("Store detail:", result);
+    
+            // Cek apakah result.data ada dan sesuai format
+            if (result && result.data) {
+                const storeData = result.data;
+    
+                // Map dan set data ke state atau ke dalam komponen
+                console.log("Detail store:", storeData);
+                setStoreDetail(storeData); // Menyimpan data store di state
+            } else {
+                console.error("Data tidak tersedia:", result?.data);
+            }
+        } catch (err) {
+            console.error('Gagal ambil detail Store:', err.message);
+        }
+    };
+
+    const handleAction = async (status) => {
+        try {
+            const storeId = storeDetail.store_id;
+    
+            // Kirim request untuk mengupdate status
+            const response = await apiService.putData(`/superadmin/validate_store_owner/?store_id=${storeId}&status=${status}`);
+            console.log("API Response:", response);
+    
+            // Jika status berhasil diperbarui (status_code === 200), lakukan hal berikut
+            if (response.status_code === 200) {
+                // Panggil kembali listStoreOwner untuk memperbarui tabel
+                await listStoreOwner();
+    
+                // Panggil kembali getStoreDetail untuk memperbarui detail store
+                await getStoreDetail(storeId);
+    
+                // Tampilkan SweetAlert sukses
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: 'Status berhasil diperbarui.',
+                    confirmButtonText: 'OK'
+                });
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            
+            // Tampilkan SweetAlert error jika terjadi masalah
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal!',
+                text: 'Gagal memperbarui status. Silakan coba lagi.',
+                confirmButtonText: 'OK'
+            });
+        }
+    };
+    
 
     const statuses = ['', 'Selesai', 'Diproses', 'Ditolak'];
 
@@ -41,22 +116,30 @@ export default function DaftarPaket() {
     const totalDitolak = data.filter(item => item.status === 'Ditolak').length;
 
     useEffect(() => {
+        listStoreOwner();
+        if (storeId) {
+            getStoreDetail(storeId);
+        }
+    }, [storeId]);
+
+    useEffect(() => {
         console.log("Filtering:", { selectedStatus, selectedDate });
         let filtered = data;
-      
+
         if (selectedStatus) {
-          filtered = filtered.filter((item) => item.status === selectedStatus);
+            filtered = filtered.filter((item) => item.status === selectedStatus);
         }
-      
+
         if (selectedDate) {
-          filtered = filtered.filter((item) => {
-            const itemDate = new Date(item.tanggal).toISOString().slice(0, 10);
-            return itemDate === selectedDate;
-          });
+            filtered = filtered.filter((item) => {
+                const itemDate = new Date(item.tanggal).toISOString().slice(0, 10);
+                return itemDate === selectedDate;
+            });
         }
-      
+
         setFilteredData(filtered);
-    }, [selectedStatus, selectedDate]);         
+    }, [data, selectedStatus, selectedDate]);
+     
 
     const handleSelectStatus = (status) => {
         setSelectedStatus(status);
@@ -243,7 +326,7 @@ export default function DaftarPaket() {
                                 <td className="py-3 px-4">
                                     <Eye
                                         className="w-5 h-5 text-gray-600 hover:text-gray-800 mx-auto cursor-pointer"
-                                        onClick={() => setSelectedItem(item)}
+                                        onClick={() => getStoreDetail(item.storeid)} // Panggil getStoreDetail dengan store_id
                                     />
                                 </td>
                             </tr>
@@ -251,120 +334,126 @@ export default function DaftarPaket() {
                         </tbody>
                     </table>
 
-                    {selectedItem && (
-                    <>
-                        {/* Overlay */}
-                        <div
-                        className="fixed inset-0 backdrop-brightness-50 z-60 transition-opacity duration-300"
-                        onClick={() => setSelectedItem(null)}
-                        ></div>
+                    {storeDetail && (
+                        <>
+                            {/* Overlay */}
+                            <div
+                                className="fixed inset-0 backdrop-brightness-50 z-60 transition-opacity duration-300"
+                                onClick={() => setStoreDetail(null)} // <- tutup drawer
+                            ></div>
 
-                        {/* Drawer Panel */}
-                        <div className="fixed top-0 right-0 w-full md:w-[480px] h-full bg-white z-70 shadow-lg overflow-y-auto text-black transition-transform duration-300 transform translate-x-0">
-                        
-                        {/* Header */}
-                        <div className="bg-[#FFF6ED] p-4 flex justify-between items-center">
-                            <h2 className="text-center font-bold text-lg flex-1">DETAIL PENGAJUAN</h2>
-                            <button
-                            onClick={() => setSelectedItem(null)}
-                            className="text-gray-600 hover:text-red-500 text-xl font-bold"
-                            >
-                            ×
-                            </button>
-                        </div>
-
-                        {/* Body */}
-                        <div className="p-5 text-sm space-y-5">
-
-                            {/* Nomor & Tanggal */}
-                            <div className="flex justify-between text-xs mb-2 px-1">
-                            <span><strong>NOMOR PENGAJUAN</strong> : 0293875</span>
-                            <span><strong>TANGGAL</strong> : 2025-03-03</span>
+                            {/* Drawer Panel */}
+                            <div className="fixed top-0 right-0 w-full md:w-[480px] h-full bg-white z-70 shadow-lg overflow-y-auto text-black transition-transform duration-300 transform translate-x-0">
+                            
+                            {/* Header */}
+                            <div className="bg-[#FFF6ED] p-4 flex justify-between items-center">
+                                <h2 className="text-center font-bold text-lg flex-1">DETAIL PENGAJUAN</h2>
+                                <button
+                                    onClick={() => setStoreDetail(null)} // <- tutup drawer
+                                    className="text-gray-600 hover:text-red-500 text-xl font-bold"
+                                >
+                                    ×
+                                </button>
                             </div>
 
-                            {/* Detail Pengajuan */}
-                            <div>
-                            <h3 className="text-center font-bold mb-3">DETAIL PENGAJUAN</h3>
-                            <div className="space-y-2">
+                            {/* Body */}
+                            <div className="p-5 text-sm space-y-5">
+
+                                {/* Nomor & Tanggal */}
+                                <div className="flex justify-between text-xs mb-2 px-1">
+                                    <span><strong>NOMOR PENGAJUAN</strong> : {storeDetail.submission_code}</span>
+                                    <span><strong>TANGGAL</strong> : {storeDetail.created_at}</span>
+                                </div>
+
+                                {/* Detail Pengajuan */}
+                                <div>
+                                <h3 className="text-center font-bold mb-3">DETAIL PENGAJUAN</h3>
+                                <div className="space-y-2">
+                                    {[
+                                        ['NAMA', storeDetail.name_owner],
+                                        ['NIK', storeDetail.no_nik],
+                                        ['NOMOR WHATSAPP', storeDetail.no_hp],
+                                        ['EMAIL PENGAJUAN', storeDetail.email],
+                                        ['ALAMAT TOKO', storeDetail.store_address],
+                                        ['PAKET PILIHAN', `PAKET ${storeDetail.package_id}`],
+                                    ].map(([label, value]) => (
+                                        <div key={label} className="flex text-sm">
+                                            <div className="w-[45%] font-medium">{label}</div>
+                                            <div className="w-[5%]">:</div>
+                                            <div className="w-[50%]">{value}</div>
+                                        </div>
+                                    ))}
+
+                                    {/* Deskripsi */}
+                                    <div className="mt-3">
+                                        <div className="flex">
+                                            <div className="w-[45%] font-medium">DESKRIPSI TOKO</div>
+                                            <div className="w-[5%]">:</div>
+                                            <div className="w-[50%]">
+                                                <p className="text-justify">{storeDetail.description}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Foto Toko */}
+                                    <div className="mt-3">
+                                        <div className="flex items-start">
+                                            <div className="w-[45%] font-medium">FOTO TOKO</div>
+                                            <div className="w-[5%]">:</div>
+                                            <div className="w-[50%]">
+                                                <img
+                                                    src={`http://localhost:8000/media/${storeDetail.store_picture}`} // bangun URL manual
+                                                    alt="Foto Toko"
+                                                    className="w-[120px] h-auto object-cover rounded border shadow"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                </div>
+
+                                {/* Dokumen Pendukung */}
+                                <div>
+                                <h3 className="text-center font-bold mb-4">DOKUMEN PENDUKUNG</h3>
                                 {[
-                                ['NAMA', 'ALFATURRISKI'],
-                                ['NIK', '004897865678644'],
-                                ['NOMOR WHATSAPP', '082098980756'],
-                                ['EMAIL PENGAJUAN', 'ALFATURRISKI@GMAIL.COM'],
-                                ['ALAMAT TOKO', 'PERUMAHAN BATU AJI BLOK Z NO 20'],
-                                ['PAKET PILIHAN', 'PAKET 2'],
-                                ].map(([label, value]) => (
-                                <div key={label} className="flex text-sm">
-                                    <div className="w-[45%] font-medium">{label}</div>
-                                    <div className="w-[5%]">:</div>
-                                    <div className="w-[50%]">{value}</div>
-                                </div>
+                                    { label: 'KTP PEMILIK TOKO', filename: storeDetail.ktp_picture },
+                                    { label: 'SURAT PERNYATAAN KEABSAHAN DATA', filename: storeDetail.statement_letter },
+                                    { label: 'SURAT IZIN USAHA (OPSIONAL)', filename: storeDetail.business_license },
+                                ].map((doc, idx) => (
+                                    <div key={idx} className="mb-3">
+                                    <p className="text-xs font-semibold mb-1">{doc.label}</p>
+                                    <a
+                                        href={`http://localhost:8000/media/${doc.filename}`} // Gunakan URL yang benar
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center border rounded px-3 py-2 bg-gray-50 text-sm hover:underline"
+                                    >
+                                        <span className="mr-2">📄</span> {doc.filename}
+                                    </a>
+                                    </div>
                                 ))}
-
-                                {/* Deskripsi */}
-                                <div className="mt-3">
-                                <div className="flex">
-                                    <div className="w-[45%] font-medium">DESKRIPSI TOKO</div>
-                                    <div className="w-[5%]">:</div>
-                                    <div className="w-[50%]">
-                                    <p className="text-justify">
-                                        TOKO SAYA ADALAH TOKO ANGKRINGAN YANG BERADA DI PERUMAHAN BATU AJI PALING POJOK YAITU DI BLOK Z NO 20
-                                    </p>
-                                    </div>
-                                </div>
-                                </div>
-
-                                {/* Foto Toko */}
-                                <div className="mt-3">
-                                <div className="flex items-start">
-                                    <div className="w-[45%] font-medium">FOTO TOKO</div>
-                                    <div className="w-[5%]">:</div>
-                                    <div className="w-[50%]">
-                                    <img
-                                        src="/Toko1.png"
-                                        alt="Foto Toko"
-                                        className="w-[120px] h-auto object-cover rounded border shadow"
-                                    />
-                                    </div>
-                                </div>
                                 </div>
                             </div>
-                            </div>
 
-                            {/* Dokumen Pendukung */}
-                            <div>
-                            <h3 className="text-center font-bold mb-4">DOKUMEN PENDUKUNG</h3>
-                            {[
-                                'KTP PEMILIK TOKO',
-                                'SURAT PERNYATAAN KEABSAHAN DATA',
-                                'SURAT IZIN USAHA (OPSIONAL)',
-                            ].map((label, idx) => (
-                                <div key={idx} className="mb-3">
-                                <p className="text-xs font-semibold mb-1">{label}</p>
-                                <div className="flex items-center border rounded px-3 py-2 bg-gray-50 text-sm">
-                                    <span className="mr-2">📄</span> pdf document.pdf
+                                {/* Footer */}
+                                {(storeDetail.account_status !== "Done" && storeDetail.account_status !== "Reject") && (
+                                <div className="flex justify-end gap-5 p-5">
+                                    <button
+                                        onClick={() => handleAction("Reject")} // Kirim status "Rejected"
+                                        className="px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white"
+                                    >
+                                        Tolak
+                                    </button>
+                                    <button
+                                        onClick={() => handleAction("Done")} // Kirim status "Accepted"
+                                        className="px-4 py-2 border border-green-500 text-green-500 rounded-lg hover:bg-green-500 hover:text-white"
+                                    >
+                                        Terima
+                                    </button>
                                 </div>
-                                </div>
-                            ))}
+                                )}
                             </div>
-                        </div>
-
-                        {/* Footer */}
-                        <div className="flex justify-end gap-5 p-5">
-                            <button
-                            onClick={() => setSelectedItem(null)}
-                            className="px-4 py-2 border border-red-500 text-red-500 rounded-lg hover:bg-red-500 hover:text-white"
-                            >
-                            Tolak
-                            </button>
-                            <button
-                            className="px-4 py-2 border border-green-500 text-green-500 rounded-lg hover:bg-green-500 hover:text-white"
-                            >
-                            Terima
-                            </button>
-                        </div>
-                        </div>
-                    </>
+                        </>
                     )}
                 </div>
 
@@ -402,3 +491,5 @@ export default function DaftarPaket() {
         </div>
     );
 }
+
+export default withAuth(DaftarPengajuanToko,['1'])

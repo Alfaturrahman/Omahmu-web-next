@@ -27,7 +27,6 @@ function DaftarPaket() {
         try {
           const result = await apiService.getData('/superadmin/list_package/');
           setPaketList(result.data);
-          console.log("tessssssss", result);
         } catch (err) {
           console.error('Gagal ambil data paket:', err.message);
         }
