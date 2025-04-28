@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useRef, useEffect} from 'react';
 import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
@@ -14,7 +14,6 @@ function DaftarPengajuanToko() {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [selectedStatus, setSelectedStatus] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [showFilter, setShowFilter] = useState(false);
     const itemsPerPage = 10;
     const [selectedItem, setSelectedItem] = useState(null);
     const [storeDetail, setStoreDetail] = useState(null);
@@ -22,6 +21,11 @@ function DaftarPengajuanToko() {
     const [data, setData] = useState([]);
     const [filteredData, setFilteredData] = useState(data);
     const [storeId, setStoreId] = useState(null); // Atau props storeId jika itu berasal dari luar
+    const [showFilter, setShowFilter] = useState(false);
+
+    // Referensi untuk elemen filter
+    const filterRef = useRef(null);
+  
 
     const listStoreOwner = async () => {
         try {
@@ -162,6 +166,25 @@ function DaftarPengajuanToko() {
         }
     };
 
+    useEffect(() => {
+        function handleClickOutside(event) {
+          if (filterRef.current && !filterRef.current.contains(event.target)) {
+            setShowFilter(false); // tutup dropdown
+          }
+        }
+    
+        if (showFilter) {
+          document.addEventListener("mousedown", handleClickOutside);
+        } else {
+          document.removeEventListener("mousedown", handleClickOutside);
+        }
+    
+        // Bersihkan listener saat unmount
+        return () => {
+          document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [showFilter]);
+      
     const statusColor = {
         'Selesai': 'bg-[#CFF0E7] text-[#57AD94]',
         'Lunas': 'bg-[#ABF291] text-[#04A20F]',
@@ -178,161 +201,150 @@ function DaftarPengajuanToko() {
     );
 
     return (
-        <div className="min-h-screen flex flex-col bg-white">
-        <Header toggleSidebar={toggleSidebar} />
-        <div className="flex flex-1 relative">
-            <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
+        <div className="h-screen flex flex-col bg-white">
+            <Header toggleSidebar={toggleSidebar} />
+            <div className="flex flex-1 h-screen overflow-hidden">
+                <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
-            <div className="flex-1 flex flex-col overflow-x-auto gap-6 p-3 transition-all duration-300">
-                {/* Judul dan Filter */}
-                <div className="w-full flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center p-5">
-                    <h1 className="text-base md:text-md lg:text-lg font-semibold text-black">
-                    Daftar Pengajuan Toko
-                    </h1>
+                <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex-1 min-h-0 overflow-y-auto p-3">
+                        {/* Judul dan Filter */}
+                        <div className="w-full flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center p-5">
+                            <h1 className="text-base md:text-md lg:text-lg font-semibold text-black">
+                            Daftar Pengajuan Toko
+                            </h1>
 
-                    <button
-                        onClick={() => setShowFilter((prev) => !prev)}
-                        className="flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md"
-                        >
-                        Filter
-                        <Filter className="w-5 h-5 ml-2 text-black" />
-                        </button>
+                            <button
+                                onClick={() => setShowFilter((prev) => !prev)}
+                                className="flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md"
+                                >
+                                Filter
+                                <Filter className="w-5 h-5 ml-2 text-black" />
+                            </button>
 
-                        {/* Filter Dropdown */}
-                        {showFilter && (
-                            <div className="absolute right-5 top-[90px] bg-white border rounded-md shadow-md w-60 p-4 z-50">
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Status
-                                    </label>
-                                    <select
-                                        value={selectedStatus}
-                                        onChange={(e) => handleSelectStatus(e.target.value)}
-                                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    >
-                                        {statuses.map((status, i) => (
-                                        <option key={i} value={status}>
-                                            {status === "" ? "Semua Status" : status}
-                                        </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                {/* Filter Dropdown */}
+                                {showFilter && (
+                                    <div ref={filterRef} className="absolute right-5 top-[90px] bg-white border rounded-md shadow-md w-60 p-4 z-50">
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Status
+                                            </label>
+                                            <select
+                                                value={selectedStatus}
+                                                onChange={(e) => handleSelectStatus(e.target.value)}
+                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            >
+                                                {statuses.map((status, i) => (
+                                                <option key={i} value={status}>
+                                                    {status === "" ? "Semua Status" : status}
+                                                </option>
+                                                ))}
+                                            </select>
+                                        </div>
 
-                                <div className="mb-2">
-                                    <label className="block text-sm font-medium text-black mb-1">
-                                        Tanggal
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={selectedDate}
-                                        onChange={(e) => setSelectedDate(e.target.value)}
-                                        className="w-full border border-gray-300 text-black rounded px-2 py-1 text-sm"
-                                    />
-                                </div>
-                                <button
-                                    onClick={handleClearFilter}
-                                    className="mt-2 w-full text-sm bg-red-100 text-red-600 py-1 rounded hover:bg-red-200"
-                                    >
-                                    Reset Filter
-                                </button>
-                            </div>
-                        )}
-                </div>
-
-                {/* Stat Card */}
-                <div className="w-full flex flex-wrap justify-between">
-                    {/* Total Pengajuan */}
-                    <div
-                    onClick={() => handleCardClick("")}
-                    className={`cursor-pointer w-full md:w-[200px] rounded-xl p-6 text-center shadow-sm mb-4 transition-all duration-200 bg-[#FFF4E8]`}
-                    >
-                    <h2 className="text-[#F39117] font-semibold mb-2">Total Pengajuan</h2>
-                    <p className="text-2xl font-bold text-black">{totalPengajuan}</p>
-                    </div>
-
-                    {/* Total Diproses */}
-                    <div
-                        onClick={() => handleCardClick("Diproses")}
-                        className={`cursor-pointer w-full md:w-[200px] rounded-xl p-6 text-center shadow-sm mb-4 transition-all duration-200 bg-[#FFF4E8]`}
-                    >
-                    <h2 className="text-[#F39117] font-semibold mb-2">Total Diproses</h2>
-                    <p className="text-2xl font-bold text-black">{totalDiproses}</p>
-                    </div>
-
-                    {/* Total Diterima */}
-                    <div
-                        onClick={() => handleCardClick("Selesai")}
-                        className={`cursor-pointer w-full md:w-[200px] rounded-xl p-6 text-center shadow-sm mb-4 transition-all duration-200 bg-[#FFF4E8]`}
-                    >
-                    <h2 className="text-[#F39117] font-semibold mb-2">Total Diterima</h2>
-                    <p className="text-2xl font-bold text-black">{totalSelesai}</p>
-                    </div>
-
-                    {/* Total Ditolak */}
-                    <div
-                        onClick={() => handleCardClick("Ditolak")}
-                        className={`cursor-pointer w-full md:w-[200px] rounded-xl p-6 text-center shadow-sm mb-4 transition-all duration-200 bg-[#FFF4E8]`}
-                    >
-                        <h2 className="text-[#F39117] font-semibold mb-2">Total Ditolak</h2>
-                        <p className="text-2xl font-bold text-black">{totalDitolak}</p>
-                    </div>
-                </div>
-
-                {/* Tabel */}
-                <div className="w-full overflow-x-auto rounded-lg">
-                    <table className="min-w-[800px] w-full shadow-lg">
-                        <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
-                            <tr>
-                            {['NO', 'KODE PENGAJUAN', 'EMAIL PENGAJUAN', 'PAKET', 'TANGGAL PENGAJUAN', 'STATUS', 'STATUS PEMBAYARAN', 'DETAIL'].map((header, index) => (
-                                <th key={index} className="py-3 px-4 relative">
-                                {header}
-                                {index !== 7 && (
-                                    <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                        <div className="mb-2">
+                                            <label className="block text-sm font-medium text-black mb-1">
+                                                Tanggal
+                                            </label>
+                                            <input
+                                                type="date"
+                                                value={selectedDate}
+                                                onChange={(e) => setSelectedDate(e.target.value)}
+                                                className="w-full border border-gray-300 text-black rounded px-2 py-1 text-sm"
+                                            />
+                                        </div>
+                                        <button
+                                            onClick={handleClearFilter}
+                                            className="mt-2 w-full text-sm bg-red-100 text-red-600 py-1 rounded hover:bg-red-200"
+                                            >
+                                            Reset Filter
+                                        </button>
+                                    </div>
                                 )}
-                                </th>
-                            ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {displayedData.map((item, index) => (
-                            <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                <td className="py-3 px-4 relative">{item.no}
-                                    <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative">{item.kode}
-                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative uppercase">{item.email}
-                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative">{item.paket}
-                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative">{item.tanggal}
-                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[item.status]}`}>
-                                        {item.status}
-                                    </span>
-                                    <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[item.statuspembayaran]}`}>
-                                        {item.statuspembayaran}
-                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                    </span>
-                                </td>
-                                <td className="py-3 px-4">
-                                    <Eye
-                                        className="w-5 h-5 text-gray-600 hover:text-gray-800 mx-auto cursor-pointer"
-                                        onClick={() => getStoreDetail(item.storeid)} // Panggil getStoreDetail dengan store_id
-                                    />
-                                </td>
-                            </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                        </div>
+
+                        {/* Stat Card */}
+                        <div className="w-full grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-3 mb-4">
+                            {/* Total Pengajuan */}
+                            <div
+                                onClick={() => handleCardClick("")}
+                                className="cursor-pointer rounded-xl p-6 text-center shadow-sm transition-all duration-200 bg-[#FFF4E8]"
+                            >
+                                <h2 className="text-[#F39117] font-semibold mb-2">Total Pengajuan</h2>
+                                <p className="text-2xl font-bold text-black">{totalPengajuan}</p>
+                            </div>
+
+                            {/* Total Diproses */}
+                            <div
+                                onClick={() => handleCardClick("Diproses")}
+                                className="cursor-pointer rounded-xl p-6 text-center shadow-sm transition-all duration-200 bg-[#FFF4E8]"
+                            >
+                                <h2 className="text-[#F39117] font-semibold mb-2">Total Diproses</h2>
+                                <p className="text-2xl font-bold text-black">{totalDiproses}</p>
+                            </div>
+
+                            {/* Total Diterima */}
+                            <div
+                                onClick={() => handleCardClick("Selesai")}
+                                className="cursor-pointer rounded-xl p-6 text-center shadow-sm transition-all duration-200 bg-[#FFF4E8]"
+                            >
+                                <h2 className="text-[#F39117] font-semibold mb-2">Total Diterima</h2>
+                                <p className="text-2xl font-bold text-black">{totalSelesai}</p>
+                            </div>
+
+                            {/* Total Ditolak */}
+                            <div
+                                onClick={() => handleCardClick("Ditolak")}
+                                className="cursor-pointer rounded-xl p-6 text-center shadow-sm transition-all duration-200 bg-[#FFF4E8]"
+                            >
+                                <h2 className="text-[#F39117] font-semibold mb-2">Total Ditolak</h2>
+                                <p className="text-2xl font-bold text-black">{totalDitolak}</p>
+                            </div>
+                        </div>
+
+                        {/* Container Tabel */}
+                        <div className="overflow-x-auto rounded-lg">
+                            <div className="overflow-y-auto max-h-[900px]">
+                                <table className="min-w-[800px] w-full shadow-lg">
+                                <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
+                                    <tr>
+                                    {['NO', 'KODE PENGAJUAN', 'EMAIL PENGAJUAN', 'PAKET', 'TANGGAL PENGAJUAN', 'STATUS', 'STATUS PEMBAYARAN', 'DETAIL'].map((header, index) => (
+                                        <th key={index} className="py-3 px-4 relative bg-white">
+                                        {header}
+                                        {index !== 7 && (
+                                            <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                        )}
+                                        </th>
+                                    ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {displayedData.map((item, index) => (
+                                    <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
+                                        {/* List isi tabel kamu */}
+                                        <td className="py-3 px-4 relative">{item.no}</td>
+                                        <td className="py-3 px-4 relative">{item.kode}</td>
+                                        <td className="py-3 px-4 relative uppercase">{item.email}</td>
+                                        <td className="py-3 px-4 relative">{item.paket}</td>
+                                        <td className="py-3 px-4 relative">{item.tanggal}</td>
+                                        <td className="py-3 px-4 relative">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[item.status]}`}>
+                                            {item.status}
+                                        </span>
+                                        </td>
+                                        <td className="py-3 px-4 relative">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[item.statuspembayaran]} whitespace-nowrap overflow-hidden text-ellipsis max-w-full inline-block`}>
+                                            {item.statuspembayaran}
+                                        </span>
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            <Eye className="w-5 h-5 text-gray-600 hover:text-gray-800 mx-auto cursor-pointer" onClick={() => getStoreDetail(item.storeid)} // Panggil getStoreDetail dengan store_id
+                                            />
+                                        </td>
+                                    </tr>
+                                    ))}
+                                </tbody>
+                                </table>
 
                     {storeDetail && (
                         <>
@@ -457,33 +469,35 @@ function DaftarPengajuanToko() {
                     )}
                 </div>
 
-                {/* Pagenation */}
-                <div className="flex flex-col sm:flex-row justify-between items-center mt-4 text-gray-600">
-                    <span>Menampilkan {currentPage * itemsPerPage - itemsPerPage + 1} hingga {Math.min(currentPage * itemsPerPage, filteredData.length)} dari {filteredData.length} entri</span>
-                    <div className="flex gap-2">
-                        <button 
-                            className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'cursor-not-allowed' : 'bg-[#ECA641] text-white'}`} 
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                        >
-                            Sebelumnya
-                        </button>
-                        {[...Array(totalPages)].map((_, i) => (
-                            <button 
-                                key={i} 
-                                className={`px-4 py-2 rounded-md ${currentPage === i + 1 ? 'bg-[#ECA641] text-white' : 'bg-gray-300'}`} 
-                                onClick={() => setCurrentPage(i + 1)}
-                            >
-                                {i + 1}
-                            </button>
-                        ))}
-                        <button 
-                            className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'cursor-not-allowed' : 'bg-[#ECA641] text-white'}`} 
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            Selanjutnya
-                        </button>
+                        {/* Pagination */}
+                        <div className="p-3 border-t flex flex-col sm:flex-row justify-between items-center text-gray-600 bg-white">
+                            <span>Menampilkan {currentPage * itemsPerPage - itemsPerPage + 1} hingga {Math.min(currentPage * itemsPerPage, filteredData.length)} dari {filteredData.length} entri</span>
+                            <div className="flex gap-2 mt-2 sm:mt-0">
+                                <button 
+                                className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#ECA641] text-white'}`} 
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                >
+                                Sebelumnya
+                                </button>
+                                {[...Array(totalPages)].map((_, i) => (
+                                <button 
+                                    key={i} 
+                                    className={`px-4 py-2 rounded-md ${currentPage === i + 1 ? 'bg-[#ECA641] text-white' : 'bg-gray-300'}`} 
+                                    onClick={() => setCurrentPage(i + 1)}
+                                >
+                                    {i + 1}
+                                </button>
+                                ))}
+                                <button 
+                                className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#ECA641] text-white'}`} 
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                >
+                                Selanjutnya
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

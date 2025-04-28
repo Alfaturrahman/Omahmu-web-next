@@ -75,27 +75,27 @@ function SuperadminDashboard() {
                 </div>
             </div>
 
-
             {/* Stat Cards */}
-            <div className="w-full flex flex-wrap justify-between px-4">
-                {/* Total Toko Terdaftar */}
-                <div className="w-full md:w-[200px] bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm mb-4">
-                    <h2 className="text-[#F28C20] font-semibold mb-2">Total Toko Terdaftar</h2>
-                    <p className="text-2xl font-bold text-black">{jumlahToko.total}</p>
-                </div>
+            <div className="w-full flex flex-col md:flex-row lg:flex-row justify-between px-4 gap-4">
+              {/* Total Toko Terdaftar */}
+              <div className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm">
+                <h2 className="text-[#F28C20] font-semibold mb-2">Total Toko Terdaftar</h2>
+                <p className="text-2xl font-bold text-black">{jumlahToko.total}</p>
+              </div>
 
-                {/* Toko Aktif */}
-                <div className="w-full md:w-[200px] bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm mb-4">
-                    <h2 className="text-[#F28C20] font-semibold mb-2">Toko Aktif</h2>
-                    <p className="text-2xl font-bold text-black">{jumlahToko.aktif}</p>
-                </div>
+              {/* Toko Aktif */}
+              <div className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm">
+                <h2 className="text-[#F28C20] font-semibold mb-2">Toko Aktif</h2>
+                <p className="text-2xl font-bold text-black">{jumlahToko.aktif}</p>
+              </div>
 
-                {/* Toko Nonaktif */}
-                <div className="w-full md:w-[200px] bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm mb-4">
-                    <h2 className="text-[#F28C20] font-semibold mb-2">Toko Nonaktif</h2>
-                    <p className="text-2xl font-bold text-black">{jumlahToko.tidakAktif}</p>
-                </div>
+              {/* Toko Nonaktif */}
+              <div className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm">
+                <h2 className="text-[#F28C20] font-semibold mb-2">Toko Nonaktif</h2>
+                <p className="text-2xl font-bold text-black">{jumlahToko.tidakAktif}</p>
+              </div>
             </div>
+
 
             {/* List Toko */}
             <div className="w-full flex flex-wrap justify-start gap-8 md:gap-4 lg:gap-8 px-4">

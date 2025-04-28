@@ -23,6 +23,8 @@ function DaftarPaket() {
     const [errors, setErrors] = useState({});
     const [paketList, setPaketList] = useState([]);
     const [fiturList, setFiturList] = useState([]);
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [editId, setEditId] = useState(null); // kalau kamu butuh ID paket untuk update
     const [formData, setFormData] = useState({
       nama: '',
       durasi: '',
@@ -85,9 +87,26 @@ function DaftarPaket() {
         setOpenMenuIndex(openMenuIndex === index ? null : index)
     }
 
-    const handleEdit = (index) => {
-        console.log(`Edit Paket ${index + 1}`)
-    }
+    const handleEdit = (paket) => {
+      const fiturSelected = (paket.features || []).map(fiturId => {
+        const found = fiturList.find(f => f.value === fiturId);
+        return found ? found.value : null;
+      }).filter(f => f !== null); 
+    
+      setFormData({
+        nama: paket.package_name || '',
+        durasi: paket.duration || '',
+        harga: paket.price || '',
+        deskripsi: paket.description || '',
+        fitur: fiturSelected, 
+      });
+    
+      setEditId(paket.package_id); 
+      setIsEditMode(true);
+      setErrors({});
+      setIsModalOpen(true);
+    };
+    
 
     const handleDelete = (packageId) => {
         Swal.fire({
@@ -146,65 +165,71 @@ function DaftarPaket() {
     }).format(Number(formData.harga));
   
     const handleSubmit = async () => {
-        const newErrors = {};
-      
-        // Validasi field
-        if (!formData.nama) newErrors.nama = 'Nama paket wajib diisi';
-        if (!formData.durasi) newErrors.durasi = 'Durasi wajib diisi';
-        if (!formData.harga) newErrors.harga = 'Harga wajib diisi';
-        if (!formData.deskripsi) newErrors.deskripsi = 'Deskripsi wajib diisi';
-        if (!formData.fitur || formData.fitur.length === 0) newErrors.fitur = 'Minimal pilih 1 fitur';
-      
-        if (Object.keys(newErrors).length > 0) {
-          setErrors(newErrors);
-          return;
-        }
-      
-        try {
-          // Siapkan payload untuk dikirim
-          const payload = {
-            package_name: formData.nama,
-            duration: Number(formData.durasi),
-            price: formattedPrice,
-            description: formData.deskripsi,
-            features: formData.fitur, // Kirim array ID fitur yang valid
-          };
-
-          console.log("tes",payload);
-          
-      
-          // Kirim ke backend
+      const newErrors = {};
+    
+      // Validasi
+      if (!formData.nama) newErrors.nama = 'Nama paket wajib diisi';
+      if (!formData.durasi) newErrors.durasi = 'Durasi wajib diisi';
+      if (!formData.harga) newErrors.harga = 'Harga wajib diisi';
+      if (!formData.deskripsi) newErrors.deskripsi = 'Deskripsi wajib diisi';
+      if (!formData.fitur || formData.fitur.length === 0) newErrors.fitur = 'Minimal pilih 1 fitur';
+    
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
+      }
+    
+      try {
+        const payload = {
+          package_name: formData.nama,
+          duration: Number(formData.durasi),
+          price: formattedPrice,
+          description: formData.deskripsi,
+          features: formData.fitur,
+        };
+    
+        if (isEditMode) {
+          // Update data
+          await apiService.putData(`/superadmin/update_package/${editId}/`, payload); 
+          Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: 'Data paket berhasil diperbarui.',
+            confirmButtonColor: '#F6B543',
+          });
+        } else {
+          // Insert data
           await apiService.postData('/superadmin/insert_package/', payload);
-      
-          // Success!
           Swal.fire({
             icon: 'success',
             title: 'Berhasil!',
             text: 'Data paket berhasil ditambahkan.',
             confirmButtonColor: '#F6B543',
           });
-      
-          // Reset form dan tutup modal
-          setFormData({
-            nama: '',
-            durasi: '',
-            harga: '',
-            deskripsi: '',
-            fitur: [],
-          });
-          setIsModalOpen(false);
-          setErrors({});
-      
-          // Refresh list paket
-          fetchPaketList(); // pastikan ini dideklarasikan di luar handleSubmit
-        } catch (err) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Gagal!',
-            text: err.message || 'Terjadi kesalahan saat menyimpan data.',
-          });
         }
-      };
+    
+        // Reset form
+        setFormData({
+          nama: '',
+          durasi: '',
+          harga: '',
+          deskripsi: '',
+          fitur: [],
+        });
+        setErrors({});
+        setIsModalOpen(false);
+        setIsEditMode(false);
+        setEditId(null);
+    
+        fetchPaketList();
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Gagal!',
+          text: err.message || 'Terjadi kesalahan saat menyimpan data.',
+        });
+      }
+    };
     
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -242,9 +267,9 @@ function DaftarPaket() {
 
                     {/* Header */}
                     <div className="px-6 py-4 bg-[#FEF1E7] border-b">
-                        <Dialog.Title className="text-lg font-semibold text-center text-black">
-                        TAMBAH PAKET LANGGANAN
-                        </Dialog.Title>
+                    <Dialog.Title className="text-lg font-semibold text-center text-black">
+                      {isEditMode ? 'EDIT PAKET LANGGANAN' : 'TAMBAH PAKET LANGGANAN'}
+                    </Dialog.Title>
                     </div>
 
                     {/* Body */}
@@ -391,7 +416,7 @@ function DaftarPaket() {
                       {openMenuIndex === index && (
                         <div className="absolute right-0 mt-2 w-28 bg-white rounded shadow-md z-10">
                           <button
-                            onClick={() => handleEdit(index)}
+                            onClick={() => handleEdit(paket)}
                             className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100"
                           >
                             Edit
