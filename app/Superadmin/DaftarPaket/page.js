@@ -22,19 +22,51 @@ function DaftarPaket() {
     const [isClient, setIsClient] = useState(false);
     const [errors, setErrors] = useState({});
     const [paketList, setPaketList] = useState([]);
+    const [fiturList, setFiturList] = useState([]);
+    const [formData, setFormData] = useState({
+      nama: '',
+      durasi: '',
+      harga: '',
+      deskripsi: '',
+      fitur: [],
+    });
+  
+    const fiturOptions = [
+      { value: '1-5 Pengguna', label: '1-5 Pengguna' },
+      { value: 'Tidak Terbatas Pengguna', label: 'Tidak Terbatas Pengguna' },
+      { value: 'Live Chat', label: 'Live Chat' },
+      { value: 'Dukungan AI', label: 'Dukungan AI' },
+      { value: 'Laporan Penjualan', label: 'Laporan Penjualan' },
+      { value: 'API Integrasi', label: 'API Integrasi' },
+    ];
 
     const fetchPaketList = async () => {
+      try {
+        const result = await apiService.getData('/superadmin/list_package/');
+        setPaketList(result.data);
+      } catch (err) {
+        console.error('Gagal ambil data paket:', err.message);
+      }
+    };
+
+    const fetchFiturList = async () => {
         try {
-          const result = await apiService.getData('/superadmin/list_package/');
-          setPaketList(result.data);
+            const result = await apiService.getData('/superadmin/list_master_features/'); 
+            const fiturOptions = result.data.map(fitur => ({
+                value: fitur.feature_id, 
+                label: fitur.feature_name, 
+                description: fitur.feature_description, 
+            }));
+            setFiturList(fiturOptions);
         } catch (err) {
-          console.error('Gagal ambil data paket:', err.message);
+            console.error('Gagal ambil data fitur:', err.message);
         }
-      };
+    };
       
       useEffect(() => {
         setIsClient(true);
         fetchPaketList();
+        fetchFiturList();
       }, []);
     
     const closeModal = () => {
@@ -84,22 +116,7 @@ function DaftarPaket() {
         });
       };
       
-    const [formData, setFormData] = useState({
-      nama: '',
-      durasi: '',
-      harga: '',
-      deskripsi: '',
-      fitur: [],
-    });
-  
-    const fiturOptions = [
-      { value: '1-5 Pengguna', label: '1-5 Pengguna' },
-      { value: 'Tidak Terbatas Pengguna', label: 'Tidak Terbatas Pengguna' },
-      { value: 'Live Chat', label: 'Live Chat' },
-      { value: 'Dukungan AI', label: 'Dukungan AI' },
-      { value: 'Laporan Penjualan', label: 'Laporan Penjualan' },
-      { value: 'API Integrasi', label: 'API Integrasi' },
-    ];
+    
   
     const toggleSidebar = () => {
       if (window.innerWidth < 1024) {
@@ -114,10 +131,13 @@ function DaftarPaket() {
       setFormData(prev => ({ ...prev, [name]: value }));
     };
   
-    const handleFiturChange = (selected) => {
-      setFormData(prev => ({ ...prev, fitur: selected }));
+    const handleFiturChange = (selectedOptions) => {
+        setFormData(prevData => ({
+            ...prevData,
+            fitur: selectedOptions ? selectedOptions.map(option => option.value) : []
+        }));
     };
-
+    
     const formattedPrice = new Intl.NumberFormat('id-ID', {
         style: 'currency',
         currency: 'IDR',
@@ -147,8 +167,11 @@ function DaftarPaket() {
             duration: Number(formData.durasi),
             price: formattedPrice,
             description: formData.deskripsi,
-            fitur: formData.fitur.map(f => f.value), // hanya ambil value dari select
+            features: formData.fitur, // Kirim array ID fitur yang valid
           };
+
+          console.log("tes",payload);
+          
       
           // Kirim ke backend
           await apiService.postData('/superadmin/insert_package/', payload);
@@ -288,55 +311,45 @@ function DaftarPaket() {
                         {/* Fitur (Multi Select) */}
                         <div>
                             <label className="block text-xs font-semibold mb-1">Fitur Paket</label>
-                            <Select isMulti name="fitur"
-                                options=
-                                {[
-                                    { value: '1-5 Pengguna', label: '1-5 Pengguna' },
-                                    { value: 'Tidak Terbatas Pengguna', label: 'Tidak Terbatas Pengguna' },
-                                    { value: '1 Cabang', label: '1 Cabang' },
-                                    { value: 'Tidak Terbatas Cabang', label: 'Tidak Terbatas Cabang' },
-                                    { value: 'Maks. 500 Produk', label: 'Maks. 500 Produk' },
-                                    { value: 'Laporan Penjualan Dasar', label: 'Laporan Penjualan Dasar' },
-                                    { value: 'Laporan Lengkap & Analitik', label: 'Laporan Lengkap & Analitik' },
-                                    { value: 'Dukungan Email', label: 'Dukungan Email' },
-                                    { value: 'Live Chat 24/7', label: 'Live Chat 24/7' },
-                                    { value: 'Bantuan AI', label: 'Bantuan AI' },
-                                    { value: 'Rekomendasi Menu Otomatis', label: 'Rekomendasi Menu Otomatis' },
-                                    { value: 'Integrasi API', label: 'Integrasi API' },
-                                ]}
-                                value={formData.fitur}
+                            <Select
+                                isMulti
+                                name="fitur"
+                                options={fiturList} // Menggunakan fiturList yang sudah diformat
+                                value={formData.fitur.map(id => ({
+                                    value: id,
+                                    label: fiturList.find(f => f.value === id)?.label || '', // Menampilkan nama fitur
+                                }))}
                                 onChange={handleFiturChange}
                                 className="text-sm"
                                 classNamePrefix="select"
                                 placeholder="Pilih fitur yang tersedia"
-
                                 menuPortalTarget={isClient ? document.body : null}
                                 menuPosition="fixed"
                                 styles={{
                                     menuPortal: base => ({ ...base, zIndex: 9999 }),
                                     control: (base, state) => ({
-                                    ...base,
-                                    backgroundColor: 'white',
-                                    color: 'black',
+                                        ...base,
+                                        backgroundColor: 'white',
+                                        color: 'black',
                                     }),
                                     option: (base, state) => ({
-                                    ...base,
-                                    color: 'black',
-                                    cursor: 'pointer',
+                                        ...base,
+                                        color: 'black',
+                                        cursor: 'pointer',
                                     }),
                                     multiValue: base => ({
-                                    ...base,
-                                    color: 'black',
+                                        ...base,
+                                        color: 'black',
                                     }),
                                     multiValueLabel: base => ({
-                                    ...base,
-                                    color: 'black',
+                                        ...base,
+                                        color: 'black',
                                     }),
                                     input: base => ({
-                                    ...base,
-                                    color: 'black',
+                                        ...base,
+                                        color: 'black',
                                     }),
-                            }}
+                                }}
                             />
                             {errors.fitur && <p className="text-red-500 text-xs mt-1">{errors.fitur}</p>}
                         </div>
@@ -401,30 +414,17 @@ function DaftarPaket() {
                     {/* Deskripsi */}
                     <p className="text-sm text-center text-gray-700 mb-4">{paket.description}</p>
                   
-                    {/* Simulasi fitur (sementara hardcoded) */}
+                    {/* Fitur */}
                     <ul className="space-y-2 text-sm text-black">
-                      {index === 0 ? (
-                        <>
-                          <li>✅ 1-5 Pengguna</li>
-                          <li>✅ 1 Cabang</li>
-                          <li>✅ Maksimal 500 Produk</li>
-                          <li>✅ Laporan Penjualan Dasar</li>
-                          <li>✅ Dukungan Email</li>
-                          <li className="text-red-500">❌ Bantuan AI</li>
-                          <li className="text-red-500">❌ Rekomendasi Menu Otomatis</li>
-                          <li className="text-red-500">❌ Live Chat Dukungan</li>
-                        </>
-                      ) : (
-                        <>
-                          <li>✅ Tidak Terbatas Pengguna</li>
-                          <li>✅ Tidak Terbatas Cabang</li>
-                          <li>✅ Tidak Terbatas Produk</li>
-                          <li>✅ Laporan Penjualan Lengkap & Analitik</li>
-                          <li>✅ Bantuan AI (Rekomendasi Menu, Harga, Tren Penjualan)</li>
-                          <li>✅ Live Chat Dukungan 24/7</li>
-                          <li>✅ Integrasi API</li>
-                        </>
-                      )}
+                        {paket.features.map((fitur, idx) => (
+                            <li key={idx}>
+                                {fitur.is_active ? (
+                                    <>✅ {fitur.feature_name}</>
+                                ) : (
+                                    <>❌ {fitur.feature_name}</>
+                                )}
+                            </li>
+                        ))}
                     </ul>
                   
                     {/* Harga dari API */}
