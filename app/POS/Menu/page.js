@@ -4,12 +4,16 @@ import { useState, useEffect } from 'react';
 import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
+import * as apiService from 'services/authService';
+import withAuth from 'hoc/withAuth';
 import Image from 'next/image';
 
-export default function Kasir() {
+function Menu() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [activeCategory, setActiveCategory] = useState("Semua");
+    const [menuItems, setMenuItems] = useState([]);
+
 
     const toggleSidebar = () => {
         if (window.innerWidth < 1024) {
@@ -18,21 +22,19 @@ export default function Kasir() {
             setIsCollapsed(!isCollapsed);
         }
     };
-
-    const menuItems = [
-        { id: 1, name: "Sate Kambing", price: 15000, image: "/sate-kambing.png", category: "Makanan", favorite: true },
-        { id: 2, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
-        { id: 3, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
-        { id: 4, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
-        { id: 5, name: "Sate Kambing", price: 15000, image: "/sate-kambing.png", category: "Makanan", favorite: true },
-        { id: 6, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
-        { id: 7, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
-        { id: 8, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
-        { id: 9, name: "Sate Kambing", price: 15000, image: "/sate-kambing.png", category: "Makanan", favorite: true },
-        { id: 10, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
-        { id: 11, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
-        { id: 12, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
-    ];
+    async function fetchData() {
+        try {
+            const storeId = localStorage.getItem('store_id');
+            const result = await apiService.getData(`/storeowner/daftar_menu/?store_id=${storeId}`);
+            setMenuItems(result.data);  
+        } catch (err) {
+            console.error(err.message);
+        }
+    }
+    
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const categories = ["Semua", "Makanan", "Minuman", "Favorit"];
 
@@ -71,24 +73,36 @@ export default function Kasir() {
                 {/* Daftar Menu */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {menuItems
-                    .filter((item) => activeCategory === "Semua" || item.category === activeCategory || (activeCategory === "Favorit" && item.favorite))
-                    .map((item) => (
-                        <div key={item.id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
-                            <Image src={item.image} width={300} height={200} alt={item.name} className="rounded-lg w-full h-40 object-cover" />
+                        .filter((item) => 
+                        activeCategory === "Semua" || 
+                        item.product_type === activeCategory || 
+                        (activeCategory === "Favorit" && item.favorite_status)
+                        )
+                        .map((item) => (
+                        <div key={item.product_id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
+                           <img
+                            src={item.product_picture ? `http://localhost:8000/media/${item.product_picture}` : '/default-image.png'}
+                            alt={item.product_name}
+                            className="rounded-lg w-full h-40 object-cover w-full"
+                            />
                             <div className="flex items-center justify-between mt-2">
-                                <h3 className="font-semibold text-sm text-black flex items-center">
-                                    {item.favorite && <span className="text-yellow-400 mr-1">⭐</span>}
-                                    {item.name}
-                                </h3>
-                                <p className="text-[#ECA641] font-bold text-sm whitespace-nowrap">
-                                    Rp {item.price.toLocaleString("id-ID")},00
-                                </p>
+                            <h3 className="font-semibold text-sm text-black flex items-center">
+                                {item.favorite_status && <span className="text-yellow-400 mr-1">⭐</span>}
+                                {item.product_name}
+                            </h3>
+                            <p className="text-[#ECA641] font-bold text-sm whitespace-nowrap">
+                                Rp {item.selling_price ? Number(item.selling_price).toLocaleString("id-ID") : "0"},00
+                            </p>
                             </div>
                         </div>
-                    ))}
+                        ))
+                    }
                 </div>
             </div>
         </div>
     </div>
   );
 }
+
+
+export default withAuth(Menu, ['2']);

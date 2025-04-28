@@ -47,12 +47,15 @@ const LoginPage = () => {
 
                 const token = response.data.token;
                 const role_id = response.data.user.role_id;
+                const reference_id = response.data.user.reference_id;
 
                 console.log("role yang dilempar", role_id);
                 
 
                 localStorage.setItem('token', token); // Store the JWT token in localStorage (or use sessionStorage)
                 localStorage.setItem('role_id', role_id); // Store the JWT token in localStorage (or use sessionStorage)
+                localStorage.setItem('store_id',reference_id ); // Menyimpan store_id sebagai reference_id
+
                 setLoading(false);
 
                 // Redirect based on role_id
