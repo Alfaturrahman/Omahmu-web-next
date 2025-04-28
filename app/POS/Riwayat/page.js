@@ -4,9 +4,11 @@ import { useState, useRef, useEffect  } from 'react';
 import { Eye, X } from "lucide-react";
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
+import * as apiService from 'services/authService';
+import withAuth from 'hoc/withAuth';
 import '@/globals.css';
 
-export default function Riwayat() {
+function Riwayat() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -19,10 +21,21 @@ export default function Riwayat() {
     const [filterTransactionStatus, setFilterTransactionStatus] = useState('');
     const filterRef = useRef(null);
     const modalRef = useRef(null);
+    const [riwayatDineIn, setRiwayatDineIn] = useState([]);
+    const [riwayatOnline, setRiwayatOnline] = useState([]);
+    const [detailPesanan, setDetailPesanan] = useState(null);  // Untuk menyimpan data detail pesanan
+    const [selectedPesananId, setSelectedPesananId] = useState(null);
 
-    const handleOpenModal = () => setShowModal(true);
-    const handleCloseModal = () => setShowModal(false);
-
+    const handleOpenModal = (idPesanan) => {
+        setSelectedPesananId(idPesanan);  
+        setShowModal(true);  
+    };
+    
+    const handleCloseModal = () => {
+        setShowModal(false);  
+        setSelectedPesananId(null); 
+    };
+    
     const toggleSidebar = () => {
         if (typeof window !== 'undefined' && window.innerWidth < 1024) {
         setIsSidebarOpen(!isSidebarOpen);
@@ -31,59 +44,33 @@ export default function Riwayat() {
         }
     };
 
-    const dineInData = [
-        {
-        orderCode: '15032023',
-        customerName: 'Alfaturriski',
-        orderDate: '10 MARET 2023',
-        orderStatus: 'Selesai',
-        transactionStatus: 'Cash',
-        orderType: 'DINE IN',
-        },
-        {
-        orderCode: '16022023',
-        customerName: 'Eka Fitri Anisa',
-        orderDate: '18 JANUARI 2023',
-        orderStatus: 'Selesai',
-        transactionStatus: 'TF',
-        orderType: 'DINE IN',
-        },
-        {
-        orderCode: '18032023',
-        customerName: 'Bustanul Ariffin',
-        orderDate: '11 MARET 2023',
-        orderStatus: 'Proses',
-        transactionStatus: 'Qris',
-        orderType: 'DINE IN',
-        },
-        ...Array.from({ length: 17 }, (_, i) => ({
-        orderCode: `OC${i + 4}`,
-        customerName: `Customer ${i + 4}`,
-        orderDate: '11 MARET 2023',
-        orderStatus: i % 2 === 0 ? 'Selesai' : 'Proses',
-        transactionStatus: ['Cash', 'Qris', 'TF'][i % 3],
-        orderType: ['DINE IN', 'ONLINE'][i % 2],
-        })),
-    ];
+    async function fetchData() {
+        try {
+            const result = await apiService.getData('/storeowner/riwayat_pesanan/');
+            setRiwayatDineIn(result.data.riwayat_pesanan_ditempat.rows); // menyimpan data dine-in
+            setRiwayatOnline(result.data.riwayat_pesanan_online.rows); // menyimpan data online
+        } catch (err) {
+            console.error(err.message);
+        }
+    }
+    
+    // Fungsi untuk mengambil data detail pesanan
+    async function fetchDetailData(pesananId) {
+        try {
+            const result = await apiService.getData(`/storeowner/riwayat_detail_pesanan/?store_code=A001&id=${pesananId}`);
+            setDetailPesanan(result.data); // Simpan data detail pesanan ke state
+            setShowModal(true);  // Tampilkan modal
+        } catch (err) {
+            console.error(err.message);
+        }
+    }
 
-    const onlineData = [
-        {
-        orderCode: '16022023',
-        customerName: 'Eka Fitri Anisa',
-        orderDate: '18 JANUARI 2023',
-        orderStatus: 'Selesai',
-        transactionStatus: 'TF',
-        orderType: 'ONLINE',
-        },
-        ...Array.from({ length: 17 }, (_, i) => ({
-        orderCode: `OC${i + 4}`,
-        customerName: `Customer ${i + 4}`,
-        orderDate: '11 MARET 2023',
-        orderStatus: i % 2 === 0 ? 'Selesai' : 'Proses',
-        transactionStatus: ['Cash', 'Qris', 'TF'][i % 3],
-        orderType: ['DINE IN', 'ONLINE'][i % 2],
-        })),
-    ];
+    useEffect(() => {
+        fetchData();
+        if (selectedPesananId) {
+            fetchDetailData(selectedPesananId);  // Panggil fetchDetailData saat ID pesanan berubah
+        }
+      }, [selectedPesananId]);
 
     const handleTabClick = (tab) => {
         setActiveTab(tab);
@@ -91,15 +78,22 @@ export default function Riwayat() {
     };
 
     const getData = () => {
-        return activeTab === 'dinein' ? dineInData : onlineData;
+        return activeTab === 'dinein' ? riwayatDineIn : riwayatOnline;
     };
 
+    // Mengaplikasikan filter pada data
     const applyFilters = (data) => {
         return data.filter(item => {
-        const matchDate = filterDate ? item.orderDate.includes(filterDate) : true;
-        const matchOrderStatus = filterOrderStatus ? item.orderStatus === filterOrderStatus : true;
-        const matchTransactionStatus = filterTransactionStatus ? item.transactionStatus === filterTransactionStatus : true;
-        return matchDate && matchOrderStatus && matchTransactionStatus;
+            const matchDate = filterDate ? item.date.includes(filterDate) : true;
+    
+            const matchOrderStatus = filterOrderStatus ? 
+                (filterOrderStatus === "Selesai" ? item.order_status === "completed" : item.order_status === filterOrderStatus) : true;
+    
+            const matchTransactionStatus = filterTransactionStatus ? 
+            (filterTransactionStatus === "Cash" ? item.payment_method === "cash" :
+            filterTransactionStatus === "Qris" ? item.payment_method === "qris" : true) : true;
+    
+            return matchDate && matchOrderStatus && matchTransactionStatus;
         });
     };
     
@@ -111,7 +105,6 @@ export default function Riwayat() {
 
     useEffect(() => {
         const handleClickOutside = (event) => {
-            // Untuk dropdown filter
             if (filterRef.current && !filterRef.current.contains(event.target)) {
             setShowFilterDropdown(false);
             }
@@ -255,31 +248,32 @@ export default function Riwayat() {
                         <tbody>
                         {currentData.length > 0 ? (
                             currentData.map((item, index) => (
-                            <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                <td className="py-3 px-4 relative">{index + 1 + (currentPage - 1) * itemsPerPage}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
-                                <td className="py-3 px-4 relative">{item.orderCode}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
-                                <td className="py-3 px-4 relative">{item.customerName}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
-                                <td className="py-3 px-4 relative">{item.orderDate}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
-                                <td className="py-3 px-4 relative">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.orderStatus === 'Selesai' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'}`}>{item.orderStatus}</span>
-                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.transactionStatus === 'Cash' ? 'bg-green-200 text-green-700' : item.transactionStatus === 'Qris' ? 'bg-blue-200 text-blue-700' : 'bg-red-200 text-red-700'}`}>{item.transactionStatus}</span>
-                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative flex items-center justify-center">
-                                <Eye className="cursor-pointer" onClick={handleOpenModal} />
-                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative">{item.orderType}</td>
-                            </tr>
+                                <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
+                                    <td className="py-3 px-4 relative">{index + 1 + (currentPage - 1) * itemsPerPage}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
+                                    <td className="py-3 px-4 relative">{item.order_code}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
+                                    <td className="py-3 px-4 relative">{item.customer_name}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
+                                    <td className="py-3 px-4 relative">{item.date}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
+                                    <td className="py-3 px-4 relative">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.order_status === 'completed' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'}`}>{item.order_status}</span>
+                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                    </td>
+                                    <td className="py-3 px-4 relative">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.payment_method === 'cash' ? 'bg-green-200 text-green-700' : item.payment_method === 'Qris' ? 'bg-blue-200 text-blue-700' : 'bg-red-200 text-red-700'}`}>{item.payment_method}</span>
+                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                    </td>
+                                    <td className="py-3 px-4 relative flex items-center justify-center">
+                                        <Eye className="cursor-pointer" onClick={() => handleOpenModal(item.order_id)} 
+ />
+                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                    </td>
+                                    <td className="py-3 px-4 relative">{item.is_dine_in ? 'Dine-in' : 'Online'}</td>
+                                </tr>
                             ))
                         ) : (
                             <tr>
-                            <td colSpan="8" className="py-6 text-center text-gray-400 text-sm">
-                                Tidak Ada Data
-                            </td>
+                                <td colSpan="8" className="py-6 text-center text-gray-400 text-sm">
+                                    Tidak Ada Data
+                                </td>
                             </tr>
                         )}
                         </tbody>
@@ -409,3 +403,5 @@ export default function Riwayat() {
     </div>
   );
 }
+
+export default withAuth(Riwayat,['2']);
