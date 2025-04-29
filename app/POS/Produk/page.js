@@ -2,8 +2,9 @@
 
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, Plus, MoreVertical, Package, Utensils, Beer, X, UploadCloud } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 const Produk = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -12,9 +13,10 @@ const Produk = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [errors, setErrors] = useState({});
-  
+  const [activeDropdown, setActiveDropdown] = useState(null);
+
   const [formData, setFormData] = useState({
     kodeProduk: '',
     stok: '',
@@ -27,78 +29,15 @@ const Produk = () => {
     image: null,
   });
 
-  const validateForm = () => {
-      let formErrors = {};
-      let isValid = true;
-
-      if (!formData.kodeProduk) {
-          formErrors.kodeProduk = 'Kode Produk tidak boleh kosong';
-          isValid = false;
-      }
-      if (!formData.stok) {
-          formErrors.stok = 'Stok tidak boleh kosong';
-          isValid = false;
-      }
-      if (!formData.namaProduk) {
-          formErrors.namaProduk = 'Nama Produk tidak boleh kosong';
-          isValid = false;
-      }
-      if (!formData.tipeProduk) {
-          formErrors.tipeProduk = 'Tipe Produk harus dipilih';
-          isValid = false;
-      }
-      if (!formData.keterangan) {
-          formErrors.keterangan = 'Keterangan harus dipilih';
-          isValid = false;
-      }
-      if (!formData.hargaModal) {
-          formErrors.hargaModal = 'Harga Modal tidak boleh kosong';
-          isValid = false;
-      }
-      if (!formData.hargaJual) {
-          formErrors.hargaJual = 'Harga Jual tidak boleh kosong';
-          isValid = false;
-      }
-      if (!formData.deskripsi) {
-          formErrors.deskripsi = 'Deskripsi tidak boleh kosong';
-          isValid = false;
-      }
-      if (!formData.image) {
-          formErrors.image = 'Gambar produk harus diupload';
-          isValid = false;
-      }
-
-      setErrors(formErrors);
-      return isValid;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-        Swal.fire({
-            icon: 'success',
-            title: 'Berhasil!',
-            text: 'Data berhasil disimpan!',
-            confirmButtonColor: '#F6B543',
-        });
-    }
-  };
-
-  const toggleSidebar = () => {
-    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-      setIsSidebarOpen(!isSidebarOpen);
-    } else {
-      setIsCollapsed(!isCollapsed);
-    }
-  };
+  const [isEditing, setIsEditing] = useState(false);
 
   const [products, setProducts] = useState([
-    { id: "P001", category: "Makanan", name: "TEMPE MENDOAN", stock: 0, price: 7000, image: "/kopi-susu.png", active: true },
-    { id: "P002", category: "Makanan", name: "SATE KAMBING", stock: 10, price: 7000, image: "/sate-kambing.png", active: true },
-    { id: "P003", category: "Makanan", name: "TELUR PUYUH", stock: 40, price: 7000, image: "/telur-puyuh.png", active: true },
-    { id: "P004", category: "Minuman", name: "ES TEH", stock: 40, price: 7000, image: "/es-teh.png", active: true },
-    { id: "P005", category: "Minuman", name: "KOPI SUSU", stock: 40, price: 7000, image: "/kopi-susu.png", active: false },
-    { id: "M002", category: "Minuman", name: "TEH TARIK", stock: 10, price: 7000, image: "/teh-tarik.png", active: true },
+    { id: "P001", category: "Makanan", name: "TEMPE MENDOAN", stock: 0, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/kopi-susu.png", active: true },
+    { id: "P002", category: "Makanan", name: "SATE KAMBING", stock: 10, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/sate-kambing.png", active: true },
+    { id: "P003", category: "Makanan", name: "TELUR PUYUH", stock: 40, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/telur-puyuh.png", active: true },
+    { id: "P004", category: "Minuman", name: "ES TEH", stock: 40, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/es-teh.png", active: true },
+    { id: "P005", category: "Minuman", name: "KOPI SUSU", stock: 40, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/kopi-susu.png", active: false },
+    { id: "M002", category: "Minuman", name: "TEH TARIK", stock: 10, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/teh-tarik.png", active: true },
   ]);
 
   const filteredProducts = products.filter((product) => {
@@ -107,10 +46,80 @@ const Produk = () => {
     return matchSearch && matchCategory;
   });
 
-  const toggleActive = (id) => {
-    setProducts(products.map(product =>
-      product.id === id ? { ...product, active: !product.active } : product
-    ));
+  const validateForm = () => {
+    let formErrors = {};
+    let isValid = true;
+
+    if (!formData.kodeProduk) {
+      formErrors.kodeProduk = 'Kode Produk tidak boleh kosong';
+      isValid = false;
+    }
+    if (!formData.stok) {
+      formErrors.stok = 'Stok tidak boleh kosong';
+      isValid = false;
+    }
+    if (!formData.namaProduk) {
+      formErrors.namaProduk = 'Nama Produk tidak boleh kosong';
+      isValid = false;
+    }
+    if (!formData.tipeProduk) {
+      formErrors.tipeProduk = 'Tipe Produk harus dipilih';
+      isValid = false;
+    }
+    if (!formData.keterangan) {
+      formErrors.keterangan = 'Keterangan harus dipilih';
+      isValid = false;
+    }
+    if (!formData.hargaModal) {
+      formErrors.hargaModal = 'Harga Modal tidak boleh kosong';
+      isValid = false;
+    }
+    if (!formData.hargaJual) {
+      formErrors.hargaJual = 'Harga Jual tidak boleh kosong';
+      isValid = false;
+    }
+    if (!formData.deskripsi) {
+      formErrors.deskripsi = 'Deskripsi tidak boleh kosong';
+      isValid = false;
+    }
+    if (!formData.image) {
+      formErrors.image = 'Gambar produk harus diupload';
+      isValid = false;
+    }
+
+    setErrors(formErrors);
+    return isValid;
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (validateForm()) {
+      Swal.fire({
+        icon: 'success',
+        title: isEditing ? 'Berhasil Diubah!' : 'Berhasil Ditambahkan!',
+        text: 'Data produk berhasil disimpan!',
+        confirmButtonColor: '#F6B543',
+      });
+      setIsModalOpen(false); // Tutup modal setelah submit
+      resetForm(); // Reset form setelah submit
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      kodeProduk: '',
+      stok: '',
+      namaProduk: '',
+      tipeProduk: '',
+      keterangan: '',
+      hargaModal: '',
+      hargaJual: '',
+      deskripsi: '',
+      image: null,
+    });
+    setErrors({});
+    setPreviewImage(null);
+    setIsEditing(false); // Reset status edit
   };
 
   const handleImageChange = (e) => {
@@ -126,8 +135,41 @@ const Produk = () => {
     }
   };
 
-  const handleStatCardClick = (category) => {
-    setSelectedCategory(category);
+  const openModalForEdit = (product) => {
+    setIsEditing(true);
+    setFormData({
+      kodeProduk: product.id,
+      stok: product.stock,
+      namaProduk: product.name,
+      tipeProduk: product.category,
+      keterangan: product.active ? 'Aktif' : 'Tidak Aktif',
+      hargaModal: product.hargaModal,
+      hargaJual: product.price,
+      deskripsi: product.deskripsi,
+      image: product.image,
+    });
+    setPreviewImage(product.image);
+    setIsModalOpen(true);
+  };
+
+  const openModalForAdd = () => {
+    setIsEditing(false);
+    resetForm(); // Reset form ketika modal tambah produk dibuka
+    setIsModalOpen(true);
+  };
+
+  const toggleActive = (id) => {
+    setProducts(products.map((product) =>
+      product.id === id ? { ...product, active: !product.active } : product
+    ));
+  };
+
+  const toggleSidebar = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setIsSidebarOpen(!isSidebarOpen);
+    } else {
+      setIsCollapsed(!isCollapsed);
+    }
   };
   
   return (
@@ -203,7 +245,7 @@ const Produk = () => {
             </div>
             <button
               className="bg-[#F6B543] text-white px-4 py-2 rounded-lg flex items-center justify-center text-sm whitespace-nowrap"
-              onClick={() => setIsModalOpen(true)} // <- Buka modal
+              onClick={openModalForAdd}
             >
               <Plus size={18} className="mr-2" /> Tambah Data
             </button>
@@ -235,7 +277,7 @@ const Produk = () => {
                   </div>
 
                   {/* Header: Toggle & More icon */}
-                  <div className="flex items-center justify-between px-3 pt-1">
+                  <div className="flex items-center justify-between px-3 pt-1 relative">
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -245,6 +287,72 @@ const Produk = () => {
                       />
                       <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:left-[2px] after:top-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
                     </label>
+
+                    {/* Icon titik tiga */}
+                    <div className="relative">
+                      <button
+                        onClick={() =>
+                          setActiveDropdown(activeDropdown === product.id ? null : product.id)
+                        }
+                        className="p-1 hover:bg-gray-100 rounded-full"
+                      >
+                        <MoreVertical className="w-5 h-5 text-gray-600" />
+                      </button>
+
+                      {activeDropdown === product.id && (
+                        <div className="absolute right-0 z-10 mt-2 w-28 bg-white border rounded-md shadow-lg text-sm">
+                          <button
+                            className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
+                            onClick={() => {
+                              setFormData({
+                                kodeProduk: product.id,
+                                stok: product.stock,
+                                namaProduk: product.name,
+                                tipeProduk: product.category,
+                                keterangan: product.keterangan,
+                                hargaModal: product.hargaModal,
+                                hargaJual: product.price,
+                                deskripsi: product.deskripsi,
+                                image: product.image,
+                              });
+                              setIsModalOpen(true);
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
+                            onClick={() => {
+                              Swal.fire({
+                                title: 'Yakin ingin menghapus?',
+                                text: `Produk ${product.name} akan dihapus!`,
+                                icon: 'warning',
+                                showCancelButton: true,
+                                confirmButtonColor: '#d33',
+                                cancelButtonColor: '#aaa',
+                                confirmButtonText: 'Ya, hapus!',
+                                cancelButtonText: 'Batal',
+                              }).then((result) => {
+                                if (result.isConfirmed) {
+                                  setProducts(products.filter((p) => p.id !== product.id));
+                                  Swal.fire({
+                                    icon: 'success',
+                                    title: 'Terhapus!',
+                                    text: 'Produk berhasil dihapus.',
+                                    confirmButtonColor: '#F6B543',
+                                  });
+                                }
+                              });
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex justify-center mt-2">
@@ -298,7 +406,7 @@ const Produk = () => {
                         />
                         {errors.kodeProduk && <p className="text-red-500 text-sm">{errors.kodeProduk}</p>}
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-black">Stok</label>
                         <input
@@ -340,9 +448,10 @@ const Produk = () => {
 
                     <div>
                       <label className="block text-sm font-medium text-black">Keterangan</label>
-                      <select className={`w-full border ${errors.tipeProduk ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
-                      value={formData.keterangan}
-                      onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
+                      <select
+                        className={`w-full border ${errors.keterangan ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                        value={formData.keterangan}
+                        onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
                       >
                         <option>Aktif</option>
                         <option>Tidak Aktif</option>
@@ -362,7 +471,7 @@ const Produk = () => {
                         />
                         {errors.hargaModal && <p className="text-red-500 text-sm">{errors.hargaModal}</p>}
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-medium text-black">Harga Jual</label>
                         <input
@@ -425,10 +534,8 @@ const Produk = () => {
           )}
         </div>
       </div>
-
     </div>
-  );
-};
+)};
 
 export default Produk;
 
