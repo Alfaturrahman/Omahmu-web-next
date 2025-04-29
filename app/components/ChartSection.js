@@ -2,27 +2,43 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const data = [
-  { name: 'Jan', makanan: 180, minuman: 120 },
-  { name: 'Feb', makanan: 200, minuman: 150 },
-  { name: 'Mar', makanan: 190, minuman: 220 },
-  { name: 'Apr', makanan: 220, minuman: 250 },
-  { name: 'Mei', makanan: 210, minuman: 260 },
-  { name: 'Jun', makanan: 180, minuman: 280 },
-  { name: 'Jul', makanan: 170, minuman: 300 },
-  { name: 'Aug', makanan: 300, minuman: 400 },
-  { name: 'Okt', makanan: 350, minuman: 670 },
-  { name: 'Nov', makanan: 400, minuman: 500 },
-  { name: 'Sept', makanan: 450, minuman: 450 },
-  { name: 'Des', makanan: 500, minuman: 400 },
+const monthNames = [
+  '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Des'
 ];
 
-export default function ChartSection() {
+export default function ChartSection({ data }) {
+  // Transform data dari API ke bentuk yang diinginkan
+  const formattedData = [];
+
+  if (data?.length) {
+    const grouped = {};
+
+    data.forEach((item) => {
+      const monthNumber = parseInt(item.bulan.split('-')[1], 10); // ambil bulan dari "2025-04"
+      const monthName = monthNames[monthNumber];
+
+      if (!grouped[monthName]) {
+        grouped[monthName] = { name: monthName, makanan: 0, minuman: 0 };
+      }
+
+      if (item.product_type === 'Makanan') {
+        grouped[monthName].makanan = item.total_penjualan;
+      } else if (item.product_type === 'Minuman') {
+        grouped[monthName].minuman = item.total_penjualan;
+      }
+    });
+
+    // Convert object ke array
+    for (const key in grouped) {
+      formattedData.push(grouped[key]);
+    }
+  }
+
   return (
     <div className="bg-[#FFF4E8] p-4 rounded-lg shadow-lg">
-      <h2 className="text-lg text-black font-semibold text-center mb-4">Grafik Penjualan Bulan Ini</h2>
-      <ResponsiveContainer width="100%" height={400}>
-        <LineChart data={data}>
+      <h2 className="text-lg text-black font-semibold text-center mb-4">Grafik Penjualan Tahun Ini</h2>
+      <ResponsiveContainer width="100%" height={480}>
+        <LineChart data={formattedData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis />

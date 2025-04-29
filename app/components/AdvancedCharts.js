@@ -1,35 +1,72 @@
 'use client';
 
+import { useState } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Legend, Tooltip, ResponsiveContainer } from 'recharts';
-
-const barData = [
-  { name: '1', makanan: 50, minuman: 30 },
-  { name: '2', makanan: 55, minuman: 35 },
-  { name: '3', makanan: 60, minuman: 40 },
-  { name: '4', makanan: 70, minuman: 50 },
-  { name: '5', makanan: 65, minuman: 55 },
-  { name: '6', makanan: 75, minuman: 60 },
-  { name: '7', makanan: 80, minuman: 65 }
-];
-
-const pieData = [
-  { name: 'Makanan', value: 75 },
-  { name: 'Minuman', value: 15 }
-];
 
 const COLORS = ['#ECA641', '#BFBFBF'];
 
-export default function AdvancedCharts() {
+export default function AdvancedCharts({ data }) {
+  const [currentWeek, setCurrentWeek] = useState(0); // Mulai dari minggu ke-0
+
+  function formatTanggal(tanggalString) {
+    const date = new Date(tanggalString);
+    const bulan = String(date.getMonth() + 1).padStart(2, '0');
+    const tanggal = String(date.getDate()).padStart(2, '0');
+    return `${bulan}-${tanggal}`;
+  }
+  
+  // Handle pie chart data
+  const pieRawData = data?.dashboard_presentase || [];
+  const pieData = pieRawData.map(item => ({
+    name: item.product_type,
+    value: parseFloat(item.persentase),
+  }));
+
+  // Handle bar chart data
+  const allBarData = [];
+  if (data?.dashboard_daily) {
+    const temp = {};
+
+    data.dashboard_daily.forEach(item => {
+      if (!temp[item.tanggal]) {
+        temp[item.tanggal] = { tanggal: formatTanggal(item.tanggal), makanan: 0, minuman: 0 };
+      }
+      if (item.product_type === 'Makanan') {
+        temp[item.tanggal].makanan = item.jumlah_terjual;
+      } else if (item.product_type === 'Minuman') {
+        temp[item.tanggal].minuman = item.jumlah_terjual;
+      }
+    });
+
+    allBarData.push(...Object.values(temp));
+  }
+
+  // Split data per minggu
+  const itemsPerPage = 7;
+  const totalWeeks = Math.ceil(allBarData.length / itemsPerPage);
+
+  const startIdx = currentWeek * itemsPerPage;
+  const endIdx = startIdx + itemsPerPage;
+  const currentBarData = allBarData.slice(startIdx, endIdx);
+
+  // Cek apakah semua penjualan 0
+  const isEmpty = currentBarData.every(item => item.makanan === 0 && item.minuman === 0);
+
+  // Menangani grafik kosong
+  const emptyBarData = currentBarData.length > 0 ? currentBarData : [{ tanggal: '', makanan: 0, minuman: 0 }];
+
   return (
     <div className="flex flex-col md:flex-row lg:flex-col items-center justify-center gap-6">
       
-      {/* Grafik Batang */}
-      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[320px]">
-        <h3 className="text-center text-black font-bold mb-4">Penjualan Terlaris</h3>
-        <div className="w-full h-full">
+      {/* Grafik Batang (Penjualan Harian) */}
+      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[380px]">
+        <h3 className="text-center text-black font-bold mb-2">Penjualan Harian</h3>
+      
+        {/* Grafik */}
+        <div className="w-full h-[260px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={barData}>
-              <XAxis dataKey="name" />
+            <BarChart data={emptyBarData}>
+              <XAxis dataKey="tanggal" />
               <YAxis />
               <Tooltip />
               <Legend />
@@ -38,9 +75,31 @@ export default function AdvancedCharts() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
+          {/* Navigasi Minggu */}
+          <div className="flex justify-center items-center gap-4 mb-2">
+          <button
+            className="px-2 py-1 bg-gray-300 text-black rounded disabled:opacity-50"
+            onClick={() => setCurrentWeek(prev => prev - 1)}
+            disabled={currentWeek === 0}
+          >
+            &lt;
+          </button>
+          <span className="text-black font-medium">
+            Minggu {currentWeek + 1} / {totalWeeks}
+          </span>
+          <button
+            className="px-2 py-1 bg-gray-300 text-black rounded disabled:opacity-50"
+            onClick={() => setCurrentWeek(prev => prev + 1)}
+            disabled={currentWeek >= totalWeeks - 1}
+          >
+            &gt;
+          </button>
+        </div>
+
       </div>
 
-      {/* Grafik Pie */}
+      {/* Grafik Pie (Produk Terlaris) */}
       <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[320px]">
         <h2 className="text-center text-black font-bold mb-4">Produk Terlaris</h2>
         <div className="w-full h-[200px]">
