@@ -29,8 +29,9 @@ function Dashboard() {
 
   async function fetchData() {
     setLoading(true); // Mulai loading
+    const storeId = localStorage.getItem('store_id');
     try {
-      let url = `/storeowner/dashboard/?store_id=2`;
+      let url = `/storeowner/dashboard/?store_id=${storeId}`;
       if (selectedDate) {
         const { year, month, day } = selectedDate;
         url += `&year=${year}&month=${month}&day=${day}`;

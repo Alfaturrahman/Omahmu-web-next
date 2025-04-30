@@ -5,6 +5,8 @@ import Header from '@/components/Navbar';
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Plus, MoreVertical, Package, Utensils, Beer, X, UploadCloud } from 'lucide-react';
 import Swal from 'sweetalert2';
+import * as apiService from 'services/authService';
+import withAuth from 'hoc/withAuth';
 
 const Produk = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -16,7 +18,13 @@ const Produk = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [errors, setErrors] = useState({});
   const [activeDropdown, setActiveDropdown] = useState(null);
-
+  const [products, setProducts] = useState([]);
+  const [dashboardProducts, setDashboardProducts] = useState({
+    total: 0,
+    makanan: 0,
+    minuman: 0,
+  });
+  const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     kodeProduk: '',
     stok: '',
@@ -27,25 +35,82 @@ const Produk = () => {
     hargaJual: '',
     deskripsi: '',
     image: null,
+    keterangan: true, // ✅ default boolean
   });
 
-  const [isEditing, setIsEditing] = useState(false);
+  const fetchProducts = async () => {
+    try {
+      const storeId = localStorage.getItem('store_id');
+      const response = await apiService.getData(`/storeowner/daftar_produk/?store_id=${storeId}`);
+      setProducts(response.data); // Sesuaikan dengan format API kamu
+    } catch (error) {
+      console.error("Gagal mengambil produk:", error);
+    }
+  };
+  
+  const fetchDashboardProducts = async () => {
+    try {
+      const storeId = localStorage.getItem('store_id');
+      const response = await apiService.getData(`/storeowner/summary_produk/?store_id=${storeId}`);
+      setDashboardProducts({
+        total: response.data[0].total_product,
+        makanan: response.data[0].total_makanan,
+        minuman: response.data[0].total_minuman,
+      });
+    } catch (error) {
+      console.error("Gagal mengambil produk:", error);
+    }
+  };
 
-  const [products, setProducts] = useState([
-    { id: "P001", category: "Makanan", name: "TEMPE MENDOAN", stock: 0, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/kopi-susu.png", active: true },
-    { id: "P002", category: "Makanan", name: "SATE KAMBING", stock: 10, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/sate-kambing.png", active: true },
-    { id: "P003", category: "Makanan", name: "TELUR PUYUH", stock: 40, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/telur-puyuh.png", active: true },
-    { id: "P004", category: "Minuman", name: "ES TEH", stock: 40, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/es-teh.png", active: true },
-    { id: "P005", category: "Minuman", name: "KOPI SUSU", stock: 40, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/kopi-susu.png", active: false },
-    { id: "M002", category: "Minuman", name: "TEH TARIK", stock: 10, hargaModal: 3000, deskripsi: "Makanan Lezat", price: 7000, image: "/teh-tarik.png", active: true },
-  ]);
+  useEffect(() => {
+    fetchProducts();
+    fetchDashboardProducts();
+  }, []);
+
+  const handleDelete = async (product) => {
+    Swal.fire({
+      title: 'Yakin ingin menghapus?',
+      text: `Produk ${product.product_name} akan dihapus!`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#aaa',
+      confirmButtonText: 'Ya, hapus!',
+      cancelButtonText: 'Batal',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await apiService.deleteData(`/storeowner/delete_produk/${product.product_id}/`);
+  
+          setProducts((prev) => prev.filter((p) => p.product_id !== product.product_id));
+  
+          Swal.fire({
+            icon: 'success',
+            title: 'Terhapus!',
+            text: 'Produk berhasil dihapus.',
+            confirmButtonColor: '#F6B543',
+          });
+        } catch (error) {
+          console.error("Gagal menghapus produk:", error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: 'Terjadi kesalahan saat menghapus produk.',
+            confirmButtonColor: '#F6B543',
+          });
+        }
+      }
+    });
+  
+    setActiveDropdown(null);
+  };
 
   const filteredProducts = products.filter((product) => {
-    const matchSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchCategory = selectedCategory ? product.category === selectedCategory : true;
+    const matchSearch = product.product_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCategory = selectedCategory ? product.product_type === selectedCategory : true;
     return matchSearch && matchCategory;
   });
-
+  
   const validateForm = () => {
     let formErrors = {};
     let isValid = true;
@@ -91,17 +156,61 @@ const Produk = () => {
     return isValid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
+    if (!validateForm()) return;
+
+    console.log("isEditing", isEditing );
+    
+  
+    const storeId = localStorage.getItem('store_id');
+    const formPayload = new FormData();
+  
+    formPayload.append('store_id', storeId);
+    formPayload.append('product_code', formData.kodeProduk);
+    formPayload.append('stock', formData.stok);
+    formPayload.append('product_name', formData.namaProduk);
+    formPayload.append('product_type', formData.tipeProduk);
+    formPayload.append('description', formData.deskripsi);
+    formPayload.append('capital_price', formData.hargaModal);
+    formPayload.append('selling_price', formData.hargaJual);
+    formPayload.append('is_active', String(formData.keterangan === 'true'));
+
+    console.log("TES", formData.keterangan);
+    
+
+    // Jika gambar baru dipilih
+    if (formData.image instanceof File) {
+      formPayload.append('product_picture', formData.image);
+    }
+  
+    try {
+      if (isEditing) {
+        // Edit produk
+        await apiService.putData(`/storeowner/update_produk/${formData.productId}/`, formPayload);
+      } else {
+        // Tambah produk
+        await apiService.postData('/storeowner/insert_produk/', formPayload);
+      }
+  
       Swal.fire({
         icon: 'success',
         title: isEditing ? 'Berhasil Diubah!' : 'Berhasil Ditambahkan!',
         text: 'Data produk berhasil disimpan!',
         confirmButtonColor: '#F6B543',
       });
-      setIsModalOpen(false); // Tutup modal setelah submit
-      resetForm(); // Reset form setelah submit
+  
+      setIsModalOpen(false);
+      resetForm();
+      fetchProducts();
+    } catch (error) {
+      console.error("Gagal menyimpan produk:", error);
+      Swal.fire({
+        icon: 'error',
+        title: 'Gagal!',
+        text: 'Terjadi kesalahan saat menyimpan data.',
+        confirmButtonColor: '#F6B543',
+      });
     }
   };
 
@@ -125,15 +234,18 @@ const Produk = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
+      setFormData({ ...formData, image: file }); // simpan file
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result);
       };
       reader.readAsDataURL(file);
     } else {
+      setFormData({ ...formData, image: null });
       setPreviewImage(null);
     }
   };
+  
 
   const openModalForEdit = (product) => {
     setIsEditing(true);
@@ -158,10 +270,25 @@ const Produk = () => {
     setIsModalOpen(true);
   };
 
-  const toggleActive = (id) => {
-    setProducts(products.map((product) =>
-      product.id === id ? { ...product, active: !product.active } : product
-    ));
+  const toggleActive = async (id) => {
+    try {
+      const product = products.find(p => p.product_id === id); 
+      if (!product) return;
+  
+      const updatedStatus = !product.is_active; // false -> true, true -> false
+  
+      const statusString = updatedStatus ? 'true' : 'false';
+  
+      await apiService.putData(`/storeowner/update_status/?product_id=${id}&is_active=${statusString}`);
+  
+      setProducts(prev =>
+        prev.map(p => (p.product_id === id ? { ...p, is_active: updatedStatus } : p))
+      );
+  
+      fetchProducts();
+    } catch (error) {
+      console.error('Gagal update status:', error.message);
+    }
   };
 
   const toggleSidebar = () => {
@@ -182,10 +309,26 @@ const Produk = () => {
         <div className="flex-1 p-4 sm:p-6 overflow-y-auto min-h-0">
           {/* Statistik Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <StatCard title="Total Produk" value="100" icon={Package} onClick={() => handleStatCardClick(null)} />
-            <StatCard title="Total Makanan" value="50" icon={Utensils} onClick={() => handleStatCardClick("Makanan")} />
-            <StatCard title="Total Minuman" value="50" icon={Beer} onClick={() => handleStatCardClick("Minuman")} />
+            <StatCard
+              title="Total Produk"
+              value={dashboardProducts.total}
+              icon={Package}
+              onClick={() => handleStatCardClick(null)}
+            />
+            <StatCard
+              title="Total Makanan"
+              value={dashboardProducts.makanan}
+              icon={Utensils}
+              onClick={() => handleStatCardClick("Makanan")}
+            />
+            <StatCard
+              title="Total Minuman"
+              value={dashboardProducts.minuman}
+              icon={Beer}
+              onClick={() => handleStatCardClick("Minuman")}
+            />
           </div>
+
 
           {/* Search & Filter */}
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-6">
@@ -282,8 +425,8 @@ const Produk = () => {
                       <input
                         type="checkbox"
                         className="sr-only peer"
-                        checked={product.active}
-                        onChange={() => toggleActive(product.id)}
+                        checked={product.is_active}
+                        onChange={() => toggleActive(product.product_id)}
                       />
                       <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 after:content-[''] after:absolute after:left-[2px] after:top-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
                     </label>
@@ -292,31 +435,34 @@ const Produk = () => {
                     <div className="relative">
                       <button
                         onClick={() =>
-                          setActiveDropdown(activeDropdown === product.id ? null : product.id)
+                          setActiveDropdown(activeDropdown === product.product_id ? null : product.product_id) // Ganti `product.id` ke `product.product_id`
                         }
                         className="p-1 hover:bg-gray-100 rounded-full"
                       >
                         <MoreVertical className="w-5 h-5 text-gray-600" />
                       </button>
 
-                      {activeDropdown === product.id && (
+                      {activeDropdown === product.product_id && ( // Periksa dengan `product.product_id` yang benar
                         <div className="absolute right-0 z-10 mt-2 w-28 bg-white border rounded-md shadow-lg text-sm">
                           <button
                             className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
                             onClick={() => {
                               setFormData({
-                                kodeProduk: product.id,
+                                kodeProduk: product.product_code,
                                 stok: product.stock,
-                                namaProduk: product.name,
-                                tipeProduk: product.category,
-                                keterangan: product.keterangan,
-                                hargaModal: product.hargaModal,
-                                hargaJual: product.price,
-                                deskripsi: product.deskripsi,
-                                image: product.image,
+                                namaProduk: product.product_name,
+                                tipeProduk: product.product_type,
+                                keterangan: product.is_active,
+                                hargaModal: product.capital_price,
+                                hargaJual: product.selling_price,
+                                deskripsi: product.description,
+                                image: product.product_picture,
+                                productId: product.product_id,
                               });
                               setIsModalOpen(true);
-                              setActiveDropdown(null);
+                              setActiveDropdown(null); // Tutup dropdown setelah memilih "Edit"
+                              setPreviewImage(`http://localhost:8000${product.product_picture}`);
+                              setIsEditing(true);
                             }}
                           >
                             Edit
@@ -324,29 +470,7 @@ const Produk = () => {
 
                           <button
                             className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
-                            onClick={() => {
-                              Swal.fire({
-                                title: 'Yakin ingin menghapus?',
-                                text: `Produk ${product.name} akan dihapus!`,
-                                icon: 'warning',
-                                showCancelButton: true,
-                                confirmButtonColor: '#d33',
-                                cancelButtonColor: '#aaa',
-                                confirmButtonText: 'Ya, hapus!',
-                                cancelButtonText: 'Batal',
-                              }).then((result) => {
-                                if (result.isConfirmed) {
-                                  setProducts(products.filter((p) => p.id !== product.id));
-                                  Swal.fire({
-                                    icon: 'success',
-                                    title: 'Terhapus!',
-                                    text: 'Produk berhasil dihapus.',
-                                    confirmButtonColor: '#F6B543',
-                                  });
-                                }
-                              });
-                              setActiveDropdown(null);
-                            }}
+                            onClick={() => handleDelete(product)}
                           >
                             Hapus
                           </button>
@@ -357,20 +481,20 @@ const Produk = () => {
 
                   <div className="flex justify-center mt-2">
                     <img
-                      src={product.image}
-                      alt={product.name}
+                      src={`http://localhost:8000${product.product_picture}`}
+                      alt={product.product_name}
                       className="w-40 h-28 object-cover rounded"
                     />
                   </div>
 
-                  <div className="px-3 pt-2 text-xs text-gray-500">#{product.id}</div>
+                  <div className="px-3 pt-2 text-xs text-gray-500">#{product.product_code}</div>
                   <div className="px-3 flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-800">{product.name}</span>
+                    <span className="text-sm font-semibold text-gray-800">{product.product_name}</span>
                     <span className="text-xs text-gray-500">Stok: {product.stock}</span>
                   </div>
 
                   <div className="px-3 pb-3 text-right text-sm font-semibold text-gray-800">
-                    RP {product.price.toLocaleString('id-ID')},00
+                    RP {product.selling_price.toLocaleString('id-ID')},00
                   </div>
                 </div>
               ))
@@ -382,7 +506,7 @@ const Produk = () => {
             <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
               <div className="bg-white rounded-xl p-6 sm:p-8 w-[95%] md:w-[900px] max-h-[90vh] overflow-y-auto shadow-lg">
                 <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-2xl font-bold text-black">Tambah Produk</h2>
+                  <h2 className="text-2xl font-bold text-black">{isEditing ? 'Edit Produk' : 'Tambah Produk'}</h2>
                   <button
                     className="text-gray-500 hover:text-black"
                     onClick={() => setIsModalOpen(false)}
@@ -391,7 +515,7 @@ const Produk = () => {
                   </button>
                 </div>
 
-                <form className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <form encType="multipart/form-data" className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Bagian kiri: form */}
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -453,8 +577,8 @@ const Produk = () => {
                         value={formData.keterangan}
                         onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
                       >
-                        <option>Aktif</option>
-                        <option>Tidak Aktif</option>
+                        <option value="true">Aktif</option>
+                        <option value="false">Tidak Aktif</option>
                       </select>
                       {errors.keterangan && <p className="text-red-500 text-sm">{errors.keterangan}</p>}
                     </div>
@@ -525,7 +649,7 @@ const Produk = () => {
                       type="submit"
                       className="px-6 py-2 rounded-lg bg-[#F6B543] text-white font-medium hover:bg-[#e2a530]"
                     >
-                      Simpan
+                      {isEditing ? 'Simpan Perubahan' : 'Tambah Produk'}
                     </button>
                   </div>
                 </form>
@@ -537,7 +661,7 @@ const Produk = () => {
     </div>
 )};
 
-export default Produk;
+export default withAuth(Produk,['2']);
 
 function StatCard({ icon: Icon = Package, title, value, onClick }) {
   return (

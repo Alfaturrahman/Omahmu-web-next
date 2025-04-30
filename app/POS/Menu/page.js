@@ -81,7 +81,7 @@ function Menu() {
                         .map((item) => (
                         <div key={item.product_id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
                            <img
-                            src={item.product_picture ? `http://localhost:8000/media/${item.product_picture}` : '/default-image.png'}
+                            src={item.product_picture ? `http://localhost:8000${item.product_picture}` : '/default-image.png'}
                             alt={item.product_name}
                             className="rounded-lg w-full h-40 object-cover w-full"
                             />

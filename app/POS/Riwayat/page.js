@@ -57,11 +57,17 @@ function Riwayat() {
     // Fungsi untuk mengambil data detail pesanan
     async function fetchDetailData(pesananId) {
         try {
-            const result = await apiService.getData(`/storeowner/riwayat_detail_pesanan/?store_code=A001&id=${pesananId}`);
-            setDetailPesanan(result.data); // Simpan data detail pesanan ke state
-            setShowModal(true);  // Tampilkan modal
+            const result = await apiService.getData(`/storeowner/riwayat_detail_pesanan/?order_id=${pesananId}`);
+            
+            // Pastikan data ada dan memiliki struktur yang benar
+            if (result.data && result.data.length > 0 && result.data[0].get_order_json) {
+                setDetailPesanan(result.data[0].get_order_json); // Simpan data detail pesanan ke state
+                setShowModal(true);  // Tampilkan modal
+            } else {
+                console.error("Data detail pesanan tidak ditemukan.");
+            }
         } catch (err) {
-            console.error(err.message);
+            console.error("Terjadi kesalahan:", err.message);
         }
     }
 
@@ -280,11 +286,11 @@ function Riwayat() {
                         </table>
                     </div>
 
-                    {showModal && (
+                    {showModal && detailPesanan && (
                         <div ref={modalRef} className="fixed inset-0 z-50 flex items-center justify-center backdrop-brightness-50">
                             <div className="bg-white text-black rounded-lg w-[90%] md:w-[500px] max-h-[90vh] overflow-y-auto p-4 sm:p-6 relative">
                                 {/* Header */}
-                                <div className="flex justify-between items-cente pb-4">
+                                <div className="flex justify-between items-center pb-4">
                                     <h2 className="text-xl font-bold text-center w-full">Detail Pesanan</h2>
                                     <button className="absolute right-6" onClick={handleCloseModal}>
                                         <X className="w-5 h-5 cursor-pointer" />
@@ -296,82 +302,55 @@ function Riwayat() {
                                     <div className="flex flex-row justify-between gap-2">
                                         <div className='border-2 border-gray-300 p-2 rounded-md'>
                                             <p className="text-xs text-gray-500">Nama Customer</p>
-                                            <p className="font-medium">Alfatturrizki</p>
+                                            <p className="font-medium">{detailPesanan.customer_name}</p>
                                         </div>
-                                        <div className='border-2 border-gray-300 p-2 rounded-md text-right'>
+                                        <div className='border-2 border-gray-300 p-2 rounded-md text'>
                                             <p className="text-xs text-gray-500">Tanggal Pemesanan</p>
-                                            <p className="font-medium">10 Maret 2023</p>
+                                            <p className="font-medium">{detailPesanan.order_date}</p>
                                         </div>
                                     </div>
-
 
                                     <div className="mt-4 pt-2">
                                         <div className="flex justify-between">
                                             <p className="font-semibold text-black">Detail Pesanan</p>
-                                            <p className="font-semibold text-xs md:text-sm text-gray-500">Kode Pesanan : 15032023</p>
+                                            <p className="font-semibold text-xs md:text-sm text-gray-500">
+                                                Kode Pesanan : {detailPesanan.order_code}
+                                            </p>
                                         </div>
 
-                                        {/* Item 1 */}
-                                        <div className="flex gap-3 mt-4">
-                                            <img
-                                                src="/sate-kambing.png"
-                                                alt="Kopi Susu"
-                                                className="w-20 h-16 rounded object-cover"
-                                            />
-
-                                            <div className="flex justify-between w-full">
-                                                {/* Nama dan Kategori */}
-                                                <div className="flex flex-col justify-start">
-                                                <p className="font-semibold ">Sate kambing</p>
-                                                <p className="text-gray-500 text-xs">Makanan</p>
-                                                </div>
-
-                                                {/* Harga di bawah kanan */}
-                                                <div className="flex flex-row gap-2 justify-end items-end">
-                                                    <p className="font-bold text-sm">1x</p>
-                                                    <p className="font-bold text-sm">Rp 15.000,00</p>
+                                        {detailPesanan.items.map((item, index) => (
+                                            <div key={index} className={`flex gap-3 mt-4 ${index > 0 ? "pt-2 border-t" : ""}`}>
+                                                <img
+                                                    src={`http://localhost:8000${item.product_picture}`}
+                                                    alt={item.product_name}
+                                                    className="w-20 h-16 rounded object-cover"
+                                                />
+                                                <div className="flex justify-between w-full">
+                                                    <div className="flex flex-col justify-start">
+                                                        <p className="font-semibold">{item.product_name}</p>
+                                                        <p className="text-gray-500 text-xs">{item.product_type}</p>
+                                                    </div>
+                                                    <div className="flex flex-row gap-2 justify-end items-end">
+                                                        <p className="font-bold text-sm">{item.quantity}x</p>
+                                                        <p className="font-bold text-sm">Rp {Number(item.price).toLocaleString("id-ID")}</p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-
-
-                                        {/* Item 2 */}
-                                        <div className="flex gap-3 mt-4 pt-2 border-t">
-                                            <img
-                                                src="/kopi-susu.png"
-                                                alt="Kopi Susu"
-                                                className="w-20 h-16 rounded object-cover"
-                                            />
-
-                                            <div className="flex justify-between w-full">
-                                                {/* Nama dan Kategori */}
-                                                <div className="flex flex-col justify-start">
-                                                <p className="font-semibold">Kopi Susu</p>
-                                                <p className="text-gray-500 text-xs">Minuman</p>
-                                                </div>
-
-                                                {/* Harga di bawah kanan */}
-                                                <div className="flex flex-row gap-2 justify-end items-end">
-                                                    <p className="font-bold text-sm">1x</p>
-                                                    <p className="font-bold text-sm">Rp 7.000,00</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
+                                        ))}
 
                                         {/* Total Section */}
                                         <div className="mt-5 border-t pt-2 text-sm">
                                             <div className="flex justify-between">
                                                 <span>Item</span>
-                                                <span className='font-semibold  text-black'>2 (items)</span>
+                                                <span className='font-semibold  text-black'>{detailPesanan.total_items} (items)</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span>Subtotal</span>
-                                                <span className='font-semibold  text-black'>Rp 22.000,00</span>
+                                                <span className='font-semibold  text-black'>Rp {Number(detailPesanan.total_amount).toLocaleString("id-ID")}</span>
                                             </div>
                                             <div className="flex justify-between">
                                                 <span>Keterangan</span>
-                                                <span className='font-semibold text-black'>Dine In</span>
+                                                <span className='font-semibold text-black'>{detailPesanan.is_dine_in ? "Dine In" : "Take Away"}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -380,7 +359,7 @@ function Riwayat() {
                                 {/* Footer */}
                                 <div className="flex flex-row justify-between border-t mt-5 py-3 text-right font-semibold">
                                     <p>Total</p>
-                                    <p>Rp 22.0000,00</p>
+                                    <p>Rp {Number(detailPesanan.total_amount).toLocaleString("id-ID")}</p>
                                 </div>
                             </div>
                         </div>

@@ -431,7 +431,7 @@ function Kasir() {
                                 <div key={item.product_id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
                                     {/* Menampilkan gambar dari localhost/media */}
                                     <img
-                                        src={item.product_picture ? `http://localhost:8000/media/${item.product_picture}` : '/default-image.png'}
+                                        src={item.product_picture ? `http://localhost:8000/${item.product_picture}` : '/default-image.png'}
                                         alt={item.product_name}
                                         className="rounded-lg w-full h-40 object-cover"
                                     />
@@ -504,7 +504,7 @@ function Kasir() {
                             cart.map((item) => (
                                 <div key={item.product_id} className="flex items-center border-b pb-3 mb-3">
                                     <img
-                                        src={item.product_picture ? `http://localhost:8000/media/${item.product_picture}` : '/default-image.png'}
+                                        src={item.product_picture ? `http://localhost:8000${item.product_picture}` : '/default-image.png'}
                                         alt={item.product_name}
                                         className="rounded-lg w-[60px] h-[60px] object-cover"
                                     />
