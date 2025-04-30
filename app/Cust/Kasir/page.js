@@ -8,8 +8,11 @@ import Swal from "sweetalert2";
 import Flag from "react-world-flags";
 import { ShoppingCart, X, Minus, Plus, ScanQrCode, Calendar, Clock   } from 'lucide-react';
 import '@/globals.css';
+import withAuth from 'hoc/withAuth';
+import * as apiService from 'services/authService';
 
-export default function Kasir() {
+
+function Kasir() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [activeCategory, setActiveCategory] = useState("Semua");
@@ -24,6 +27,13 @@ export default function Kasir() {
     const [pickupTime, setPickupTime] = useState("");
     const [selectedCountry, setSelectedCountry] = useState("ID");
     const [errors, setErrors] = useState({});
+    const [listMenu, setListMenu] = useState([]);
+    const [deliveryAddress, setDeliveryAddress] = useState("");
+    const [remarks, setRemarks] = useState("");
+    const [customerName, setCustomerName] = useState("");
+    const [orderDate, setOrderDate] = useState("");
+    const [isCashModalOpen, setIsCashModalOpen] = useState(false);
+
 
     const [formData, setFormData] = useState({
         phoneNumber: "",
@@ -36,6 +46,32 @@ export default function Kasir() {
         [name]: value,
     }));
     };
+
+    async function fetchDataMenu() {
+        try {
+            const storeId = 5; // atau localStorage.getItem('store_id')
+            const result = await apiService.getData(`/storeowner/daftar_menu/?store_id=${storeId}`);
+    
+            const formatted = result.data.map((item) => ({
+                id: item.product_id,
+                productCode: item.product_code,
+                name: item.product_name,
+                stock: item.stock,
+                price: Number(item.selling_price),
+                image: item.product_picture,
+                category: item.product_type,
+                favorite: item.favorite_status || false
+            }));
+    
+            setListMenu(formatted);
+        } catch (err) {
+            console.error(err.message);
+        }
+    }
+    
+    useEffect(() => {
+        fetchDataMenu();
+    }, []);
     
     const countryFlags = {
         ID: { code: "+62", label: "ID" },
@@ -44,6 +80,108 @@ export default function Kasir() {
         IN: { code: "+91", label: "IN" }
     };
 
+    const handleBayarSekarang = () => {
+        if (!validateForm()) return;
+    
+        if (selected === "qris") {
+            setShowQrisModal(true); // Modal QRIS muncul
+        } else if (selected === "cash") {
+            setIsCashModalOpen(true); // Modal Cash muncul
+        } else {
+            Swal.fire({
+                icon: "info",
+                title: "Metode pembayaran belum tersedia",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#ECA641",
+            });
+        }
+    };
+
+    const handleConfirmBayar = () => {
+        insertOrder();
+    };
+
+    const insertOrder = async () => {
+        try {
+            if (!customerName || !orderDate || !selected || cart.length === 0) {
+                Swal.fire({
+                    icon: "warning",
+                    title: "Lengkapi semua data sebelum membayar",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+                return;
+            }
+    
+            const payload = {
+                customer_name: customerName,
+                date: orderDate,
+                total_amount: total,
+                order_status: "completed",
+                payment_method: selected,
+                is_pre_order: false,
+                is_delivered: false,
+                is_dine_in: true,
+                remarks: remarks,
+                pickup_date: null,
+                pickup_time: null,
+                no_hp: formData.phoneNumber || null,  // Menggunakan formData.phoneNumber
+                delivery_address: deliveryAddress,
+                order_items: cart.map(item => ({
+                    product_id: item.id,
+                    selling_price: item.price,
+                    product_type: item.category,
+                    item: item.quantity,
+                })),
+            };
+    
+            // const storeId = localStorage.getItem('store_id');
+            const storeId = 5;
+            if (!storeId) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Store ID tidak ditemukan",
+                    text: "Silakan login ulang.",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+                return;
+            }
+    
+            const response = await apiService.postData(`/storeowner/insert_order/?store_id=${storeId}`, payload);
+    
+            Swal.fire({
+                icon: "success",
+                title: "Pesanan Berhasil Dibuat!",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#ECA641",
+            });
+    
+            closeCart();
+            setCustomerName("");
+            setOrderDate("");
+            setFormData({
+                ...formData,
+                phoneNumber: "",  // Reset phoneNumber dalam formData
+            });
+            setDeliveryAddress("");
+            setRemarks("");
+            setSelected(null);
+            fetchDataMenu();
+            setShowQrisModal(false); // Modal QRIS muncul
+    
+        } catch (err) {
+            console.error(err.message);
+            Swal.fire({
+                icon: "error",
+                title: "Gagal Membuat Pesanan",
+                text: err.message,
+                confirmButtonText: "OK",
+                confirmButtonColor: "#ECA641",
+            });
+        }
+    };
+    
     const handlePayment = () => {
         if (!validateForm()) {
             // Jika form tidak valid, tidak lanjut proses
@@ -71,14 +209,6 @@ export default function Kasir() {
             setIsCollapsed(!isCollapsed);
         }
     };
-
-    const menuItems = [
-        { id: 1, name: "Sate Kambing", price: 15000, image: "/sate-kambing.png", category: "Makanan", favorite: true },
-        { id: 2, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
-        { id: 3, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
-        { id: 4, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
-        { id: 5, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
-    ];
 
     const categories = ["Semua", "Makanan", "Minuman", "Favorit"];
 
@@ -210,8 +340,18 @@ export default function Kasir() {
                                 <hr className="my-2" />
                                 <p className="text-gray-600">Total Transaksi</p>
                                 <h3 className="text-xl font-bold text-black">Rp {total.toLocaleString("id-ID")}</h3>
+
+                                {/* Tombol Konfirmasi */}
                                 <button
-                                    className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
+                                    className="mt-4 bg-[#ECA641] text-white py-2 px-4 rounded"
+                                    onClick={handleConfirmBayar}
+                                >
+                                    Konfirmasi Pembayaran
+                                </button>
+
+                                {/* Tombol Tutup */}
+                                <button
+                                    className="mt-2 bg-red-500 text-white py-2 px-4 rounded"
                                     onClick={() => setShowQrisModal(false)}
                                 >
                                     Tutup
@@ -226,27 +366,34 @@ export default function Kasir() {
                             ? "grid-cols-3 pr-[370px]"  // Cart terbuka, hanya 2 kolom dan beri ruang untuk cart
                             : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 pr-0"  // Normal grid dengan ukuran kolom responsif
                     }`}>
-                        {menuItems
-                            .filter((item) => activeCategory === "Semua" || item.category === activeCategory || (activeCategory === "Favorit" && item.favorite))
-                            .map((item) => (
-                                <div key={item.id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
-                                    <Image src={item.image} width={300} height={200} alt={item.name} className="rounded-lg w-full h-40 object-cover" />
-                                    <div className="mt-2">
-                                        <h3 className="font-semibold text-sm text-black flex items-center">
-                                            {item.favorite && <span className="text-yellow-400 mr-1">⭐</span>}
-                                            {item.name}
-                                        </h3>
-                                        <div className="flex justify-between items-end mt-2">
-                                            {/* Mengatur harga di bawah nama dan di ujung kanan */}
-                                            <p className="text-[#ECA641] font-bold text-sm ml-auto">Rp {item.price.toLocaleString("id-ID")},00</p>
+                            {listMenu
+                                .filter((item) => activeCategory === "Semua" || item.category === activeCategory || (activeCategory === "Favorit" && item.favorite))
+                                .map((item) => (
+                                    <div key={item.product_id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
+                                        <img
+                                            src={item.image ? `http://localhost:8000${item.image}` : '/default-image.png'}
+                                            alt={item.name}
+                                            className="rounded-lg w-full h-40 object-cover"
+                                        />
+                                        <div className="mt-2">
+                                            <h3 className="font-semibold text-sm text-black flex items-center">
+                                                {item.favorite && <span className="text-yellow-400 mr-1">⭐</span>}
+                                                {item.name}
+                                            </h3>
+                                            <div className="flex justify-between items-end mt-2">
+                                                <p className="text-gray-500 text-xs mt-1">Stok: {item.stock}</p>
+                                                <p className="text-[#ECA641] font-bold text-sm ml-auto">Rp {item.price.toLocaleString("id-ID")},00</p>
+                                            </div>
                                         </div>
+                                        <button
+                                            onClick={() => addToCart(item)}
+                                            className="mt-2 bg-[#ECA641] text-white px-4 py-2 w-full rounded-lg flex items-center justify-center gap-2 cursor-pointer"
+                                        >
+                                            Tambah Ke Keranjang <ShoppingCart size={16} />
+                                        </button>
                                     </div>
-                                    <button onClick={() => addToCart(item)} className="mt-2 bg-[#ECA641] text-white px-4 py-2 w-full rounded-lg flex items-center justify-center gap-2 cursor-pointer">
-                                        Tambah Ke Keranjang <ShoppingCart size={16} />
-                                    </button>
-                                </div>
-                            ))
-                        }
+                                ))
+                            }
                     </div>
 
                     {/* Modal Keranjang */}
@@ -264,6 +411,8 @@ export default function Kasir() {
                                 <input
                                     type="text"
                                     name="customerName"
+                                    value={customerName}
+                                    onChange={(e) => setCustomerName(e.target.value)}
                                     placeholder="Masukkan Nama Customer"
                                     className="bg-transparent border-none text-black font-semibold text-sm focus:outline-none"
                                 />
@@ -275,8 +424,10 @@ export default function Kasir() {
                                 <input
                                     type="date"
                                     name="orderDate"
+                                    value={orderDate}
+                                    onChange={(e) => setOrderDate(e.target.value)}
                                     className="bg-transparent border-none text-black font-semibold text-sm focus:outline-none text-right"
-                                />
+                                    />
                             </div>
                         </div>
 
@@ -288,7 +439,11 @@ export default function Kasir() {
                         ) : (
                             cart.map((item) => (
                                 <div key={item.id} className="flex items-center border-b pb-3 mb-3">
-                                    <Image src={item.image} width={60} height={60} alt={item.name} className="rounded-lg" />
+                                    <img
+                                            src={item.image ? `http://localhost:8000${item.image}` : '/default-image.png'}
+                                            alt={item.name}
+                                            className="rounded-lg w-20 h-20 object-cover"
+                                        />
                                     <div className="flex-1 ml-3">
                                         <p className="text-black text-sm font-medium">{item.name}</p>
                                         <p className="text-gray-500 text-xs">{item.category}</p>
@@ -499,7 +654,7 @@ export default function Kasir() {
                         </div>
 
                         {/* Tombol Bayar */}
-                        <button onClick={handlePayment} className="mt-6 w-full bg-[#ECA641] text-white py-3 rounded-lg font-semibold">
+                        <button onClick={handleBayarSekarang} className="mt-6 w-full bg-[#ECA641] text-white py-3 rounded-lg font-semibold">
                             Bayar Sekarang
                         </button>
                     </div>
@@ -508,3 +663,5 @@ export default function Kasir() {
         </div>
     );
 }
+
+export default withAuth(Kasir, ['3']);
