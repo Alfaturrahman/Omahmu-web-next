@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import { Filter, Search } from "lucide-react";
+import * as apiService from 'services/authService';
+import withAuth from 'hoc/withAuth';
 
-export default function Home() {
+function Laporan() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [search, setSearch] = useState("");
@@ -14,21 +16,42 @@ export default function Home() {
     const [selectedCategory, setSelectedCategory] = useState("All"); // Default: filter kategori ke "All"
     const [sortOrder, setSortOrder] = useState(""); // Default: tidak ada sort
     const [currentPage, setCurrentPage] = useState(1);
+    const [laporanItems, setLaporan] = useState([]);
+    const [dashboardItems, setDashboardLaporan] = useState([]);
     const itemsPerPage = 10;
 
-    const data = [
-        { name: "Nasi Goreng", category: "Makanan", price: "RP 10.000,00", sellingPrice: "RP 20.000,00", quantity: "50", totalSales: "RP 1.000.000,00", profit: "RP 500.000,00" },
-        { name: "Mie Ayam", category: "Makanan", price: "RP 8.000,00", sellingPrice: "RP 15.000,00", quantity: "70", totalSales: "RP 1.050.000,00", profit: "RP 490.000,00" },
-        { name: "Soto Ayam", category: "Makanan", price: "RP 12.000,00", sellingPrice: "RP 22.000,00", quantity: "40", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
-        { name: "Ayam Geprek", category: "Makanan", price: "RP 15.000,00", sellingPrice: "RP 25.000,00", quantity: "60", totalSales: "RP 1.500.000,00", profit: "RP 600.000,00" },
-        { name: "Gado-Gado", category: "Makanan", price: "RP 9.000,00", sellingPrice: "RP 18.000,00", quantity: "45", totalSales: "RP 810.000,00", profit: "RP 405.000,00" },
-        { name: "Es Teh Manis", category: "Minuman", price: "RP 2.000,00", sellingPrice: "RP 5.000,00", quantity: "200", totalSales: "RP 1.000.000,00", profit: "RP 600.000,00" },
-        { name: "Jus Alpukat", category: "Minuman", price: "RP 7.000,00", sellingPrice: "RP 12.000,00", quantity: "90", totalSales: "RP 1.080.000,00", profit: "RP 450.000,00" },
-        { name: "Kopi Hitam", category: "Minuman", price: "RP 5.000,00", sellingPrice: "RP 10.000,00", quantity: "120", totalSales: "RP 1.200.000,00", profit: "RP 600.000,00" },
-        { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
-        { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
-        { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
-    ];
+        async function fetchDashboardLaporan() {
+            try {
+                const storeId = localStorage.getItem('store_id');
+                const result = await apiService.getData(`/storeowner/laporan_keutungan_dashboard/?store_id=${storeId}`);
+                setDashboardLaporan(result.data[0]); // Karena hanya 1 object
+            } catch (err) {
+                console.error(err.message);
+            }
+        }
+        
+        async function fetchDataLaporan() {
+            try {
+                const storeId = localStorage.getItem('store_id');
+                const result = await apiService.getData(`/storeowner/laporan_keutungan/?store_id=${storeId}`);
+                setLaporan(result.data.map(item => ({
+                    name: item.product_name,
+                    category: item.product_type,
+                    price: `RP ${parseInt(item.capital_price).toLocaleString('id-ID')},00`,
+                    sellingPrice: `RP ${parseInt(item.selling_price).toLocaleString('id-ID')},00`,
+                    quantity: item.total_terjual.toString(),
+                    totalSales: `RP ${parseInt(item.total_pemasukan).toLocaleString('id-ID')},00`,
+                    profit: `RP ${parseInt(item.net_profit).toLocaleString('id-ID')},00`
+                })));
+            } catch (err) {
+                console.error(err.message);
+            }
+        }
+        
+        useEffect(() => {
+            fetchDataLaporan();
+            fetchDashboardLaporan();
+        }, []);
 
     // Fungsi untuk convert "RP 1.000.000,00" menjadi angka 1000000
     const parseRupiah = (value) => {
@@ -37,7 +60,7 @@ export default function Home() {
     };
 
     // Proses filter dan sort
-    const filteredData = data
+    const filteredData = laporanItems
         .filter((item) => {
             const matchName = item.name.toLowerCase().includes(search.toLowerCase());
             const matchCategory = selectedCategory === "All" || item.category === selectedCategory; // Filter kategori "All" artinya tidak ada filter kategori
@@ -78,9 +101,18 @@ export default function Home() {
                 <div className={`flex-1 flex flex-col gap-6 p-3 overflow-y-auto max-h-screen transition-all duration-300`}>
                     {/* Stat Card */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <StatCard title="Total Pemasukan" value="RP 1.000.000,00" />
-                        <StatCard title="Total Produk Terjual" value="150" />
-                        <StatCard title="NET Profit" value="RP 200.000,00" />
+                        <StatCard 
+                            title="Total Pemasukan" 
+                            value={`RP ${dashboardItems?.total_pemasukan?.toLocaleString('id-ID') || 0},00`} 
+                        />
+                        <StatCard 
+                            title="Total Produk Terjual" 
+                            value={dashboardItems?.total_produk_terjual?.toString() || "0"} 
+                        />
+                        <StatCard 
+                            title="NET Profit" 
+                            value={`RP ${dashboardItems?.net_profit?.toLocaleString('id-ID') || 0},00`} 
+                        />
                     </div>
 
                     {/* Filter */}
@@ -251,3 +283,5 @@ function StatCard({ title, value }) {
         </div>
     );
 }
+
+export default withAuth(Laporan,['2'])
