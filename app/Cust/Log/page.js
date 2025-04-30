@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import '@/globals.css';
 import { X, Clock } from 'lucide-react';
+import withAuth from 'hoc/withAuth';
+import * as apiService from 'services/authService';
 
 const sampleOrders = [
   {
@@ -51,11 +53,13 @@ const sampleOrders = [
   }
 ];
 
-export default function Kasir() {
+function Log() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [filter, setFilter] = useState('Semua');
+    const [listLog, setListLog] = useState([]);
+    const [detailLog, setDetailLog] = useState([]);
 
     const toggleSidebar = () => {
         if (window.innerWidth < 1024) {
@@ -65,10 +69,47 @@ export default function Kasir() {
         }
     };
 
+      async function fetchDetailLog(orderId) {
+        try {
+          const result = await apiService.getData(`/customer/detail_log/?order_id=${orderId}`);
+          setDetailLog(result.data); // pastikan `data` berisi detail yang kamu butuhkan
+        } catch (err) {
+          console.error(err.message);
+        }
+      }
+  
+      async function fetchDataLog() {
+        try {
+            const result = await apiService.getData(`/customer/log_pemesanan/`);
+            const mappedData = result.data.map((item) => ({
+                id: item.order_id,
+                name: item.store_name,
+                method: item.pickup_method || (item.is_dine_in ? "Makan di tempat" : "Ambil sendiri"),
+                time: new Date(item.created_at).toLocaleTimeString('id-ID', {
+                  hour: '2-digit',
+                  minute: '2-digit'
+                }),
+                total: parseInt(item.total_amount),
+                items: item.total_items,
+                status: item.status_label,
+                detail: item // kamu bisa gunakan ini untuk offcanvas/detail view
+            }));
+            setListLog(mappedData);
+        } catch (err) {
+            console.error(err.message);
+        }
+    }
+
+    useEffect(() => {
+        fetchDataLog();
+        fetchDetailLog();
+    }, []);
+
     const filteredOrders =
         filter === 'Semua'
-        ? sampleOrders
-        : sampleOrders.filter((order) => order.status === filter);
+        ? listLog
+        : listLog.filter((order) => order.status === filter);
+
 
   return (
     <div className="h-screen flex flex-col bg-white overflow-hidden">
@@ -121,7 +162,10 @@ export default function Kasir() {
             filteredOrders.map((order) => (
               <div
                 key={order.id}
-                onClick={() => setSelectedOrder(order)}
+                onClick={() => {
+                  fetchDetailLog(order.id); // order.id = order_id
+                  setSelectedOrder(order);
+                }}
                 className="flex items-start justify-between border rounded-lg p-4 mb-4 cursor-pointer shadow-md border-gray-300"
               >
                 <div className="flex gap-3">
@@ -160,15 +204,13 @@ export default function Kasir() {
           )}
 
           {/* Modal Detail */}
-          {selectedOrder && (
+          {selectedOrder && detailLog.length > 0 && (
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
               <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-brightness-50">
                 <div className="bg-white text-black rounded-lg w-[90%] md:w-[500px] max-h-[90vh] overflow-y-auto p-4 sm:p-6 relative">
                   {/* Header */}
-                  <div className="flex justify-between items-cente pb-4">
-                    <h2 className="text-xl font-bold text-center w-full">
-                      Detail Pesanan
-                    </h2>
+                  <div className="flex justify-between items-center pb-4">
+                    <h2 className="text-xl font-bold text-center w-full">Detail Pesanan</h2>
                     <button
                       className="absolute right-6"
                       onClick={() => setSelectedOrder(null)}
@@ -182,13 +224,17 @@ export default function Kasir() {
                     <div className="flex flex-row justify-between gap-2">
                       <div className="border-2 border-gray-300 p-2 rounded-md">
                         <p className="text-xs text-gray-500">Nama Customer</p>
-                        <p className="font-medium">Alfatturrizki</p>
+                        <p className="font-medium">{detailLog[0]?.get_order_json?.customer_name}</p>
                       </div>
                       <div className="border-2 border-gray-300 p-2 rounded-md text-right">
-                        <p className="text-xs text-gray-500">
-                          Tanggal Pemesanan
+                        <p className="text-xs text-gray-500">Tanggal Pemesanan</p>
+                        <p className="font-medium">
+                          {new Date(detailLog[0]?.get_order_json?.order_date).toLocaleDateString('id-ID', {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
                         </p>
-                        <p className="font-medium">10 Maret 2023</p>
                       </div>
                     </div>
 
@@ -196,30 +242,27 @@ export default function Kasir() {
                       <div className="flex justify-between">
                         <p className="font-semibold text-black">Detail Pesanan</p>
                         <p className="font-semibold text-xs md:text-sm text-gray-500">
-                          Kode Pesanan : 15032023
+                          Kode Pesanan : {detailLog[0]?.get_order_json?.order_code}
                         </p>
                       </div>
 
                       {/* Items */}
-                      {selectedOrder.detail.foods.map((item, idx) => (
-                        <div
-                          className="flex gap-3 mt-2 border-b py-4"
-                          key={idx}
-                        >
+                      {detailLog[0]?.get_order_json?.items?.map((item, idx) => (
+                        <div className="flex gap-3 mt-2 border-b py-4" key={idx}>
                           <img
-                            src={item.image}
-                            alt={item.name}
+                            src={item.product_picture ? `http://localhost:8000/${item.product_picture}` : '/default-image.png'}
+                            alt={item.product_name}
                             className="w-20 h-16 rounded object-cover"
                           />
                           <div className="flex justify-between w-full">
                             <div className="flex flex-col justify-start">
-                              <p className="font-semibold">{item.name}</p>
-                              <p className="text-gray-500 text-xs">{item.type}</p>
+                              <p className="font-semibold">{item.product_name}</p>
+                              <p className="text-gray-500 text-xs">{item.product_type}</p>
                             </div>
                             <div className="flex flex-row gap-2 justify-end items-end">
-                              <p className="font-bold text-sm">{item.qty}x</p>
+                              <p className="font-bold text-sm">{item.quantity}x</p>
                               <p className="font-bold text-sm">
-                                Rp {item.price.toLocaleString('id-ID')},00
+                                Rp {parseInt(item.price).toLocaleString('id-ID')},00
                               </p>
                             </div>
                           </div>
@@ -229,7 +272,7 @@ export default function Kasir() {
                       <textarea
                         className="mt-5 w-full border rounded-md p-2 mb-4 text-sm"
                         placeholder="Catatan"
-                        defaultValue={selectedOrder.detail.catatan}
+                        defaultValue={detailLog[0]?.get_order_json?.remarks}
                         readOnly
                       ></textarea>
 
@@ -238,26 +281,24 @@ export default function Kasir() {
                         <div className="flex justify-between">
                           <span>Item</span>
                           <span className="font-semibold text-black">
-                            {selectedOrder.detail.foods.length} (items)
+                            {detailLog[0]?.get_order_json?.items?.length} (items)
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Subtotal</span>
                           <span className="font-semibold text-black">
                             Rp{' '}
-                            {selectedOrder.detail.foods
-                              .reduce(
-                                (total, item) => total + item.price * item.qty,
-                                0
-                              )
-                              .toLocaleString('id-ID')}
+                            {detailLog[0]?.get_order_json?.items?.reduce(
+                              (total, item) => total + parseInt(item.price) * item.quantity,
+                              0
+                            ).toLocaleString('id-ID')}
                             ,00
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span>Keterangan</span>
                           <span className="font-semibold text-black">
-                            {selectedOrder.detail.metode}
+                            {detailLog[0]?.get_order_json?.payment_method}
                           </span>
                         </div>
                       </div>
@@ -269,12 +310,10 @@ export default function Kasir() {
                     <p>Total</p>
                     <p>
                       Rp{' '}
-                      {selectedOrder.detail.foods
-                        .reduce(
-                          (total, item) => total + item.price * item.qty,
-                          0
-                        )
-                        .toLocaleString('id-ID')}
+                      {detailLog[0]?.get_order_json?.items?.reduce(
+                        (total, item) => total + parseInt(item.price) * item.quantity,
+                        0
+                      ).toLocaleString('id-ID')}
                       ,00
                     </p>
                   </div>
@@ -287,3 +326,4 @@ export default function Kasir() {
     </div>
   );
 }
+export default withAuth(Log, ['3'])
