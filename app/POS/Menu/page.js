@@ -47,9 +47,9 @@ export default function Kasir() {
             <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
             {/* Konten Utama */}
-            <div className={`flex-1 flex flex-col gap-6 p-3 overflow-y-auto min-h-0 transition-all duration-300`}>
+            <div className={`flex-1 flex flex-col gap-2 p-3 overflow-y-auto min-h-0 transition-all duration-300`}>
                 {/* Kategori Menu */}
-                <div className="mb-6">
+                <div className="mb-2">
                     <h2 className="text-lg md:text-xl text-black font-semibold mb-3">Menu Pesanan</h2>
                     <div className="overflow-x-auto max-w-full">
                         <div className="flex space-x-2 md:space-x-4 w-full flex-wrap">
