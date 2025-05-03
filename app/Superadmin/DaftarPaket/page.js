@@ -1,23 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import { Plus, X } from "lucide-react";
 import { Dialog } from '@headlessui/react';
-import Select from 'react-select';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline'
+import Select from 'react-select';
 import Swal from 'sweetalert2'
 
 export default function DaftarPaket() {
+    const router = useRouter();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [openMenuIndex, setOpenMenuIndex] = useState(null);
-    const [errors, setErrors] = useState({});
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const [editIndex, setEditIndex] = useState(null);
+    const [errors, setErrors] = useState({});
+    const menuRef = useRef(null);
+
+    const handleDetailPengguna = () => {
+        router.push('/Superadmin/DetailPenggunaPaket');
+    };      
 
     const [paketList, setPaketList] = useState([
       { nama: 'Paket 1', durasi: '1', harga: 'Rp100.000', deskripsi: 'Deskripsi Paket 1', fitur: ['1-5 Pengguna'] },
@@ -64,12 +71,6 @@ export default function DaftarPaket() {
         });  // Reset form data
         setErrors({});  // Reset errors
     };
-
-    useEffect(() => {
-        if (!isModalOpen) {
-            setErrors({});
-        }
-    }, [isModalOpen]);
     
     const toggleSidebar = () => {
       if (window.innerWidth < 1024) {
@@ -103,7 +104,7 @@ export default function DaftarPaket() {
         text: 'Paket ini akan dihapus dan tindakan ini tidak bisa dibatalkan!',
         icon: 'warning',
         showCancelButton: true,
-        confirmButtonColor: '#d33',
+        confirmButtonColor: '#F6B543',
         cancelButtonColor: '#aaa',
         confirmButtonText: 'Ya, hapus!',
         cancelButtonText: 'Batal',
@@ -112,7 +113,12 @@ export default function DaftarPaket() {
           const updatedList = [...paketList];
           updatedList.splice(index, 1);
           setPaketList(updatedList);
-          Swal.fire('Terhapus!', 'Paket berhasil dihapus.', 'success');
+          Swal.fire({
+            title: 'Terhapus!',
+            text: 'Paket berhasil dihapus.',
+            icon: 'success',
+            confirmButtonColor: '#F6B543',
+          });
         }
       });
     };
@@ -154,6 +160,7 @@ export default function DaftarPaket() {
                 icon: 'success',
                 title: 'Berhasil',
                 text: 'Paket berhasil diperbarui!',
+                confirmButtonColor: '#F6B543',
             });
         } else {
             setPaketList([...paketList, formData]);
@@ -162,6 +169,7 @@ export default function DaftarPaket() {
                 icon: 'success',
                 title: 'Berhasil',
                 text: 'Paket berhasil ditambahkan!',
+                confirmButtonColor: '#F6B543',
             });
         }
     
@@ -175,7 +183,30 @@ export default function DaftarPaket() {
             fitur: [],
         });
         setErrors({}); // Reset error
-    };    
+    };
+
+    useEffect(() => {
+        // Reset error saat modal ditutup
+        if (!isModalOpen) {
+            setErrors({});
+        }
+    
+        // Handle klik di luar dropdown menu
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setOpenMenuIndex(null);
+            }
+        };
+    
+        // Pasang event listener hanya jika menu terbuka
+        if (openMenuIndex !== null) {
+            document.addEventListener('click', handleClickOutside); // pakai 'click' daripada 'mousedown'
+        }
+    
+        return () => {
+            document.removeEventListener('click', handleClickOutside);
+        };
+    }, [isModalOpen, openMenuIndex]);    
     
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -319,74 +350,70 @@ export default function DaftarPaket() {
             </Dialog>
             
             {/* Card Paket Langganan */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-5 pb-10">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-5 pb-10">
                 {[1, 2].map((paket, index) => (
-                    <div key={index} className="bg-[#FFF3E6] rounded-xl p-6 shadow-sm relative">
-                    {/* Titik tiga icon */}
-                    <div className="absolute top-4 right-4">
-                        <button
-                        onClick={() => toggleMenu(index)}
-                        className="text-gray-600 hover:text-black focus:outline-none"
-                        >
-                        <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer" />
-                        </button>
-
-                        {/* Dropdown menu */}
-                        {openMenuIndex === index && (
-                        <div className="absolute right-0 mt-2 w-28 bg-white rounded shadow-md z-10">
-                            <button
-                            onClick={() => handleEdit(index)}
-                            className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100 cursor-pointer"
-                            >
-                            Edit
+                    <div key={index} className="relative rounded-xl p-6 shadow overflow-hidden bg-white border-gray-300 border">
+                    {/* Gradient hanya di atas (30%) */}
+                    <div className="absolute top-0 left-0 w-full h-[30%] bg-gradient-to-b from-orange-100 to-transparent pointer-events-none z-0"></div>
+                    {/* Konten paket di atas gradient */}
+                    <div className="relative z-10">
+                      {/* Titik tiga icon */}
+                        <div className="absolute right-1">
+                            <button onClick={() => toggleMenu(index)} className="text-gray-600 hover:text-black focus:outline-none">
+                            <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer" />
                             </button>
-                            <button
-                                onClick={() => handleDelete(index)}
-                                className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 cursor-pointer"
-                                >
-                                Hapus
-                            </button>
-                        </div>
-                        )}
-                    </div>
+                    
+                            {openMenuIndex === index && (
+                                <div ref={menuRef} className="absolute right-0 mt-2 w-37 bg-white rounded shadow-md z-50">
+                                <button onClick={() => handleEdit(index)} className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100">
+                                    Edit
+                                </button>
+                                <button onClick={handleDetailPengguna} className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100">
+                                    Detail Pengguna
+                                </button>
+                                <button onClick={() => handleDelete(index)} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                    Hapus
+                                </button>
+                                </div>
+                            )}
+                            </div>
+                        
+                            {/* Judul, harga, dan fitur di sini */}
+                            <h2 className="text-lg font-semibold text-black mb-1">
+                                {index === 0 ? 'Paket 1 (Basic)' : 'Paket 2 Pro (AI Enhanced)'}
+                            </h2>
+                            <p className="text-2xl font-bold text-orange-800 mb-4">
+                                {index === 0 ? 'Rp0.00/bulan' : 'Rp150.00/bulan'}
+                            </p>                  
 
-                    {/* Konten Paket */}
-                    <h2 className="text-lg font-semibold text-center text-black mb-4">
-                        {index === 0 ? 'Paket 1 (Basic)' : 'Paket 2 (AI Enhanced)'}
-                    </h2>
-                    <ul className="space-y-2 text-sm text-black">
-                        {index === 0 ? (
-                        <>
-                            <li>✅ 1-5 Pengguna</li>
-                            <li>✅ 1 Cabang</li>
-                            <li>✅ Maksimal 500 Produk</li>
-                            <li>✅ Laporan Penjualan Dasar</li>
-                            <li>✅ Dukungan Email</li>
-                            <li className="text-red-500">❌ Bantuan AI</li>
-                            <li className="text-red-500">❌ Rekomendasi Menu Otomatis</li>
-                            <li className="text-red-500">❌ Live Chat Dukungan</li>
-                        </>
-                        ) : (
-                        <>
-                            <li>✅ Tidak Terbatas Pengguna</li>
-                            <li>✅ Tidak Terbatas Cabang</li>
-                            <li>✅ Tidak Terbatas Produk</li>
-                            <li>✅ Laporan Penjualan Lengkap & Analitik</li>
-                            <li>✅ Bantuan AI (Rekomendasi Menu, Harga, Tren Penjualan)</li>
-                            <li>✅ Live Chat Dukungan 24/7</li>
-                            <li>✅ Integrasi API</li>
-                        </>
-                        )}
-                    </ul>
-
-                    {/* Harga (hanya di Paket 2 misalnya) */}
-                    {index === 1 && (
-                        <div className="absolute bottom-4 right-4 text-black font-semibold text-sm">
-                        Rp150.000/bulan
+                            {/* List fitur */}
+                            <ul className="space-y-3 text-base text-black">
+                                {index === 0 ? (
+                                <>
+                                    <li className="flex items-start gap-2"><span>✅</span> 1-5 Pengguna</li>
+                                    <li className="flex items-start gap-2"><span>✅</span> 1 Cabang</li>
+                                    <li className="flex items-start gap-2"><span>✅</span> Maksimal 500 Produk</li>
+                                    <li className="flex items-start gap-2"><span>✅</span> Laporan Penjualan Dasar</li>
+                                    <li className="flex items-start gap-2"><span>✅</span> Dukungan Email</li>
+                                    <li className="flex items-start gap-2 text-red-500"><span>❌</span> Bantuan AI</li>
+                                    <li className="flex items-start gap-2 text-red-500"><span>❌</span> Rekomendasi Menu Otomatis</li>
+                                    <li className="flex items-start gap-2 text-red-500"><span>❌</span> Live Chat Dukungan</li>
+                                </>
+                                ) : (
+                                <>
+                                    <li className="flex items-start gap-2"><span>✅</span> Tidak Terbatas Pengguna</li>
+                                    <li className="flex items-start gap-2"><span>✅</span> Tidak Terbatas Cabang</li>
+                                    <li className="flex items-start gap-2"><span>✅</span> Tidak Terbatas Produk</li>
+                                    <li className="flex items-start gap-2"><span>✅</span> Laporan Penjualan Lengkap & Analitik</li>
+                                    <li className="flex items-start gap-2"><span>✅</span> Bantuan AI (Rekomendasi Menu, Harga, Tren Penjualan)</li>
+                                    <li className="flex items-start gap-2"><span>✅</span> Live Chat Dukungan 24/7</li>
+                                    <li className="flex items-start gap-2"><span>✅</span> Integrasi API</li>
+                                </>
+                                )}
+                            </ul>
                         </div>
-                    )}
                     </div>
-                ))} 
+                ))}
             </div>
         </div>
       </div>

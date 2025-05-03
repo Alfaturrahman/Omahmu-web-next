@@ -1,17 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, React } from 'react';
 import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
-import { Filter, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import Link from 'next/link';
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Untuk mobile
   const [isCollapsed, setIsCollapsed] = useState(false); // Untuk desktop
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("semua");
 
+  const tokoList = [
+    { id: 1, name: "AngkringanOmahmu - Batam Center", statusToko: true },
+    { id: 2, name: "AngkringanOmahmu - Batam Utara", statusToko: false },
+    { id: 3, name: "AngkringanOmahmu - Batu Aji", statusToko: true },
+    { id: 4, name: "AngkringanOmahmu - Tiban", statusToko: false },
+    { id: 5, name: "AngkringanOmahmu - Nagoya", statusToko: true },
+    { id: 6, name: "AngkringanOmahmu - Bengkong", statusToko: true },
+    { id: 7, name: "AngkringanOmahmu - Sekupang", statusToko: false },
+    { id: 8, name: "AngkringanOmahmu - Baloi", statusToko: true },
+  ];
 
+  // Filter data berdasarkan status toko
+  const filteredTokoList = tokoList.filter((item) => {
+    if (filter === "semua") return true; // Semua toko
+    if (filter === "buka") return item.statusToko === true; // Toko buka
+    if (filter === "tutup") return item.statusToko === false; // Toko tutup
+    return true;
+  });
+
+  // Fungsi untuk handle klik filter card
+  const handleFilterClick = (filterType) => {
+    setFilter(filterType);
+  };
+  
   const toggleSidebar = () => {
     if (window.innerWidth < 1024) {
       // Jika layar kecil (mobile/tablet), buka/tutup sidebar overlay
@@ -53,78 +78,104 @@ export default function Home() {
             </div>
 
             {/* Stat Cards */}
-            <div className="w-full flex flex-col md:flex-row lg:flex-row justify-between px-4 gap-4">
+            <div className="w-full flex flex-col md:flex-row lg:flex-row justify-between gap-4">
               {/* Total Toko Terdaftar */}
-              <div className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm">
+              <div
+                onClick={() => handleFilterClick("semua")}
+                className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm cursor-pointer"
+              >
                 <h2 className="text-[#F28C20] font-semibold mb-2">Total Toko Terdaftar</h2>
-                <p className="text-2xl font-bold text-black">100</p>
+                <p className="text-2xl font-bold text-black">{tokoList.length}</p>
               </div>
 
               {/* Toko Aktif */}
-              <div className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm">
+              <div
+                onClick={() => handleFilterClick("buka")}
+                className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm cursor-pointer"
+              >
                 <h2 className="text-[#F28C20] font-semibold mb-2">Toko Aktif</h2>
-                <p className="text-2xl font-bold text-black">80</p>
+                <p className="text-2xl font-bold text-black">
+                  {tokoList.filter((item) => item.statusToko === true).length}
+                </p>
               </div>
 
               {/* Toko Nonaktif */}
-              <div className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm">
+              <div
+                onClick={() => handleFilterClick("tutup")}
+                className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm cursor-pointer"
+              >
                 <h2 className="text-[#F28C20] font-semibold mb-2">Toko Nonaktif</h2>
-                <p className="text-2xl font-bold text-black">10</p>
+                <p className="text-2xl font-bold text-black">
+                  {tokoList.filter((item) => item.statusToko === false).length}
+                </p>
               </div>
             </div>
 
-
-            {/* List Toko */}
-            <div className="w-full flex flex-wrap justify-start gap-8 md:gap-4 lg:gap-8 px-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((_, i) => (
+            {/* Tampil Toko Berdasarkan Filter */}
+            <div className="w-full flex flex-wrap justify-start gap-8 md:gap-4 lg:gap-8 px-4 mt-4">
+              {filteredTokoList.map((item) => (
                 <div
-                key={i}
-                className="w-full sm:w-[48%] lg:w-[30%] xl:w-[22%] bg-white border border-gray-300 rounded-xl p-4 text-left"
+                  key={item.id}
+                  className="w-full sm:w-[48%] lg:w-[30%] xl:w-[22%] bg-white border border-gray-300 rounded-xl p-4 text-left"
                 >
-                {/* Gambar Logo */}
-                <img
+                  {/* Gambar Logo */}
+                  <img
                     src="/Logo-Toko.png"
                     alt="Logo Toko"
                     className="w-full p-3 h-auto mx-auto"
-                />
+                  />
 
-                {/* Nama Toko */}
-                <h3 className="mt-4 font-semibold text-black text-base md:text-lg">
-                    AngkringanOmahmu – Batam Center
-                </h3>
+                  {/* Nama Toko */}
+                  <h3 className="mt-4 font-semibold text-black text-base md:text-lg">
+                    {item.name}
+                  </h3>
 
-                {/* Jam Operasional */}
-                <div className="flex items-center text-gray-500 text-sm mt-1 mb-4">
+                  {/* Jam Operasional */}
+                  <div className="flex items-center text-gray-500 text-sm mt-1">
                     <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
                     >
-                    <path
+                      <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
+                      />
                     </svg>
                     06.00pm - 1.00am
-                </div>
+                  </div>
 
-                {/* Tombol */}
-                <div className="flex justify-end">
-                    <button className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded">
-                    Pantau Toko
-                    </button>
+                  {/* Status Toko */}
+                  <div className="flex items-center text-sm mb-4 mt-1">
+                    <span
+                      className={`h-3 w-3 rounded-full mr-2 ${
+                        item.statusToko ? 'bg-green-500' : 'bg-red-500'
+                      }`}
+                    ></span>
+                    <span className={item.statusToko ? 'text-green-600' : 'text-red-600'}>
+                      {item.statusToko ? 'Buka' : 'Tutup'}
+                    </span>
+                  </div>
+
+                  {/* Tombol */}
+                  <div className="flex justify-end">
+                    <Link
+                      href="/Superadmin/DashboardToko"
+                      className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded"
+                    >
+                      Pantau Toko
+                    </Link>
+                  </div>
                 </div>
-                </div>
-            ))}
+              ))}
             </div>
-
-
         </div>
       </div>
     </div>
   );
 }
+
