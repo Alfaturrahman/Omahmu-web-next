@@ -2,10 +2,12 @@
 
 import '@/globals.css';
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Flag from "react-world-flags";
 import { Upload } from 'lucide-react';
 import { registerStoreOwner } from '../../../services/authService';
+import * as apiService from 'services/authService';
+import Swal from 'sweetalert2';
 
 const countryFlags = {
   ID: { code: "+62", label: "ID" },
@@ -15,6 +17,7 @@ const countryFlags = {
 };
 
 const Register = () => {
+  const [paketList, setPaketList] = useState([]);
   const [selectedCountry, setSelectedCountry] = useState("ID");
 
   const [formData, setFormData] = useState({
@@ -44,8 +47,24 @@ const Register = () => {
     setUploads(prev => ({ ...prev, [key]: e.target.files[0] }));
   };
 
+  const fetchPaketList = async () => {
+    try {
+      const result = await apiService.getPublicData('/superadmin/list_package/');
+      setPaketList(result.data);
+    } catch (err) {
+      console.error('Gagal ambil data paket:', err.message);
+    }
+  };
+
+  useEffect(() => {
+      fetchPaketList();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log('Submitting form with data:');
+    console.log('Selected package id:', formData.paket);  // This should show the ID now
     try {
         const payload = new FormData();
         payload.append('email', formData.email);
@@ -56,6 +75,7 @@ const Register = () => {
         payload.append('store_address', formData.alamatToko);
         payload.append('description', formData.deskripsiToko);
         payload.append('package_id', formData.paket);
+        console.log('Selected package id:', formData.paket);
         payload.append('submission_code', "SUBM-001" ); // misalnya: 'SUBM-001'
         payload.append('no_virtual_account', "VA123456");         // misalnya: 'VA123456'
         payload.append('start_date', "2025-04-24");   
@@ -75,7 +95,13 @@ const Register = () => {
         });
 
       const result = await registerStoreOwner(payload);
-      alert("Registrasi berhasil!");
+      Swal.fire({
+        icon: 'success',
+        title: 'Registrasi berhasil!',
+        text: 'Silakan login untuk masuk ke akun Anda.',
+        confirmButtonColor: '#ECA641'
+      });
+      
       // Reset form input
       setFormData({
         nama: '',
@@ -100,7 +126,12 @@ const Register = () => {
       console.log(result);
     } catch (error) {
       console.error(error);
-      alert(error.message);
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops!',
+        text: error.message || 'Terjadi kesalahan saat registrasi.',
+      });
+      
     }
   };
 
@@ -199,9 +230,12 @@ const Register = () => {
                 onChange={handleChange}
                 className="w-full p-2 text-[#71717A] border border-gray-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-[#ECA641]"
               >
-                <option value="">Pilih salah satu</option>
-                <option value="1">Basic</option>
-                <option value="2">Premium</option>
+                <option value="" disabled hidden>Pilih salah satu</option>
+                {paketList.map((paket) => (
+                  <option key={paket.package_id} value={paket.package_id}> {/* Pastikan value adalah paket.package_id */}
+                    {paket.package_name}
+                  </option>
+                ))}
               </select>
             </div>
 

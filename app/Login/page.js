@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginUser } from '../../services/authService'; // Import the loginUser function
 import '@/globals.css';
+import Swal from 'sweetalert2';
 
 const LoginPage = () => {
     const router = useRouter();
@@ -37,57 +38,63 @@ const LoginPage = () => {
             setSuccessMessage('');
         } else {
             setErrors({ email: '', password: '' });
-            setSuccessMessage('Login berhasil!');
             setLoading(true);
-
+    
             try {
                 // Send login data to the API
                 const response = await loginUser({ email, password });
-                console.log(response.data); // Check the response
-
+                console.log(response.data);
+    
                 const token = response.data.token;
                 const role_id = response.data.user.role_id;
                 const reference_id = response.data.user.reference_id;
-
+    
                 console.log("role yang dilempar", role_id);
-                
-
-                localStorage.setItem('token', token); // Store the JWT token in localStorage (or use sessionStorage)
-                localStorage.setItem('role_id', role_id); // Store the JWT token in localStorage (or use sessionStorage)
-                localStorage.setItem('store_id',reference_id ); // Menyimpan store_id sebagai reference_id
-
+    
+                localStorage.setItem('token', token);
+                localStorage.setItem('role_id', role_id);
+                localStorage.setItem('store_id', reference_id);
+    
                 setLoading(false);
-
+                setSuccessMessage('Login berhasil!'); // <-- hanya muncul kalau berhasil login
+    
                 // Redirect based on role_id
                 if (role_id === 1) {
-                    // Store owner (role_id = 2)
                     router.push('/Superadmin/Dashboard');
                 } else if (role_id === 2) {
-                    // Customer (role_id = 3)
                     router.push('/POS/Kasir');
                 } else if (role_id === 3) {
-                    // Customer (role_id = 3)
                     router.push('/Cust/Dashboard');
                 } else {
-                    // Default or fallback route if role_id is not recognized
                     router.push('/');
                 }
             } catch (error) {
                 setLoading(false);
-                setSuccessMessage('');
+                setSuccessMessage(''); // pastikan kosongkan jika error
                 if (error.response?.data?.message) {
-                    setErrors({ email: '', password: error.response.data.message });
+                    // Show error message using SweetAlert
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login gagal',
+                        text: error.response.data.message || 'Terjadi kesalahan, coba lagi.',
+                        confirmButtonColor: '#ECA641',
+                    });
                 } else {
-                    setErrors({ email: '', password: 'Login gagal, silakan coba lagi.' });
+                    // Show a generic error message
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login gagal',
+                        text: 'Terjadi kesalahan, coba lagi.',
+                        confirmButtonColor: '#ECA641',
+                    });
                 }
             } finally {
-                // Clear the email and password fields after submission (success or failure)
                 setEmail('');
                 setPassword('');
             }
         }
     };
-
+    
     return (
         <div className="flex items-center justify-center min-h-screen bg-[#FFF4E8] p-4">
             <div className="flex flex-col md:flex-row w-full max-w-md md:max-w-4xl h-auto md:h-150 rounded-2xl shadow-lg overflow-hidden">

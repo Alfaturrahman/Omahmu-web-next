@@ -43,6 +43,16 @@ export const getData = async (endpoint) => {
   }
 };
 
+export const getPublicData = async (endpoint) => {
+  try {
+    const response = await api.get(endpoint); // tanpa headers
+    return response.data;
+  } catch (error) {
+    console.error('GET Error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.message || 'Gagal mengambil data');
+  }
+};
+
 // Fungsi POST dengan token
 export const postData = async (endpoint, payload, config = {}) => {
   try {
