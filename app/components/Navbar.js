@@ -4,6 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, Bell, User, LogOut, Lock } from "lucide-react";
 import { useRouter } from 'next/navigation'
+import { jwtDecode } from "jwt-decode";
 
 const Header = ({ toggleSidebar }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -14,6 +15,18 @@ const Header = ({ toggleSidebar }) => {
     localStorage.removeItem('role_id');
     router.push('/Login');
   };
+  const token = localStorage.getItem("token");
+
+  let userEmail = "";
+  let userRole = "";
+
+  if (token) {
+    const decoded = jwtDecode(token);
+    console.log("TESSSSS", decoded);
+
+    userEmail = decoded.email;
+    userRole = decoded.role_name;
+  }
   
   // Konversi path URL ke judul halaman yang lebih user-friendly
   const getPageTitle = (path) => {
@@ -72,10 +85,10 @@ const Header = ({ toggleSidebar }) => {
           {/* Dropdown */}
           {isOpen && (
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg p-3 z-50">
-              <div className="px-3 py-2 border-b">
-                <p className="text-sm text-black font-semibold">Customer</p>
-                <p className="text-xs text-gray-500">Alfaturrizki@gmail.com</p>
-              </div>
+             <div className="px-3 py-2 border-b">
+              <p className="text-sm text-black font-semibold">{userRole}</p>
+              <p className="text-xs text-gray-500">{userEmail}</p>
+            </div>
 
               <div className="py-2">
                 {/* Profil */}
