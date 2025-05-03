@@ -1,8 +1,8 @@
 'use client';
 
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
-import React, { useState, useEffect } from 'react';
 import { Search, Filter, Plus, MoreVertical, Package, Utensils, Beer, X, UploadCloud } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -16,7 +16,12 @@ const Produk = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [errors, setErrors] = useState({});
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const dropdownRef = useRef(null);
 
+  const handleStatCardClick = (category) => {
+    setSelectedCategory(category);
+  };
+  
   const [formData, setFormData] = useState({
     kodeProduk: '',
     stok: '',
@@ -135,23 +140,6 @@ const Produk = () => {
     }
   };
 
-  const openModalForEdit = (product) => {
-    setIsEditing(true);
-    setFormData({
-      kodeProduk: product.id,
-      stok: product.stock,
-      namaProduk: product.name,
-      tipeProduk: product.category,
-      keterangan: product.active ? 'Aktif' : 'Tidak Aktif',
-      hargaModal: product.hargaModal,
-      hargaJual: product.price,
-      deskripsi: product.deskripsi,
-      image: product.image,
-    });
-    setPreviewImage(product.image);
-    setIsModalOpen(true);
-  };
-
   const openModalForAdd = () => {
     setIsEditing(false);
     resetForm(); // Reset form ketika modal tambah produk dibuka
@@ -171,7 +159,30 @@ const Produk = () => {
       setIsCollapsed(!isCollapsed);
     }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Tutup filter jika klik di luar elemen dengan class tertentu
+      if (!event.target.closest('.dropdown-wrapper')) {
+        setIsFilterOpen(false);
+      }
   
+      // Tutup dropdown jika klik di luar elemen dropdownRef
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setActiveDropdown(null);
+      }
+    };
+  
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+
   return (
     <div className="h-screen flex flex-col bg-white">
       <Header toggleSidebar={toggleSidebar} />
@@ -201,9 +212,9 @@ const Produk = () => {
                 />
               </div>
 
-              <div className="relative">
+              <div className="relative dropdown-wrapper" ref={dropdownRef}>
                 <button
-                  className="border border-gray-500 text-black flex items-center justify-center bg-white px-4 py-2 rounded-lg text-sm"
+                  className="cursor-pointer border border-gray-500 text-black flex items-center justify-center bg-white px-4 py-2 rounded-lg text-sm"
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                 >
                   Filter <Filter size={18} className="ml-2" />
@@ -244,7 +255,7 @@ const Produk = () => {
 
             </div>
             <button
-              className="bg-[#F6B543] text-white px-4 py-2 rounded-lg flex items-center justify-center text-sm whitespace-nowrap"
+              className="cursor-pointer bg-[#F6B543] text-white px-4 py-2 rounded-lg flex items-center justify-center text-sm whitespace-nowrap"
               onClick={openModalForAdd}
             >
               <Plus size={18} className="mr-2" /> Tambah Data
@@ -294,7 +305,7 @@ const Produk = () => {
                         onClick={() =>
                           setActiveDropdown(activeDropdown === product.id ? null : product.id)
                         }
-                        className="p-1 hover:bg-gray-100 rounded-full"
+                        className="cursor-pointer p-1 hover:bg-gray-100 rounded-full"
                       >
                         <MoreVertical className="w-5 h-5 text-gray-600" />
                       </button>
@@ -304,6 +315,7 @@ const Produk = () => {
                           <button
                             className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
                             onClick={() => {
+                              setActiveDropdown(null);
                               setFormData({
                                 kodeProduk: product.id,
                                 stok: product.stock,
@@ -315,8 +327,8 @@ const Produk = () => {
                                 deskripsi: product.deskripsi,
                                 image: product.image,
                               });
+                              setIsEditing(true);
                               setIsModalOpen(true);
-                              setActiveDropdown(null);
                             }}
                           >
                             Edit
@@ -325,6 +337,7 @@ const Produk = () => {
                           <button
                             className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
                             onClick={() => {
+                              setActiveDropdown(null);
                               Swal.fire({
                                 title: 'Yakin ingin menghapus?',
                                 text: `Produk ${product.name} akan dihapus!`,
@@ -345,7 +358,6 @@ const Produk = () => {
                                   });
                                 }
                               });
-                              setActiveDropdown(null);
                             }}
                           >
                             Hapus
@@ -382,7 +394,7 @@ const Produk = () => {
             <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
               <div className="bg-white rounded-xl p-6 sm:p-8 w-[95%] md:w-[900px] max-h-[90vh] overflow-y-auto shadow-lg">
                 <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-2xl font-bold text-black">Tambah Produk</h2>
+                  <h2 className="text-2xl font-bold text-black">  {isEditing ? 'Edit Produk' : 'Tambah Produk'}</h2>
                   <button
                     className="text-gray-500 hover:text-black"
                     onClick={() => setIsModalOpen(false)}

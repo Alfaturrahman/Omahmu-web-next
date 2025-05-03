@@ -1,21 +1,22 @@
 'use client';
 
-import { useState } from 'react';
-import '@/globals.css';
+import { useState, useRef, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
-import { Filter, Search } from "lucide-react";
+import { Filter, Search, FileDown} from "lucide-react";
+import '@/globals.css';
 
 export default function Home() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [search, setSearch] = useState("");
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState("All"); // Default: filter kategori ke "All"
-    const [sortOrder, setSortOrder] = useState(""); // Default: tidak ada sort
+    const [selectedCategory, setSelectedCategory] = useState("All");
+    const [sortOrder, setSortOrder] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
-
+    const filterRef = useRef(null);
+    
     const data = [
         { name: "Nasi Goreng", category: "Makanan", price: "RP 10.000,00", sellingPrice: "RP 20.000,00", quantity: "50", totalSales: "RP 1.000.000,00", profit: "RP 500.000,00" },
         { name: "Mie Ayam", category: "Makanan", price: "RP 8.000,00", sellingPrice: "RP 15.000,00", quantity: "70", totalSales: "RP 1.050.000,00", profit: "RP 490.000,00" },
@@ -30,30 +31,28 @@ export default function Home() {
         { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
     ];
 
-    // Fungsi untuk convert "RP 1.000.000,00" menjadi angka 1000000
     const parseRupiah = (value) => {
         if (!value) return 0;
         return parseInt(value.replace(/[^\d]/g, ""));
     };
 
-    // Proses filter dan sort
-    const filteredData = data
-        .filter((item) => {
+    const filteredData = 
+        data.filter((item) => {
             const matchName = item.name.toLowerCase().includes(search.toLowerCase());
-            const matchCategory = selectedCategory === "All" || item.category === selectedCategory; // Filter kategori "All" artinya tidak ada filter kategori
+            const matchCategory = selectedCategory === "All" || item.category === selectedCategory;
             return matchName && matchCategory;
         })
         .sort((a, b) => {
-            const aSales = parseRupiah(a.totalSales); // Urut berdasarkan totalSales
+            const aSales = parseRupiah(a.totalSales);
             const bSales = parseRupiah(b.totalSales);
 
             if (sortOrder === "asc") {
-                return aSales - bSales; // TotalSales terendah ke tertinggi
+                return aSales - bSales;
             } else if (sortOrder === "desc") {
-                return bSales - aSales; // TotalSales tertinggi ke terendah
+                return bSales - aSales;
             }
-            return 0; // Kalo nggak ada sortOrder, yaudah default
-        });
+        return 0;
+    });
 
     const totalPages = Math.ceil(filteredData.length / itemsPerPage);
     const displayedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -65,6 +64,19 @@ export default function Home() {
             setIsCollapsed(!isCollapsed);
         }
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+          if (filterRef.current && !filterRef.current.contains(event.target)) {
+            setIsFilterOpen(false);
+          }
+        };
+      
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+          document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     return (
         <div className="h-screen flex flex-col bg-white">
@@ -87,69 +99,52 @@ export default function Home() {
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
                         <h2 className="text-xl sm:text-2xl text-black font-bold">Laporan Keuntungan Produk</h2>
                         <div className="flex items-center gap-2">
-                            <div className="relative"> {/* Tambahkan div relative disini */}
+                            {/* Button Export */}
+                            <button
+                            // onClick={""}
+                            className="cursor-pointer flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md"
+                            >
+                                <FileDown className="w-5 h-5 mr-2 text-black" />
+                                Export
+                            </button>
+                            <div ref={filterRef} className="relative inline-block"> {/* Tambahkan div relative disini */}
                                 <button
                                     onClick={() => setIsFilterOpen(!isFilterOpen)}
-                                    className="flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md"
+                                    className="cursor-pointer flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md"
                                 >
                                     <Filter className="w-5 h-5 mr-2 text-black" />
                                     Filter
                                 </button>
 
                                 {isFilterOpen && (
-                                    <div className="absolute left-0 z-10 mt-2 w-48 text-black bg-white border border-gray-200 rounded-lg shadow-md">
-                                        <ul className="py-1">
-                                            <li
-                                                onClick={() => {
-                                                    setSelectedCategory("All");
-                                                    setSortOrder("");
-                                                    setIsFilterOpen(false);
-                                                }}
-                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                    <div className="absolute left-0 z-10 mt-2 w-50 text-black bg-white border border-gray-200 rounded-lg shadow-md">
+                                        {/* Filter Kategori */}
+                                        <div className="mb-3 mt-2 px-2">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
+                                            <select
+                                                value={selectedCategory}
+                                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                                className="w-full border rounded p-2 text-sm text-gray-500"
                                             >
-                                                Semua Kategori
-                                            </li>
+                                                <option value="All">Semua Kategori</option>
+                                                <option value="Makanan">Makanan</option>
+                                                <option value="Minuman">Minuman</option>
+                                            </select>
+                                            </div>
 
-                                            <li
-                                                onClick={() => {
-                                                    setSelectedCategory("Makanan");
-                                                    setSortOrder("");
-                                                    setIsFilterOpen(false);
-                                                }}
-                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                            {/* Urutkan Berdasarkan Harga */}
+                                            <div className="mb-3 px-2">
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Urutkan Harga</label>
+                                            <select
+                                                value={sortOrder}
+                                                onChange={(e) => setSortOrder(e.target.value)}
+                                                className="w-full border rounded p-2 text-sm text-gray-500"
                                             >
-                                                Makanan
-                                            </li>
-                                            <li
-                                                onClick={() => {
-                                                    setSelectedCategory("Minuman");
-                                                    setSortOrder("");
-                                                    setIsFilterOpen(false);
-                                                }}
-                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                            >
-                                                Minuman
-                                            </li>
-                                            <hr className="my-1 text-gray-500 border border-gray-500"/>
-                                            <li
-                                                onClick={() => {
-                                                    setSortOrder("asc");
-                                                    setIsFilterOpen(false);
-                                                }}
-                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                            >
-                                                Harga Terendah
-                                            </li>
-                                            <li
-                                                onClick={() => {
-                                                    setSortOrder("desc");
-                                                    setIsFilterOpen(false);
-                                                }}
-                                                className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                            >
-                                                Harga Tertinggi
-                                            </li>
-                                        </ul>
+                                                <option value="">Default</option>
+                                                <option value="asc">Harga Terendah</option>
+                                                <option value="desc">Harga Tertinggi</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 )}
                             </div>
