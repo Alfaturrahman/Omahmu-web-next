@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect} from 'react';
-import '@/globals.css';
+import { Filter, Eye, X } from "lucide-react";
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
-import { Filter, Eye } from "lucide-react";
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import '@/globals.css';
 
 export default function DaftarPaket() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -17,7 +19,14 @@ export default function DaftarPaket() {
     const [showFilter, setShowFilter] = useState(false);
     const [showRejectModal, setShowRejectModal] = useState(false);
     const [showAcceptModal, setShowAcceptModal] = useState(false);
-
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+    const [previewImage, setPreviewImage] = useState('');
+    const [previewPdf, setPreviewPdf] = useState('');
+    const [modalContent, setModalContent] = useState(null); // Bisa URL gambar atau PDF
+    const [modalType, setModalType] = useState(null); // 'image' atau 'pdf'
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    
     const filterRef = useRef(null);
         const data = [
             { no: 1, kode: '121314', email: 'ALFATURRISKI@GMAIL.COM', paket: 'PAKET 1', tanggal: '2025-03-03', status: 'Selesai', statuspembayaran: 'Lunas' },
@@ -32,7 +41,25 @@ export default function DaftarPaket() {
             { no: 10, kode: '0932211', email: 'ALFATURRISKI@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Ditolak', statuspembayaran: 'Belum Lunas' },
             { no: 11, kode: '0293875', email: 'EKAFITRIANISA@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Diproses', statuspembayaran: 'Lunas' },
             { no: 12, kode: '0932211', email: 'ALFATURRISKI@GMAIL.COM', paket: 'PAKET 2', tanggal: '2025-03-03', status: 'Ditolak', statuspembayaran: 'Belum Lunas' },
-        ];
+    ];
+
+    const handleImageClick = (src) => {
+        setModalType('image');
+        setModalContent(src);
+        setIsModalOpen(true);
+    };
+
+    const handlePdfClick = (src) => {
+        setModalType('pdf');
+        setModalContent(src);
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setModalContent(null);
+        setModalType(null);
+    };
 
     const [filteredData, setFilteredData] = useState(data);
 
@@ -104,7 +131,7 @@ export default function DaftarPaket() {
     const statusColor = {
         'Selesai': 'bg-[#CFF0E7] text-[#57AD94]',
         'Lunas': 'bg-[#ABF291] text-[#04A20F]',
-        'Diproses': 'bg-[#FFF4D8] text-[#F1D779]',
+        'Diproses': 'bg-orange-100 text-orange-600',
         'Ditolak': 'bg-[#EF9DAD] text-[#EF4946]',
         'Belum Lunas': 'bg-[#FFC1AF] text-[#FE4C4C]',
     };
@@ -132,51 +159,53 @@ export default function DaftarPaket() {
 
                             <button
                                 onClick={() => setShowFilter((prev) => !prev)}
-                                className="flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md"
+                                className="flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md cursor-pointer"
                                 >
                                 Filter
                                 <Filter className="w-5 h-5 ml-2 text-black" />
                             </button>
 
-                                {/* Filter Dropdown */}
-                                {showFilter && (
-                                    <div ref={filterRef} className="absolute right-5 top-[90px] bg-white border rounded-md shadow-md w-60 p-4 z-50">
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Status
-                                            </label>
-                                            <select
-                                                value={selectedStatus}
-                                                onChange={(e) => handleSelectStatus(e.target.value)}
-                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            >
-                                                {statuses.map((status, i) => (
-                                                <option key={i} value={status}>
-                                                    {status === "" ? "Semua Status" : status}
-                                                </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="mb-2">
-                                            <label className="block text-sm font-medium text-black mb-1">
-                                                Tanggal
-                                            </label>
-                                            <input
-                                                type="date"
-                                                value={selectedDate}
-                                                onChange={(e) => setSelectedDate(e.target.value)}
-                                                className="w-full border border-gray-300 text-black rounded px-2 py-1 text-sm"
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={handleClearFilter}
-                                            className="mt-2 w-full text-sm bg-red-100 text-red-600 py-1 rounded hover:bg-red-200"
-                                            >
-                                            Reset Filter
-                                        </button>
+                            {/* Filter Dropdown */}
+                            {showFilter && (
+                                <div ref={filterRef} className="absolute right-5 top-[140px] bg-white border rounded-md shadow-md w-60 p-4 z-50">
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Status
+                                        </label>
+                                        <select
+                                            value={selectedStatus}
+                                            onChange={(e) => handleSelectStatus(e.target.value)}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {statuses.map((status, i) => (
+                                            <option key={i} value={status}>
+                                                {status === "" ? "Semua Status" : status}
+                                            </option>
+                                            ))}
+                                        </select>
                                     </div>
-                                )}
+
+                                    <div className="mb-2">
+                                        <label className="block text-sm font-medium text-black mb-1">
+                                            Tanggal
+                                        </label>
+                                        <DatePicker
+                                            selected={selectedDate}
+                                            onChange={(date) => setSelectedDate(date)}
+                                            className="w-full border border-gray-300 text-black rounded px-2 py-1 text-sm"
+                                            placeholderText="00-00-0000"
+                                            dateFormat="dd-MM-yyyy"
+                                            popperPlacement="bottom"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleClearFilter}
+                                        className="mt-2 w-full text-sm bg-red-100 text-red-600 py-1 rounded hover:bg-red-200"
+                                        >
+                                        Reset Filter
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Stat Card */}
@@ -276,9 +305,9 @@ export default function DaftarPaket() {
                                         <h2 className="text-center font-bold text-lg flex-1">DETAIL PENGAJUAN</h2>
                                         <button
                                         onClick={() => setSelectedItem(null)}
-                                        className="text-gray-600 hover:text-red-500 text-xl font-bold"
+                                        className="cursor-pointer text-gray-600 hover:text-red-500 text-xl font-bold"
                                         >
-                                        ×
+                                        <X/>
                                         </button>
                                     </div>
 
@@ -331,7 +360,8 @@ export default function DaftarPaket() {
                                                 <img
                                                     src="/Toko1.png"
                                                     alt="Foto Toko"
-                                                    className="w-[120px] h-auto object-cover rounded border shadow"
+                                                    className="w-[120px] h-auto object-cover rounded border shadow cursor-pointer"
+                                                    onClick={() => handleImageClick('/Logo-Toko.png')}
                                                 />
                                                 </div>
                                             </div>
@@ -348,10 +378,11 @@ export default function DaftarPaket() {
                                             'SURAT IZIN USAHA (OPSIONAL)',
                                         ].map((label, idx) => (
                                             <div key={idx} className="mb-3">
-                                            <p className="text-xs font-semibold mb-1">{label}</p>
-                                            <div className="flex items-center border rounded px-3 py-2 bg-gray-50 text-sm">
-                                                <span className="mr-2">📄</span> pdf document.pdf
-                                            </div>
+                                                <p className="text-xs font-semibold mb-1">{label}</p>
+                                                <div className="flex items-center border rounded px-3 py-2 bg-gray-50 text-sm cursor-pointer"
+                                                onClick={() => handlePdfClick('/pbl.pdf')}>
+                                                    <span className="mr-2">📄</span> pdf document.pdf
+                                                </div>
                                             </div>
                                         ))}
                                         </div>
@@ -464,9 +495,46 @@ export default function DaftarPaket() {
                                         </div>
                                     </div>
                                     )}
+
+                                    {/* Modal untuk Preview Gambar */}
+                                    {isModalOpen && modalType === 'image' && (
+                                    <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-80">
+                                        <div className="bg-white rounded p-1 shadow-lg max-w-[90vw] max-h-[90vh] relative">
+                                        <button
+                                            onClick={closeModal}
+                                            className="absolute top-2 right-2 text-lg font-bold text-white hover:text-red-500 cursor-pointer"
+                                        >
+                                            <X />
+                                        </button>
+                                        <img
+                                            src={modalContent}
+                                            alt="Preview"
+                                            className="rounded max-w-full max-h-[80vh] object-contain"
+                                        />
+                                        </div>
+                                    </div>
+                                    )}
+
+                                    {/* Modal untuk Preview PDF */}
+                                    {isModalOpen && modalType === 'pdf' && (
+                                    <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-80">
+                                        <div className="bg-white rounded shadow-lg w-[95vw] max-h-[90vh] relative">
+                                        <button
+                                            onClick={closeModal}
+                                            className="absolute top-2 right-2 text-lg font-bold text-white hover:text-red-500 cursor-pointer"
+                                        >
+                                            <X />
+                                        </button>
+                                        <iframe
+                                            src={modalContent}
+                                            title="PDF Preview"
+                                            className="w-full h-[80vh] rounded"
+                                        ></iframe>
+                                        </div>
+                                    </div>
+                                    )}
                                 </>
                                 )}
-
                             </div>
                         </div>
 

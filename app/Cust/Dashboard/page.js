@@ -84,7 +84,7 @@ export default function Home() {
             </div>
 
             {/* List Toko */}
-            <div className="w-full flex flex-wrap justify-start gap-16 px-4">
+            <div className="w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {filteredToko.length > 0 ? (
                     filteredToko.map((toko, i) => {
                     const isOpen = toko.status === "buka";
@@ -92,61 +92,62 @@ export default function Home() {
 
                     return (
                         <div
-                        key={i}
-                        className="w-full md:w-[350px] bg-white border border-gray-400 rounded-xl p-4 text-left mb-4"
+                            key={i}
+                            className="bg-white border border-gray-400 rounded-xl p-4 text-left mb-4"
                         >
-                        {/* Gambar Logo */}
-                        <img
-                            src="/Logo-Toko.png"
-                            alt="Logo Toko"
-                            className="w-full p-3 h-auto mx-auto"
-                        />
-
-                        {/* Nama Toko */}
-                        <h3 className="mt-4 font-semibold text-black">{toko.nama}</h3>
-
-                        {/* Jam Operasional */}
-                        <div className="flex items-center text-gray-500 text-sm mt-1 mb-4">
-                            <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4 mr-1"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            {/* Gambar Logo */}
+                            <img
+                                src="/Logo-Toko.png"
+                                alt="Logo Toko"
+                                className="w-full p-3 h-auto mx-auto"
                             />
-                            </svg>
-                            {toko.jam}
-                        </div>
 
-                        {/* Status */}
-                        <div className="flex items-center mt-2">
-                            <span className={`w-3 h-3 rounded-full bg-${color}-500 mr-2`}></span>
-                            <span className={`text-sm text-${color}-600 font-medium`}>
-                            {isOpen ? "Toko Buka" : "Toko Tutup"}
-                            </span>
-                        </div>
+                            {/* Nama Toko */}
+                            <h3 className="mt-4 font-semibold text-black">{toko.nama}</h3>
 
-                        {/* Tombol */}
-                        <div className="flex justify-end mt-4">
-                            <button className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded">
-                            Kunjungi Toko
-                            </button>
-                        </div>
+                            {/* Jam Operasional */}
+                            <div className="flex items-center text-gray-500 text-sm mt-1 mb-4">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4 mr-1"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                </svg>
+                                {toko.jam}
+                            </div>
+
+                            {/* Status */}
+                            <div className="flex items-center mt-2">
+                                <span className={`w-3 h-3 rounded-full bg-${color}-500 mr-2`}></span>
+                                <span className={`text-sm text-${color}-600 font-medium`}>
+                                {isOpen ? "Toko Buka" : "Toko Tutup"}
+                                </span>
+                            </div>
+
+                            {/* Tombol */}
+                            <div className="flex justify-end mt-4">
+                                <button className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded">
+                                Kunjungi Toko
+                                </button>
+                            </div>
                         </div>
                     );
                     })
                 ) : (
                     <div className="w-full text-center py-20 text-gray-500 font-medium">
-                    Tidak ada data yang sesuai dengan pencarian.
+                        Tidak ada data yang sesuai dengan pencarian.
                     </div>
                 )}
             </div>
+
         </div>
       </div>
     </div>

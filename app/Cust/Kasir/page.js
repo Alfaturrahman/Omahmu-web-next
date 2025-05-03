@@ -27,6 +27,7 @@ export default function Kasir() {
 
     const [formData, setFormData] = useState({
         phoneNumber: "",
+        deliveryAddress: "",
     });
     
     const handleInputChange = (e) => {
@@ -46,7 +47,6 @@ export default function Kasir() {
 
     const handlePayment = () => {
         if (!validateForm()) {
-            // Jika form tidak valid, tidak lanjut proses
             return;
         }
     
@@ -145,6 +145,9 @@ export default function Kasir() {
           if (!pickupTime) {
             newErrors.pickupTime = "Jam pengambilan wajib diisi.";
           }
+          if (!formData.deliveryAddress) {
+            newErrors.deliveryAddress = "Alamat wajib diisi.";
+          }
         }
       
         if (orderType === "dinein") {
@@ -155,7 +158,7 @@ export default function Kasir() {
             newErrors.pickupTime = "Jam pengambilan wajib diisi.";
           }
         }
-      
+
         if (!formData.phoneNumber) {
           newErrors.phoneNumber = "Nomor HP wajib diisi.";
         } else if (!/^\d+$/.test(formData.phoneNumber)) {
@@ -367,65 +370,81 @@ export default function Kasir() {
 
                         {/* Jika Pre-order */}
                         {orderType === "preorder" && (
-                        <div className="mt-4 space-y-4">
-                            <div className="flex gap-4">
-                                <label className="flex items-center gap-2 text-sm text-black">
-                                    <input
-                                        type="radio"
-                                        name="preorderOption"
-                                        value="diantar"
-                                        checked={preorderOption === "diantar"}
-                                        onChange={() => setPreorderOption("diantar")}
-                                        className="form-radio text-[#ECA641]"
-                                    />
-                                    Diantar
-                                </label>
-                                <label className="flex items-center gap-2 text-sm text-black">
-                                    <input
-                                        type="radio"
-                                        name="preorderOption"
-                                        value="pickup"
-                                        checked={preorderOption === "pickup"}
-                                        onChange={() => setPreorderOption("pickup")}
-                                        className="form-radio text-[#ECA641]"
-                                    />
-                                    Bayar Sendiri
-                                </label>
-                            </div>
-                            {errors.preorderOption && <p className="text-red-500 text-sm">{errors.preorderOption}</p>}
-
-                            {/* Pickup Date dan Time sama seperti sebelumnya */}
-                            <div className="flex gap-4">
-                                {/* Tanggal Pengambilan */}
-                                <div className="flex flex-col w-1/2">
-                                    <label className="text-sm text-black mb-1">Tanggal Pengambilan</label>
-                                    <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 gap-2">
+                            <div className="mt-4 space-y-4">
+                                <div className="flex gap-4">
+                                    <label className="flex items-center gap-2 text-sm text-black">
                                         <input
-                                            type="date"
-                                            name="pickupDate"
-                                            className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupDate ? 'border-red-500' : ''}`}
-                                            onChange={(e) => setPickupDate(e.target.value)}
+                                            type="radio"
+                                            name="preorderOption"
+                                            value="diantar"
+                                            checked={preorderOption === "diantar"}
+                                            onChange={() => setPreorderOption("diantar")}
+                                            className="form-radio text-[#ECA641]"
                                         />
+                                        Diantar
+                                    </label>
+                                    <label className="flex items-center gap-2 text-sm text-black">
+                                        <input
+                                            type="radio"
+                                            name="preorderOption"
+                                            value="pickup"
+                                            checked={preorderOption === "pickup"}
+                                            onChange={() => setPreorderOption("pickup")}
+                                            className="form-radio text-[#ECA641]"
+                                        />
+                                        Bayar Sendiri
+                                    </label>
+                                </div>
+                                {errors.preorderOption && <p className="text-red-500 text-sm">{errors.preorderOption}</p>}
+
+                                {/* Pickup Date dan Time sama seperti sebelumnya */}
+                                <div className="flex gap-4">
+                                    {/* Tanggal Pengambilan */}
+                                    <div className="flex flex-col w-1/2">
+                                        <label className="text-sm text-black mb-1">Tanggal Pengambilan</label>
+                                        <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 gap-2">
+                                            <input
+                                                type="date"
+                                                name="pickupDate"
+                                                className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupDate ? 'border-red-500' : ''}`}
+                                                onChange={(e) => setPickupDate(e.target.value)}
+                                            />
+                                        </div>
+                                        {errors.pickupDate && <p className="text-red-500 text-sm">{errors.pickupDate}</p>}
                                     </div>
-                                    {errors.pickupDate && <p className="text-red-500 text-sm">{errors.pickupDate}</p>}
+
+                                    {/* Jam Pengambilan */}
+                                    <div className="flex flex-col w-1/2">
+                                        <label className="text-sm text-black mb-1">Jam Pengambilan</label>
+                                        <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 gap-2">
+                                            <input
+                                                type="time"
+                                                name="pickupTime"
+                                                className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupTime ? 'border-red-500' : ''}`}
+                                                onChange={(e) => setPickupTime(e.target.value)}
+                                            />
+                                        </div>
+                                        {errors.pickupTime && <p className="text-red-500 text-sm">{errors.pickupTime}</p>}
+                                    </div>
                                 </div>
 
-                                {/* Jam Pengambilan */}
-                                <div className="flex flex-col w-1/2">
-                                    <label className="text-sm text-black mb-1">Jam Pengambilan</label>
-                                    <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 gap-2">
-                                        <input
-                                            type="time"
-                                            name="pickupTime"
-                                            className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupTime ? 'border-red-500' : ''}`}
-                                            onChange={(e) => setPickupTime(e.target.value)}
+                                {/* Alamat */}
+                                {preorderOption === "diantar" && (
+                                    <div className="flex flex-col">
+                                        <label className="text-sm text-black mb-1">Alamat Pengiriman</label>
+                                        <textarea
+                                            name="deliveryAddress"
+                                            className={`outline-none text-sm text-black border border-gray-300 rounded-md px-3 py-2 ${errors.deliveryAddress ? 'border-red-500' : ''}`}
+                                            rows="2"
+                                            placeholder="Masukkan alamat lengkap"
+                                            onChange={(e) => setDeliveryAddress(e.target.value)}
                                         />
+                                        {errors.deliveryAddress && <p className="text-red-500 text-sm">{errors.deliveryAddress}</p>}
                                     </div>
-                                    {errors.pickupTime && <p className="text-red-500 text-sm">{errors.pickupTime}</p>}
-                                </div>
+                                )}
                             </div>
-                        </div>
                         )}
+
 
                         {/* Jika Makan di Tempat */}
                         {orderType === "dinein" && (
