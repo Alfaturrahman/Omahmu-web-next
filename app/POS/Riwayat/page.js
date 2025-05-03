@@ -47,8 +47,8 @@ function Riwayat() {
     async function fetchData() {
         try {
             const result = await apiService.getData('/storeowner/riwayat_pesanan/');
-            setRiwayatDineIn(result.data.riwayat_pesanan_ditempat.rows); // menyimpan data dine-in
-            setRiwayatOnline(result.data.riwayat_pesanan_online.rows); // menyimpan data online
+            setRiwayatDineIn(result.data.riwayat_pesanan_ditempat); // menyimpan data dine-in
+            setRiwayatOnline(result.data.riwayat_pesanan_online); // menyimpan data online
         } catch (err) {
             console.error(err.message);
         }
@@ -59,13 +59,14 @@ function Riwayat() {
         try {
             const result = await apiService.getData(`/storeowner/riwayat_detail_pesanan/?order_id=${pesananId}`);
             
-            // Pastikan data ada dan memiliki struktur yang benar
-            if (result.data && result.data.length > 0 && result.data[0].get_order_json) {
-                setDetailPesanan(result.data[0].get_order_json); // Simpan data detail pesanan ke state
-                setShowModal(true);  // Tampilkan modal
-            } else {
-                console.error("Data detail pesanan tidak ditemukan.");
-            }
+            const detail = result.data[0].get_order_json;
+
+            // Jaga-jaga jika items null, fallback jadi array kosong
+            detail.items = detail.items || [];
+
+            setDetailPesanan(detail);
+            setShowModal(true);
+
         } catch (err) {
             console.error("Terjadi kesalahan:", err.message);
         }
@@ -369,11 +370,13 @@ function Riwayat() {
                     <div className="mt-auto pt-6 flex flex-col sm:flex-row justify-between items-center gap-2 text-gray-600">
                         <span>Menampilkan {currentPage * itemsPerPage - itemsPerPage + 1} hingga {Math.min(currentPage * itemsPerPage, getData().length)} dari {getData().length} entri</span>
                         <div className="flex gap-2">
-                        <button className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'cursor-not-allowed bg-gray-300' : 'bg-[#ECA641] text-white'}`} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>Sebelumnya</button>
+                        <button className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'cursor-not-allowed bg-gray-300' : 'bg-[#ECA641] text-white'}`} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>&lt;
+                        </button>
                         {[...Array(totalPages)].map((_, i) => (
                             <button key={i} className={`px-4 py-2 rounded-md ${currentPage === i + 1 ? 'bg-[#ECA641] text-white' : 'bg-gray-300'}`} onClick={() => setCurrentPage(i + 1)}>{i + 1}</button>
                         ))}
-                        <button className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'cursor-not-allowed bg-gray-300' : 'bg-[#ECA641] text-white'}`} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>Selanjutnya</button>
+                        <button className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'cursor-not-allowed bg-gray-300' : 'bg-[#ECA641] text-white'}`} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>&gt;
+                        </button>
                         </div>
                     </div>
                 </div>

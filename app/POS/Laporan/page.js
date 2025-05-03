@@ -249,7 +249,7 @@ function Laporan() {
                             onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                             disabled={currentPage === 1}
                         >
-                            Sebelumnya
+                        &lt;
                         </button>
                         {[...Array(totalPages)].map((_, i) => (
                             <button 
@@ -265,7 +265,7 @@ function Laporan() {
                             onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                             disabled={currentPage === totalPages}
                         >
-                            Selanjutnya
+                        &gt;
                         </button>
                         </div>
                     </div>

@@ -159,13 +159,13 @@ const Produk = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-
-    console.log("isEditing", isEditing );
-    
+  
+    console.log("isEditing", isEditing);
   
     const storeId = localStorage.getItem('store_id');
     const formPayload = new FormData();
   
+    // Menambahkan nilai produk ke dalam FormData
     formPayload.append('store_id', storeId);
     formPayload.append('product_code', formData.kodeProduk);
     formPayload.append('stock', formData.stok);
@@ -175,13 +175,19 @@ const Produk = () => {
     formPayload.append('capital_price', formData.hargaModal);
     formPayload.append('selling_price', formData.hargaJual);
     formPayload.append('is_active', String(formData.keterangan === 'true'));
-
-    console.log("TES", formData.keterangan);
-    
-
-    // Jika gambar baru dipilih
+  
+    // Jika gambar baru dipilih, tambahkan gambar ke dalam FormData
     if (formData.image instanceof File) {
       formPayload.append('product_picture', formData.image);
+      console.log("Gambar berhasil ditambahkan:", formData.image);
+    } else {
+      // Jika tidak ada gambar baru yang dipilih, tambahkan log
+      console.log("Tidak ada gambar yang dipilih, gambar lama tetap digunakan");
+    }
+  
+    // Cek data di FormData sebelum dikirim
+    for (let pair of formPayload.entries()) {
+      console.log(pair[0] + ': ' + pair[1]);
     }
   
     try {

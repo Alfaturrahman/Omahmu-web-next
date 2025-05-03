@@ -64,7 +64,7 @@ function Kasir() {
                 customer_name: customerName,
                 date: orderDate,
                 total_amount: total, // total yang sudah termasuk pajak (kalau ada)
-                order_status: "completed", // asumsi order langsung completed
+                order_status: "in_progress", // asumsi order langsung completed
                 payment_method: selected, // "cash" atau "qris"
                 is_pre_order: false, // default
                 is_delivered: false, // default
@@ -126,6 +126,9 @@ function Kasir() {
 
     const handleBayarSekarang = () => {
         handlePayment();
+    };
+    
+    const handleBayarQRIS = () => {
         insertOrder();
     };
         
@@ -137,7 +140,7 @@ function Kasir() {
     // Urutkan dari menit yang terlama ke terbaru
     const sortedOrders = listAntrian.sort((a, b) => b.minutesAgo - a.minutesAgo);
     
-    const showModal = () => {
+    const showModal = async (orderId) => {
         Swal.fire({
             icon: "warning",
             title: "Apakah Kamu Yakin?",
@@ -147,9 +150,44 @@ function Kasir() {
             confirmButtonColor: "#ECA641",
             cancelButtonColor: "#DC3545",
             reverseButtons: true,
-        }).then((result) => {
+        }).then(async (result) => {
             if (result.isConfirmed) {
-                console.log("Selesai ditekan!");
+                try {
+                    // Mengupdate order status ke "completed"
+                    const response = await apiService.putData(`/storeowner/update_order_status/${orderId}/`, {
+                        order_status: "completed"
+                    });
+    
+                    // Pastikan response berhasil dengan status code 200
+                    if (response.status_code === 200 && response.messagetype === "S") {
+                        // Tampilkan swal fire success jika update berhasil
+                        Swal.fire({
+                            icon: "success",
+                            title: "Berhasil!",
+                            text: "Status pesanan telah diperbarui.",
+                            confirmButtonColor: "#ECA641",
+                        });
+    
+                        // Mengambil data antrian terbaru
+                        fetchDataAntrian();
+                    } else {
+                        // Menangani jika status_code bukan 200
+                        Swal.fire({
+                            icon: "error",
+                            title: "Gagal!",
+                            text: response.message || "Gagal memperbarui status pesanan.",
+                            confirmButtonColor: "#DC3545",
+                        });
+                    }
+                } catch (error) {
+                    // Menangani error jika terjadi masalah saat melakukan API request
+                    Swal.fire({
+                        icon: "error",
+                        title: "Gagal!",
+                        text: error.message || "Terjadi kesalahan saat memperbarui status pesanan.",
+                        confirmButtonColor: "#DC3545",
+                    });
+                }
             }
         });
     };
@@ -242,12 +280,8 @@ function Kasir() {
     // Menambahkan penjumlahan pada kalkulator kasir
     const handlePayCash = () => {
         // Logic for cash payment
-        Swal.fire({
-            icon: "success",
-            title: "Pembayaran Berhasil",
-            confirmButtonText: "OK",
-            confirmButtonColor: "#ECA641",
-        });
+        insertOrder();
+
         setIsCashModalOpen(false); // Close modal after payment
     };
 
@@ -296,7 +330,7 @@ function Kasir() {
                                 Total Item {order.total_item_belanja}x
                                 </p>
                                 <button
-                                onClick={showModal}
+                                onClick={() => showModal(order.order_id)}  // Menambahkan order_id ke dalam fungsi
                                 className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm"
                                 >
                                 Selesai
@@ -342,6 +376,17 @@ function Kasir() {
                                 <hr className="my-2" />
                                 <p className="text-gray-600">Total Transaksi</p>
                                 <h3 className="text-xl font-bold text-black">Rp {total.toLocaleString("id-ID")}</h3>
+                                {/* Tombol Konfirmasi Pembayaran */}
+                                <button
+                                    className="mt-4 bg-green-500 text-white py-2 px-4 rounded"
+                                    onClick={() => {
+                                        handleBayarQRIS()
+                                        // Menutup modal setelah konfirmasi pembayaran
+                                        setShowQrisModal(false);
+                                    }}
+                                >
+                                    Konfirmasi Pembayaran
+                                </button>
                                 <button
                                     className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
                                     onClick={() => setShowQrisModal(false)}

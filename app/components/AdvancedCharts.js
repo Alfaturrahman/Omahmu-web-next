@@ -10,9 +10,8 @@ export default function AdvancedCharts({ data }) {
 
   function formatTanggal(tanggalString) {
     const date = new Date(tanggalString);
-    const bulan = String(date.getMonth() + 1).padStart(2, '0');
     const tanggal = String(date.getDate()).padStart(2, '0');
-    return `${bulan}-${tanggal}`;
+    return `${tanggal}`;
   }
   
   // Handle pie chart data
