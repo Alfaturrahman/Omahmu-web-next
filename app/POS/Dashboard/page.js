@@ -1,23 +1,35 @@
 'use client';
 
-import { useState } from 'react';
-import '@/globals.css';
+import { useState, useEffect, useRef  } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import ChartSection from '@/components/ChartSection';
 import SummaryCards from '@/components/SummaryCards';
 import AdvancedCharts from '@/components/AdvancedCharts';
-import { Calendar } from 'lucide-react'; // Icon Kalender
+import { Calendar } from 'lucide-react';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
+import '@/globals.css';
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar
   const [isCollapsed, setIsCollapsed] = useState(false); // Desktop sidebar
   const [isFilterOpen, setIsFilterOpen] = useState(false); // Filter calendar
-  const [selectedDate, setSelectedDate] = useState({
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-    day: new Date().getDate(),
-  });
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const filterRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setIsFilterOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
 
   const handleFilterToggle = () => {
     setIsFilterOpen(!isFilterOpen);
@@ -45,10 +57,10 @@ export default function Home() {
         <div className="flex-1 flex flex-col gap-6 p-4 transition-all overflow-y-auto min-h-0 duration-300">
           
           {/* Baris Filter */}
-          <div className="flex justify-end relative">
+          <div className="relative">
             <button
               onClick={handleFilterToggle}
-              className="flex items-center gap-2 text-black py-2 border border-gray-500 px-4 rounded-lg shadow-md transition"
+              className="cursor-pointer flex items-center gap-2 text-black py-2 border border-gray-500 px-4 rounded-lg shadow-md transition"
             >
               Filter
               <Calendar size={20} />
@@ -56,17 +68,22 @@ export default function Home() {
 
             {/* Calendar Dropdown */}
             {isFilterOpen && (
-              <div className="absolute mt-2 top-full right-0 bg-white p-4 rounded-lg shadow-lg border z-50 w-64">
-                <p className="font-semibold mb-2 text-gray-700">Pilih Tanggal</p>
-                <input
-                  type="date"
-                  value={`${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`}
-                  onChange={(e) => {
-                    const [year, month, day] = e.target.value.split('-');
-                    setSelectedDate({ year: parseInt(year), month: parseInt(month), day: parseInt(day) });
-                  }}
-                  className="border text-gray-400 rounded-md p-2 w-full focus:outline-none focus:ring-2 focus:ring-orange-400"
-                />
+              <div ref={filterRef} className="absolute top-full left-0 mt-2">
+                <div className="bg-white p-4 rounded-lg shadow-lg border w-64">
+                  <p className="font-semibold mb-2 text-gray-700">Pilih Tanggal</p>
+                  <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Pesanan</label>
+                      <DatePicker
+                          selected={selectedDate}
+                          onChange={(date) => setSelectedDate(date)}
+                          placeholderText="00/00/0000"
+                          dateFormat="dd/MM/yyyy"
+                          className="w-full border rounded p-2 text-sm text-gray-500"
+                          wrapperClassName="w-full"
+                          popperClassName="z-50"
+                      />
+                  </div>
+                </div>
               </div>
             )}
           </div>

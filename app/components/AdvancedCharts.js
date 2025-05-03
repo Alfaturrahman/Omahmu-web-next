@@ -24,7 +24,7 @@ export default function AdvancedCharts() {
     <div className="flex flex-col md:flex-row lg:flex-col items-center justify-center gap-6">
       
       {/* Grafik Batang */}
-      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[320px]">
+      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[260px]">
         <h3 className="text-center text-black font-bold mb-4">Penjualan Terlaris</h3>
         <div className="w-full h-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -46,7 +46,7 @@ export default function AdvancedCharts() {
         <div className="w-full h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={pieData} cx="50%" cy="50%" outerRadius={70} dataKey="value">
+              <Pie data={pieData} cx="50%" cy="50%" outerRadius={100} dataKey="value">
                 {pieData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
