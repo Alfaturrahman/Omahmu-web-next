@@ -73,7 +73,7 @@ function DaftarPaket() {
     
     const closeModal = () => {
         setIsModalOpen(false);
-        // Reset form setelah modal ditutup
+        setIsEditMode(false);
         setFormData({
           nama: '',
           durasi: '',
