@@ -4,8 +4,11 @@ import { useRouter } from 'next/navigation'
 import React, { useState } from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import Swal from 'sweetalert2';
+import withAuth from 'hoc/withAuth';
+import { jwtDecode } from "jwt-decode";
+import * as apiService from 'services/authService';
 
-export default function ProfilToko() {
+function GantiPassToko() {
     const router = useRouter();
 
     const [formData, setFormData] = useState({
@@ -13,6 +16,15 @@ export default function ProfilToko() {
         newPassword: '',
         confirmPassword: ''
     });
+
+    const token = localStorage.getItem("token");
+
+    let userId = "";
+
+    if (token) {
+        const decoded = jwtDecode(token);
+        userId = decoded.user_id;
+    }
     
     const [errors, setErrors] = useState({
         oldPassword: '',
@@ -49,16 +61,48 @@ export default function ProfilToko() {
         return isValid;
     };
     
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (validateForm()) {
+          try {
+            const token = localStorage.getItem("token");
+            let userId = "";
+      
+            if (token) {
+              const decoded = jwtDecode(token);
+              userId = decoded.user_id; // Ambil user_id dari token
+            }
+      
+            const payload = {
+              user_id: userId, // Menambahkan user_id ke dalam payload
+              oldPassword: formData.oldPassword,
+              newPassword: formData.newPassword,
+              confirmPassword: formData.confirmPassword
+            };
+      
+            const response = await apiService.putData('/user_auth/change_password/', payload);
+      
             Swal.fire({
-                icon: 'success',
-                title: 'Berhasil!',
-                text: 'Kata sandi berhasil diperbarui!',
+              icon: 'success',
+              title: 'Berhasil!',
+              text: response.message || 'Kata sandi berhasil diperbarui!',
             });
+
+             // Reset form
+            setFormData({
+                oldPassword: '',
+                newPassword: '',
+                confirmPassword: ''
+            });
+            
+          } catch (error) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Gagal!',
+              text: error.message || 'Terjadi kesalahan saat mengganti kata sandi.',
+            });
+          }
         }
-    };
-    
+      };
 
     return (
         <div
@@ -133,3 +177,5 @@ export default function ProfilToko() {
         </div>
     )
 }
+
+export default withAuth(GantiPassToko, ['1', '2', '3']);

@@ -468,4 +468,4 @@ function ProfilToko() {
     )
 }
 
-export default withAuth(ProfilToko,['2'])
+export default withAuth(ProfilToko, ['1', '2', '3']);
