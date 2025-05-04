@@ -93,13 +93,14 @@ const Header = ({ toggleSidebar }) => {
               <div className="py-2">
                 {/* Profil */}
                 <button
-                    onClick={() => router.push('/POS/Profile')}
-                    className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg"
-                  >
-                    <User className="w-4 h-4 mr-2" />
-                    Profil
+                  onClick={() => {
+                    router.push('/POS/Profile');
+                  }}
+                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg"
+                >
+                  <User className="w-4 h-4 mr-2" />
+                  Profil
                 </button>
-
                 <button
                     onClick={() => router.push('/POS/GantiSandi')}
                     className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg"

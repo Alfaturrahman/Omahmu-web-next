@@ -1,38 +1,31 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline'
 import { UploadCloud, Upload } from 'lucide-react';
 import Swal from 'sweetalert2';
+import withAuth from 'hoc/withAuth';
+import * as apiService from 'services/authService';
 
-export default function ProfilToko() {
+function ProfilToko() {
     const router = useRouter();
     const [previewImage, setPreviewImage] = useState(null);
     const [previewPernyataan, setPreviewPernyataan] = useState(null);
     const [previewKTP, setPreviewKTP] = useState(null);
     const [previewIzinUsaha, setPreviewIzinUsaha] = useState(null);
-
-    // Form States
+    const [imageFile, setImageFile] = useState(null);
+    const [storeId, setStoreId] = useState(null);
     const [formData, setFormData] = useState({
-        namaToko: 'Alfaturrizki',
-        email: 'Alfaturrizki@gmail.com',
-        nik: '004897865678644',
-        whatsapp: '082098980756',
-        alamat: 'PERUMAHAN BATU AJI BLOK Z NO 20',
-        jamBuka: '08:00',
-        jamTutup: '22:00',
-        deskripsi: 'TOKO SAYA ADALAH TOKO ANGKRINGAN YANG BERADA DI PERUMAHAN BATU AJI PALING POJOK YAITU DI BLOK Z NO 20'
+        namaToko: '',
+        email: '',
+        nik: '',
+        whatsapp: '',
+        alamat: '',
+        jamBuka: '',
+        jamTutup: '',
+        deskripsi: ''
     });
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
     const [errors, setErrors] = useState({
         namaToko: '',
         email: '',
@@ -45,38 +38,105 @@ export default function ProfilToko() {
         pernyataan: '',
         ktp: ''
     });
+    
+    // Ambil store_id dari localStorage
+    useEffect(() => {
+        const storedId = localStorage.getItem("store_id");
+        if (storedId) {
+            setStoreId(storedId);  // Simpan store_id di state
+            // Ambil data store berdasarkan store_id dari URL yang sesuai
+            apiService.getData(`/storeowner/profile/${storedId}/`)
+                .then((response) => {
+                    const storeData = response.data;
+                    // Menetapkan data yang diterima ke formData
+                    setFormData({
+                        namaToko: storeData.store_name || '',
+                        email: storeData.email || '',
+                        nik: storeData.no_nik || '',
+                        whatsapp: storeData.no_hp || '',
+                        alamat: storeData.store_address || '',
+                        jamBuka: storeData.open_time || '',
+                        jamTutup: storeData.close_time || '',
+                        deskripsi: storeData.description || '',
+                    });
+                    
+                    // Menyimpan gambar dan dokumen yang sudah ada jika ada
+                    setPreviewImage(storeData.store_picture);
+                    setPreviewPernyataan(storeData.statement_letter);
+                    setPreviewKTP(storeData.ktp_picture);
+                    setPreviewIzinUsaha(storeData.business_license);
+                })
+                .catch((error) => {
+                    console.error('Error fetching store data:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Gagal!',
+                        text: 'Tidak dapat memuat data toko.',
+                    });
+                });
+        }
+    }, []);  // Pastikan effect hanya berjalan sekali saat pertama kali dimuat
+    
+    const getFileName = (file) => {
+        if (!file) return "";
+        if (typeof file === "string") {
+          return file.split("/").pop(); // dari URL atau path
+        }
+        return file.name; // dari File object
+      };
 
-    const handlePDFChange = (event, type) => {
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+    const handleFileChange = (event, type) => {
         const file = event.target.files[0];
-        if (file && file.type === "application/pdf") {
-            switch (type) {
-                case "pernyataan":
-                    setPreviewPernyataan(file);
-                    break;
-                case "ktp":
-                    setPreviewKTP(file);
-                    break;
-                case "izin":
-                    setPreviewIzinUsaha(file);
-                    break;
-                default:
-                    break;
-            }
+        if (!file) return;
+    
+        const allowedTypes = [
+            "application/pdf",
+            "image/jpeg",
+            "image/png"
+        ];
+    
+        if (!allowedTypes.includes(file.type)) {
+            alert("File harus berupa PDF atau gambar (JPG/PNG)");
+            return;
+        }
+    
+        switch (type) {
+            case "pernyataan":
+                setPreviewPernyataan(file);
+                break;
+            case "ktp":
+                setPreviewKTP(file);
+                break;
+            case "izin":
+                setPreviewIzinUsaha(file);
+                break;
+            default:
+                break;
         }
     };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file && file.type.startsWith("image/")) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewImage(reader.result);
-            };
-            reader.readAsDataURL(file);
+          setImageFile(file); // <--- ini penting!
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setPreviewImage(reader.result);
+          };
+          reader.readAsDataURL(file);
         } else {
-            setPreviewImage(null);
+          setImageFile(null);
+          setPreviewImage(null);
         }
-    };
+      };
 
     const validateForm = () => {
         let formErrors = {};
@@ -127,16 +187,47 @@ export default function ProfilToko() {
         return isValid;
     };
 
-    const handleSubmit = () => {
-        if (validateForm()) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Berhasil!',
-                text: 'Data berhasil disimpan!',
-                confirmButtonColor: '#F6B543', 
-            });
+    const handleSubmit = async () => {
+        if (!validateForm()) return;
+      
+        const formDataToSend = new FormData();
+        formDataToSend.append("store_name", formData.namaToko);
+        formDataToSend.append("email", formData.email);
+        formDataToSend.append("no_nik", formData.nik);
+        formDataToSend.append("no_hp", formData.whatsapp);
+        formDataToSend.append("store_address", formData.alamat);
+        formDataToSend.append("description", formData.deskripsi);
+        formDataToSend.append("open_time", formData.jamBuka);
+        formDataToSend.append("close_time", formData.jamTutup);
+      
+        // Upload file jika ada
+        if (imageFile) formDataToSend.append("store_picture", imageFile);
+        if (previewPernyataan) formDataToSend.append("statement_letter", previewPernyataan);
+        if (previewKTP) formDataToSend.append("ktp_picture", previewKTP);
+        if (previewIzinUsaha) formDataToSend.append("business_license", previewIzinUsaha);
+
+        for (let pair of formDataToSend.entries()) {
+            console.log(`${pair[0]}:`, pair[1]);
         }
-    };
+      
+        try {
+            const storedId = localStorage.getItem("store_id");
+            await apiService.postData(`/storeowner/update_profile/${storeId}/`, formDataToSend);
+      
+          Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: 'Data berhasil disimpan!',
+            confirmButtonColor: '#F6B543',
+          });
+        } catch (error) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: error.message || 'Gagal menyimpan data.',
+          });
+        }
+      };
 
     return (
         <div className="h-screen bg-[#FFF4EC] flex justify-center items-center px-4 py-10 text-black">
@@ -262,9 +353,11 @@ export default function ProfilToko() {
                                 <label className="text-sm text-gray-400 block mb-2 whitespace-nowrap">Pernyataan keabsahan data</label>
                                 <div className="relative w-full sm:w-fit">
                                     <button className="flex items-center px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 w-full sm:w-[170px] truncate"
-                                        title={previewPernyataan ? previewPernyataan.name : "Upload Dokumen"}>
+                                        title={previewPernyataan ? getFileName(previewPernyataan) : "Upload Dokumen"}>
                                         <Upload className="w-5 h-5 mr-2" />
-                                        <span className="truncate">{previewPernyataan ? previewPernyataan.name : "Upload Dokumen"}</span>
+                                        <span className="truncate">
+                                        {previewPernyataan ? getFileName(previewPernyataan) : "Upload Dokumen"}
+                                        </span>
                                     </button>
                                     <input
                                         type="file"
@@ -274,24 +367,27 @@ export default function ProfilToko() {
                                     />
                                 </div>
                                 {errors.pernyataan && <p className="text-red-500 text-sm">{errors.pernyataan}</p>}
-
                             </div>
 
                             {/* KTP */}
                             <div className="flex flex-col items-start relative">
                                 <label className="text-sm text-gray-400 block mb-2">KTP Pemilik Toko</label>
                                 <div className="relative w-full sm:w-fit">
-                                    <button className="flex items-center px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 w-full sm:w-[170px] truncate"
-                                        title={previewKTP ? previewKTP.name : "Upload Dokumen"}>
-                                        <Upload className="w-5 h-5 mr-2" />
-                                        <span className="truncate">{previewKTP ? previewKTP.name : "Upload Dokumen"}</span>
-                                    </button>
-                                    <input
-                                        type="file"
-                                        accept="application/pdf"
-                                        className="absolute inset-0 opacity-0 cursor-pointer"
-                                        onChange={(e) => handlePDFChange(e, 'ktp')}
-                                    />
+                                <button
+                                    className="flex items-center px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 w-full sm:w-[170px] truncate"
+                                    title={previewKTP ? getFileName(previewKTP) : "Upload Dokumen"}
+                                >
+                                    <Upload className="w-5 h-5 mr-2" />
+                                    <span className="truncate">
+                                        {previewKTP ? getFileName(previewKTP) : "Upload Dokumen"}
+                                    </span>
+                                </button>
+                                <input
+                                type="file"
+                                accept="application/pdf,image/jpeg,image/png"
+                                className="absolute inset-0 opacity-0 cursor-pointer"
+                                onChange={(e) => handleFileChange(e, 'ktp')}
+                                />
                                 </div>
                                 {errors.ktp && <p className="text-red-500 text-sm">{errors.ktp}</p>}
 
@@ -302,9 +398,11 @@ export default function ProfilToko() {
                                 <label className="text-sm text-gray-400 block mb-2">Surat izin usaha (opsional)</label>
                                 <div className="relative w-full sm:w-fit">
                                     <button className="flex items-center px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 w-full sm:w-[170px] truncate"
-                                        title={previewIzinUsaha ? previewIzinUsaha.name : "Upload Dokumen"}>
+                                        title={previewIzinUsaha ? getFileName(previewIzinUsaha) : "Upload Dokumen"}>
                                         <Upload className="w-5 h-5 mr-2" />
-                                        <span className="truncate">{previewIzinUsaha ? previewIzinUsaha.name : "Upload Dokumen"}</span>
+                                        <span className="truncate">
+                                            {previewIzinUsaha ? getFileName(previewIzinUsaha) : "Upload Dokumen"}
+                                        </span>
                                     </button>
                                     <input
                                         type="file"
@@ -323,7 +421,7 @@ export default function ProfilToko() {
                             <label className="block w-full h-[250px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer relative overflow-hidden hover:border-yellow-400 transition">
                                 {previewImage ? (
                                     <img
-                                        src={previewImage}
+                                        src={`http://localhost:8000/media/${previewImage}`} // Menggunakan URL gambar dari server
                                         alt="Preview Foto Toko"
                                         className="w-full h-full object-cover"
                                     />
@@ -369,3 +467,5 @@ export default function ProfilToko() {
         </div>
     )
 }
+
+export default withAuth(ProfilToko,['2'])
