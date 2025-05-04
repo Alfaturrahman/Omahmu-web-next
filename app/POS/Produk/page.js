@@ -1,8 +1,8 @@
 'use client';
 
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
-import React, { useState, useEffect } from 'react';
 import { Search, Filter, Plus, MoreVertical, Package, Utensils, Beer, X, UploadCloud } from 'lucide-react';
 import Swal from 'sweetalert2';
 import * as apiService from 'services/authService';
@@ -24,7 +24,12 @@ const Produk = () => {
     makanan: 0,
     minuman: 0,
   });
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);  const dropdownRef = useRef(null);
+
+  const handleStatCardClick = (category) => {
+    setSelectedCategory(category);
+  };
+  
   const [formData, setFormData] = useState({
     kodeProduk: '',
     stok: '',
@@ -304,7 +309,30 @@ const Produk = () => {
       setIsCollapsed(!isCollapsed);
     }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Tutup filter jika klik di luar elemen dengan class tertentu
+      if (!event.target.closest('.dropdown-wrapper')) {
+        setIsFilterOpen(false);
+      }
   
+      // Tutup dropdown jika klik di luar elemen dropdownRef
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target)
+      ) {
+        setActiveDropdown(null);
+      }
+    };
+  
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+
   return (
     <div className="h-screen flex flex-col bg-white">
       <Header toggleSidebar={toggleSidebar} />
@@ -350,9 +378,9 @@ const Produk = () => {
                 />
               </div>
 
-              <div className="relative">
+              <div className="relative dropdown-wrapper" ref={dropdownRef}>
                 <button
-                  className="border border-gray-500 text-black flex items-center justify-center bg-white px-4 py-2 rounded-lg text-sm"
+                  className="cursor-pointer border border-gray-500 text-black flex items-center justify-center bg-white px-4 py-2 rounded-lg text-sm"
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
                 >
                   Filter <Filter size={18} className="ml-2" />
@@ -393,7 +421,7 @@ const Produk = () => {
 
             </div>
             <button
-              className="bg-[#F6B543] text-white px-4 py-2 rounded-lg flex items-center justify-center text-sm whitespace-nowrap"
+              className="cursor-pointer bg-[#F6B543] text-white px-4 py-2 rounded-lg flex items-center justify-center text-sm whitespace-nowrap"
               onClick={openModalForAdd}
             >
               <Plus size={18} className="mr-2" /> Tambah Data
@@ -438,12 +466,12 @@ const Produk = () => {
                     </label>
 
                     {/* Icon titik tiga */}
-                    <div className="relative">
-                      <button
+                    <div className="relative dropdown-wrapper" ref={dropdownRef}>
+                    <button
                         onClick={() =>
                           setActiveDropdown(activeDropdown === product.product_id ? null : product.product_id) // Ganti `product.id` ke `product.product_id`
                         }
-                        className="p-1 hover:bg-gray-100 rounded-full"
+                        className="cursor-pointer p-1 hover:bg-gray-100 rounded-full"
                       >
                         <MoreVertical className="w-5 h-5 text-gray-600" />
                       </button>
@@ -465,10 +493,10 @@ const Produk = () => {
                                 image: product.product_picture,
                                 productId: product.product_id,
                               });
-                              setIsModalOpen(true);
-                              setActiveDropdown(null); // Tutup dropdown setelah memilih "Edit"
                               setPreviewImage(`http://localhost:8000${product.product_picture}`);
                               setIsEditing(true);
+                              setIsModalOpen(true);
+                              setTimeout(() => setActiveDropdown(null), 100); // ⬅️ Tambahkan delay di sini
                             }}
                           >
                             Edit
@@ -512,7 +540,7 @@ const Produk = () => {
             <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
               <div className="bg-white rounded-xl p-6 sm:p-8 w-[95%] md:w-[900px] max-h-[90vh] overflow-y-auto shadow-lg">
                 <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-2xl font-bold text-black">{isEditing ? 'Edit Produk' : 'Tambah Produk'}</h2>
+                  <h2 className="text-2xl font-bold text-black">Tambah Produk</h2>
                   <button
                     className="text-gray-500 hover:text-black"
                     onClick={() => setIsModalOpen(false)}

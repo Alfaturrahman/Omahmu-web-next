@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Menu, Bell, User, LogOut, Lock } from "lucide-react";
+import { Menu, Bell, User, LogOut, Lock, Moon, Sun, PackageCheck, AlertTriangle  } from "lucide-react";
 import { useRouter } from 'next/navigation'
 import { jwtDecode } from "jwt-decode";
 
 const Header = ({ toggleSidebar }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname(); // Dapatkan path halaman saat ini
+  const pathname = usePathname();
   const router = useRouter()
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -27,8 +27,57 @@ const Header = ({ toggleSidebar }) => {
     userEmail = decoded.email;
     userRole = decoded.role_name;
   }
+    const [toggle, setToggle] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("order");
+  const notifRef = useRef(null);
+
+  const notifications = {
+    order: [
+      {
+        type: "order",
+        code: "ORD123456",
+        items: 3,
+        date: "03 Mei 2025",
+        status: "Baru",
+      },
+      {
+        type: "order",
+        code: "ORD654321",
+        items: 1,
+        date: "02 Mei 2025",
+        status: "Diproses",
+      },
+    ],
+    stock: [
+      {
+        type: "stock",
+        product: "Tinta Printer Canon",
+        remaining: 2,
+      },
+      {
+        type: "stock",
+        product: "Kertas A4 70gr",
+        remaining: 0,
+      },
+    ],
+  };
   
-  // Konversi path URL ke judul halaman yang lebih user-friendly
+  const filteredNotifications = notifications[activeTab] || [];
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setIsNotifOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const getPageTitle = (path) => {
     const pageTitles = {
       "/POS/Dashboard": "Dashboard",
@@ -47,25 +96,128 @@ const Header = ({ toggleSidebar }) => {
     return pageTitles[path] || "Halaman Tidak Diketahui";
   };
 
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
-    
     <header className="flex justify-between items-center px-6 py-3 bg-[#fdf6ed] shadow-md">
-      {/* Kiri: Tombol Toggle (Selalu Ada) */}
       <div className="flex items-center space-x-2 cursor-pointer" onClick={toggleSidebar}>
         <Menu className="h-6 w-6 text-black" />
         <span className="text-sm md:text-md lg:text-lg text-black font-semibold">
-          {getPageTitle(pathname)} {/* Menampilkan nama halaman sesuai URL */}
+          {getPageTitle(pathname)}
         </span>
       </div>
 
       {/* Kanan: Notifikasi & Profile */}
       <div className="flex items-center space-x-4 relative">
-        {/* Notifikasi */}
-        <div className="relative">
-          <Bell className="text-black cursor-pointer w-5 h-5" />
-          <span className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs font-bold min-w-[18px] min-h-[18px] flex items-center justify-center rounded-full">
-            3
-          </span>
+        <div className="relative flex items-center gap-3">
+          {/* Bell Icon */}
+          <div className="relative" ref={notifRef}>
+            <button onClick={() => setIsNotifOpen(!isNotifOpen)} className="relative">
+              <Bell className="text-black cursor-pointer w-6 h-6" />
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold min-w-[13px] min-h-[13px] flex items-center justify-center rounded-full">
+                {notifications.length}
+              </span>
+            </button>
+
+            {isNotifOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-white shadow-xl rounded-lg z-50 overflow-hidden border border-gray-200 animate-fade-in">
+                {/* Tabs */}
+                <div className="flex border-b text-sm font-medium">
+                  <button
+                    onClick={() => setActiveTab("order")}
+                    className={`w-1/2 py-2 ${
+                      activeTab === "order"
+                        ? "border-b-2 border-[#F6B543] text-[#F6B543]"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    Pesan Online
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("stock")}
+                    className={`w-1/2 py-2 ${
+                      activeTab === "stock"
+                        ? "border-b-2 border-[#F6B543] text-[#F6B543]"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    Produk
+                  </button>
+                </div>
+
+                {/* Tab Content */}
+                <ul className="max-h-64 overflow-y-auto divide-y divide-gray-100">
+                  {filteredNotifications.length > 0 ? (
+                    filteredNotifications.map((notif, idx) => (
+                      <li
+                        key={idx}
+                        className="px-4 py-3 text-sm text-gray-800 hover:bg-gray-50 transition"
+                      >
+                        {notif.type === "order" ? (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-orange-600">
+                              <PackageCheck className="w-4 h-4" />
+                              <span className="font-medium">Pesanan Baru</span>
+                            </div>
+                            <div className="text-xs text-gray-600">Kode: {notif.code}</div>
+                            <div className="text-xs text-gray-600">
+                              {notif.items} item • {notif.date}
+                            </div>
+                            <div className="text-xs text-green-600 font-medium">
+                              Status: {notif.status}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-red-600">
+                              <AlertTriangle className="w-4 h-4" />
+                              <span className="font-medium">
+                                {notif.remaining === 0 ? "Stok Habis" : "Stok Menipis"}
+                              </span>
+                            </div>
+                            <div className="text-xs text-gray-600">{notif.product}</div>
+                            <div
+                              className={`text-xs font-semibold ${
+                                notif.remaining === 0 ? "text-red-500" : "text-yellow-500"
+                              }`}
+                            >
+                              Sisa: {notif.remaining} unit
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    ))
+                  ) : (
+                    <li className="px-4 py-3 text-gray-500 text-sm">Tidak ada notifikasi</li>
+                  )}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Toggle Switch */}
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={toggle}
+              onChange={() => setToggle(!toggle)}
+            />
+            <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 relative after:content-[''] after:absolute after:left-[2px] after:top-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+          </label>
         </div>
 
         <span className="text-[11px] md:text-[13px] lg:text-[15px] text-black font-semibold">
@@ -73,7 +225,7 @@ const Header = ({ toggleSidebar }) => {
         </span>
 
         {/* Avatar dan Dropdown */}
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
           {/* Avatar Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -91,26 +243,22 @@ const Header = ({ toggleSidebar }) => {
             </div>
 
               <div className="py-2">
-                {/* Profil */}
                 <button
-                  onClick={() => {
-                    router.push('/POS/Profile');
-                  }}
-                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg"
+                  onClick={() => router.push('/POS/Profile')}
+                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg cursor-pointer"
                 >
                   <User className="w-4 h-4 mr-2" />
                   Profil
                 </button>
                 <button
-                    onClick={() => router.push('/POS/GantiSandi')}
-                    className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg"
-                  >
-                    <Lock className="w-4 h-4 mr-2" />
-                    Ganti Kata Sandi
+                  onClick={() => router.push('/POS/GantiSandi')}
+                  className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg cursor-pointer"
+                >
+                  <Lock className="w-4 h-4 mr-2" />
+                  Ganti Kata Sandi
                 </button>
 
-                {/* Logout */}
-                <button onClick={handleLogout} className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 rounded-lg text-red-500">
+                <button onClick={handleLogout} className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 rounded-lg text-red-500 cursor-pointer">
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
                 </button>
@@ -118,6 +266,7 @@ const Header = ({ toggleSidebar }) => {
             </div>
           )}
         </div>
+
       </div>
     </header>
   );

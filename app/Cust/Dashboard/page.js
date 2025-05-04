@@ -7,8 +7,10 @@ import Header from '@/components/Navbar';
 import { Filter, Search } from "lucide-react";
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
+import { useRouter } from 'next/navigation';
 
 function Home() {
+    const router = useRouter();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
     const [isCollapsed, setIsCollapsed] = useState(false); 
     const [search, setSearch] = useState("");
@@ -73,7 +75,7 @@ function Home() {
             </div>
 
             {/* List Toko */}
-            <div className="w-full flex flex-wrap justify-start gap-16 px-4">
+            <div className="w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {loading ? (
                   <div className="w-full text-center py-20 text-gray-500 font-medium">
                     Memuat data toko...
@@ -87,7 +89,7 @@ function Home() {
                       <div key={i} className="w-full md:w-[350px] bg-white border border-gray-400 rounded-xl p-4 text-left mb-4">
                         {/* Gambar Logo */}
                         <img
-                            src={toko.foto_toko ? `http://localhost:8000/media/${toko.foto_toko}` : '/default-image.png'}
+                            src={toko.store_picture ? `http://localhost:8000/media/${toko.store_picture}` : '/default-image.png'}
                             alt="Logo Toko"
                           className="w-full p-3 h-auto mx-auto"
                         />
@@ -113,9 +115,12 @@ function Home() {
     
                         {/* Tombol */}
                         <div className="flex justify-end mt-4">
-                          <button className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded">
-                            Kunjungi Toko
-                          </button>
+                        <button
+                        onClick={() => router.push(`/Cust/Kasir?store_id=${toko.store_id}`)}
+                        className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded"
+                        > 
+                        Kunjungi Toko
+                      </button>
                         </div>
                       </div>
                     );

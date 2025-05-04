@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect  } from 'react';
-import { Eye, X } from "lucide-react";
+import { Eye, X, Calendar  } from "lucide-react";
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import * as apiService from 'services/authService';
 import withAuth from 'hoc/withAuth';
-import '@/globals.css';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 function Riwayat() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -16,7 +17,7 @@ function Riwayat() {
     const [activeTab, setActiveTab] = useState('dinein');
     const [showModal, setShowModal] = useState(false);
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-    const [filterDate, setFilterDate] = useState('');
+    const [filterDate, setFilterDate] = useState(null);
     const [filterOrderStatus, setFilterOrderStatus] = useState('');
     const [filterTransactionStatus, setFilterTransactionStatus] = useState('');
     const filterRef = useRef(null);
@@ -25,7 +26,7 @@ function Riwayat() {
     const [riwayatOnline, setRiwayatOnline] = useState([]);
     const [detailPesanan, setDetailPesanan] = useState(null);  // Untuk menyimpan data detail pesanan
     const [selectedPesananId, setSelectedPesananId] = useState(null);
-
+    
     const handleOpenModal = (idPesanan) => {
         setSelectedPesananId(idPesanan);  
         setShowModal(true);  
@@ -91,18 +92,27 @@ function Riwayat() {
     // Mengaplikasikan filter pada data
     const applyFilters = (data) => {
         return data.filter(item => {
-            const matchDate = filterDate ? item.date.includes(filterDate) : true;
-    
-            const matchOrderStatus = filterOrderStatus ? 
-                (filterOrderStatus === "Selesai" ? item.order_status === "completed" : item.order_status === filterOrderStatus) : true;
-    
-            const matchTransactionStatus = filterTransactionStatus ? 
-            (filterTransactionStatus === "Cash" ? item.payment_method === "cash" :
-            filterTransactionStatus === "Qris" ? item.payment_method === "qris" : true) : true;
-    
-            return matchDate && matchOrderStatus && matchTransactionStatus;
+          const matchDate = filterDate
+            ? item.date === filterDate.toISOString().split('T')[0]
+            : true;
+      
+          const matchOrderStatus = filterOrderStatus
+            ? item.order_status === (filterOrderStatus === "Selesai" ? "completed" : "in_progress")
+            : true;
+      
+          const matchTransactionStatus = filterTransactionStatus
+            ? (
+                filterTransactionStatus === "Cash"
+                  ? item.payment_method === "cash"
+                  : filterTransactionStatus === "Qris"
+                  ? item.payment_method === "qris"
+                  : item.payment_method === "transfer"
+              )
+            : true;
+      
+          return matchDate && matchOrderStatus && matchTransactionStatus;
         });
-    };
+      };
     
     const handleResetFilter = () => {
         setFilterDate('');
@@ -116,17 +126,17 @@ function Riwayat() {
             setShowFilterDropdown(false);
             }
 
-            // Untuk modal
             if (showModal && modalRef.current && !modalRef.current.contains(event.target)) {
             setShowModal(false);
             }
+            console.log("Current Filter Date: ", filterDate);
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showModal]);
+    }, [showModal], [filterDate]);
 
     const currentData = applyFilters(getData()).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     const totalPages = Math.ceil(getData().length / itemsPerPage);
@@ -167,7 +177,7 @@ function Riwayat() {
                     <div className="relative inline-block">
                     <button
                         onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-                        className="border px-4 py-2 text-black rounded-lg text-sm flex items-center gap-1"
+                        className="cursor-pointer border px-4 py-2 text-black rounded-lg text-sm flex items-center gap-1"
                     >
                         <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -188,53 +198,57 @@ function Riwayat() {
 
                     {/* Dropdown */}
                     {showFilterDropdown && (
-                        <div ref={filterRef} className="absolute right-0 mt-2 w-64 bg-white border rounded-lg shadow-lg z-10 p-4">
-                        <div className="mb-3">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Pesanan</label>
-                            <input
-                            type="date"
-                            value={filterDate}
-                            onChange={(e) => setFilterDate(e.target.value)}
-                            className="w-full border rounded p-2 text-sm text-gray-500"
-                            />
-                        </div>
+                        <div ref={filterRef} className="absolute right-0 mt-2 w-64 bg-white border rounded-lg shadow-lg z-50 p-4">
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Pesanan</label>
+                                <DatePicker
+                                    selected={filterDate}
+                                    onChange={(date) => setFilterDate(date)}
+                                    placeholderText="00/00/0000"
+                                    dateFormat="dd/MM/yyyy"
+                                    className="w-full border rounded p-2 text-sm text-gray-500"
+                                    wrapperClassName="w-full"
+                                    popperClassName="z-50"
+                                />
+                            </div>
 
-                        <div className="mb-3">
+
+                            <div className="mb-3">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Status Pesanan</label>
                             <select
-                            value={filterOrderStatus}
-                            onChange={(e) => setFilterOrderStatus(e.target.value)}
-                            className="w-full border rounded p-2 text-sm text-gray-500"
+                                value={filterOrderStatus}
+                                onChange={(e) => setFilterOrderStatus(e.target.value)}
+                                className="w-full border rounded p-2 text-sm text-gray-500"
                             >
-                            <option value="">Semua</option>
-                            <option value="Proses">Proses</option>
-                            <option value="Selesai">Selesai</option>
+                                <option value="">Semua</option>
+                                <option value="Proses">Proses</option>
+                                <option value="Selesai">Selesai</option>
                             </select>
-                        </div>
+                            </div>
 
-                        <div className="mb-3">
+                            <div className="mb-3">
                             <label className="block text-sm font-medium text-gray-700 mb-1">Status Transaksi</label>
                             <select
-                            value={filterTransactionStatus}
-                            onChange={(e) => setFilterTransactionStatus(e.target.value)}
-                            className="w-full border rounded p-2 text-sm text-gray-500"
+                                value={filterTransactionStatus}
+                                onChange={(e) => setFilterTransactionStatus(e.target.value)}
+                                className="w-full border rounded p-2 text-sm text-gray-500"
                             >
-                            <option value="">Semua</option>
-                            <option value="Cash">Cash</option>
-                            <option value="Qris">Qris</option>
-                            <option value="TF">Transfer</option>
+                                <option value="">Semua</option>
+                                <option value="Cash">Cash</option>
+                                <option value="Qris">Qris</option>
+                                <option value="TF">Transfer</option>
                             </select>
-                        </div>
+                            </div>
 
-                        <button
+                            <button
                             onClick={handleResetFilter}
                             className="w-full bg-red-100 text-red-600 hover:bg-red-200 font-semibold py-2 px-4 rounded text-sm"
                             >
                             Reset Filter
-                        </button>
-
+                            </button>
                         </div>
                     )}
+
                     </div>
 
                 </div>
@@ -261,12 +275,30 @@ function Riwayat() {
                                     <td className="py-3 px-4 relative">{item.customer_name}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
                                     <td className="py-3 px-4 relative">{item.date}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
                                     <td className="py-3 px-4 relative">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.order_status === 'completed' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'}`}>{item.order_status}</span>
+                                    <span
+                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                            item.order_status === 'completed'
+                                            ? 'bg-green-100 text-green-600'
+                                            : 'bg-orange-100 text-orange-600'
+                                        }`}
+                                        >
+                                        {item.order_status === 'completed' ? 'Selesai' : 'Proses'}
+                                        </span>
                                         <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                     </td>
                                     <td className="py-3 px-4 relative">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.payment_method === 'cash' ? 'bg-green-200 text-green-700' : item.payment_method === 'Qris' ? 'bg-blue-200 text-blue-700' : 'bg-red-200 text-red-700'}`}>{item.payment_method}</span>
-                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                    <span
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        item.payment_method === 'cash'
+                                        ? 'bg-green-200 text-green-700'
+                                        : item.payment_method === 'Qris'
+                                        ? 'bg-blue-200 text-blue-700'
+                                        : 'bg-red-200 text-red-700'
+                                    }`}
+                                    >
+                                    {item.payment_method === 'cash' ? 'Cash' : item.payment_method === 'qris' ? 'Qris' : 'Transfer'}
+                                    </span>
+                                    <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                     </td>
                                     <td className="py-3 px-4 relative flex items-center justify-center">
                                         <Eye className="cursor-pointer" onClick={() => handleOpenModal(item.order_id)} 

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, React } from 'react';
 import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
-import { Filter, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import Link from 'next/link';
 
 function SuperadminDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -35,8 +36,32 @@ function SuperadminDashboard() {
     }
 
     fetchData();
-  }, []);
+  }, []);  const [filter, setFilter] = useState("semua");
 
+  const tokoList = [
+    { id: 1, name: "AngkringanOmahmu - Batam Center", statusToko: true },
+    { id: 2, name: "AngkringanOmahmu - Batam Utara", statusToko: false },
+    { id: 3, name: "AngkringanOmahmu - Batu Aji", statusToko: true },
+    { id: 4, name: "AngkringanOmahmu - Tiban", statusToko: false },
+    { id: 5, name: "AngkringanOmahmu - Nagoya", statusToko: true },
+    { id: 6, name: "AngkringanOmahmu - Bengkong", statusToko: true },
+    { id: 7, name: "AngkringanOmahmu - Sekupang", statusToko: false },
+    { id: 8, name: "AngkringanOmahmu - Baloi", statusToko: true },
+  ];
+
+  // Filter data berdasarkan status toko
+  const filteredTokoList = tokoList.filter((item) => {
+    if (filter === "semua") return true; // Semua toko
+    if (filter === "buka") return item.statusToko === true; // Toko buka
+    if (filter === "tutup") return item.statusToko === false; // Toko tutup
+    return true;
+  });
+
+  // Fungsi untuk handle klik filter card
+  const handleFilterClick = (filterType) => {
+    setFilter(filterType);
+  };
+  
   const toggleSidebar = () => {
     if (window.innerWidth < 1024) {
       setIsSidebarOpen(!isSidebarOpen);
@@ -76,21 +101,30 @@ function SuperadminDashboard() {
             </div>
 
             {/* Stat Cards */}
-            <div className="w-full flex flex-col md:flex-row lg:flex-row justify-between px-4 gap-4">
+            <div className="w-full flex flex-col md:flex-row lg:flex-row justify-between gap-4">
               {/* Total Toko Terdaftar */}
-              <div className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm">
+              <div
+                onClick={() => handleFilterClick("semua")}
+                className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm cursor-pointer"
+              >
                 <h2 className="text-[#F28C20] font-semibold mb-2">Total Toko Terdaftar</h2>
                 <p className="text-2xl font-bold text-black">{jumlahToko.total}</p>
               </div>
 
               {/* Toko Aktif */}
-              <div className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm">
+              <div
+                onClick={() => handleFilterClick("buka")}
+                className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm cursor-pointer"
+              >
                 <h2 className="text-[#F28C20] font-semibold mb-2">Toko Aktif</h2>
                 <p className="text-2xl font-bold text-black">{jumlahToko.aktif}</p>
               </div>
 
               {/* Toko Nonaktif */}
-              <div className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm">
+              <div
+                onClick={() => handleFilterClick("tutup")}
+                className="flex-1 bg-[#FFF4E8] rounded-xl p-6 text-center shadow-sm cursor-pointer"
+              >
                 <h2 className="text-[#F28C20] font-semibold mb-2">Toko Nonaktif</h2>
                 <p className="text-2xl font-bold text-black">{jumlahToko.tidakAktif}</p>
               </div>
@@ -100,13 +134,25 @@ function SuperadminDashboard() {
             {/* List Toko */}
             <div className="w-full flex flex-wrap justify-start gap-8 md:gap-4 lg:gap-8 px-4">
             {toko
-              .filter((item) => item.store_name.toLowerCase().includes(search.toLowerCase()))
+              .filter((item) => {
+                const matchSearch = item.store_name.toLowerCase().includes(search.toLowerCase());
+                const matchFilter =
+                  filter === "semua"
+                    ? true
+                    : filter === "buka"
+                    ? item.is_active === true
+                    : filter === "tutup"
+                    ? item.is_active === false
+                    : true;
+
+                return matchSearch && matchFilter;
+              })
               .map((store, i) => (
                 <div
                   key={i}
                   className="w-full sm:w-[48%] lg:w-[30%] xl:w-[22%] bg-white border border-gray-300 rounded-xl p-4 text-left"
                 >
-                  <img
+                      <img
                     src={`http://localhost:8000/media/${store.store_picture}`}
                     alt={store.store_name}
                     className="w-full p-3 h-auto mx-auto"
@@ -119,11 +165,11 @@ function SuperadminDashboard() {
                     {store.store_name}
                   </h3>
 
-                  <div className="text-gray-500 text-sm mt-1 mb-4">
+                    <div className="text-gray-500 text-sm mt-1 mb-4">
                     Pemilik: {store.name_owner}
                   </div>
 
-                  <div className="flex items-center text-gray-500 text-sm mt-1 mb-4">
+                    <div className="flex items-center text-gray-500 text-sm mt-1">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-4 w-4 mr-1"
@@ -131,7 +177,7 @@ function SuperadminDashboard() {
                       viewBox="0 0 24 24"
                       stroke="currentColor"
                     >
-                      <path
+                    <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
@@ -141,13 +187,16 @@ function SuperadminDashboard() {
                     Aktif: {store.start_date?.split('T')[0]} – {store.end_date?.split('T')[0]}
                   </div>
 
-                  <div className="flex justify-end">
-                    <button className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded">
-                      Pantau Toko
-                    </button>
-                  </div>
+                      <div className="flex justify-end">
+                    <Link
+                      href="/Superadmin/DashboardToko"
+                      className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded"
+                    >
+                        Pantau Toko
+                    </Link>
+                    </div>
                 </div>
-            ))}
+              ))}
             </div>
         </div>
       </div>
@@ -156,3 +205,4 @@ function SuperadminDashboard() {
 }
 
 export default withAuth(SuperadminDashboard,['1']);
+

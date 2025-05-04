@@ -31,7 +31,6 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
       role: 3, 
       items: [
         { name: "Dashboard", icon: Store, path: "/Cust/Dashboard" },
-        { name: "Kasir", icon: Monitor, path: "/Cust/Kasir" },
         { name: "Log Pemesanan", icon: ReceiptText, path: "/Cust/Log" },
       ],
     },

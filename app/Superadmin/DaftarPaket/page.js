@@ -1,19 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import '@/globals.css';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import { Plus, X } from "lucide-react";
 import { Dialog } from '@headlessui/react';
-import Select from 'react-select';
 import { EllipsisVerticalIcon } from '@heroicons/react/24/outline'
+import Select from 'react-select';
 import Swal from 'sweetalert2'
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
 
 
 function DaftarPaket() {
+    const menuRef = useRef(null); // Mendeklarasikan menuRef
+    const router = useRouter();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,6 +35,11 @@ function DaftarPaket() {
       deskripsi: '',
       fitur: [],
     });
+    const handleDetailPengguna = () => {
+      // Navigasi ke halaman detail pengguna
+      router.push('/Superadmin/DetailPenggunaPaket');
+    };
+    
   
     const fiturOptions = [
       { value: '1-5 Pengguna', label: '1-5 Pengguna' },
@@ -114,7 +122,7 @@ function DaftarPaket() {
           text: 'Paket ini akan dihapus dan tindakan ini tidak bisa dibatalkan!',
           icon: 'warning',
           showCancelButton: true,
-          confirmButtonColor: '#d33',
+          confirmButtonColor: '#F6B543',
           cancelButtonColor: '#aaa',
           confirmButtonText: 'Ya, hapus!',
           cancelButtonText: 'Batal',
@@ -123,7 +131,12 @@ function DaftarPaket() {
             try {
               await apiService.deleteData(`/superadmin/delete_package/${packageId}/`); // ganti sesuai service kamu
       
-              Swal.fire('Terhapus!', 'Paket berhasil dihapus.', 'success');
+              Swal.fire({
+            title: 'Terhapus!',
+            text: 'Paket berhasil dihapus.',
+            icon: 'success',
+            confirmButtonColor: '#F6B543',
+          });
       
               // Refresh data setelah hapus
               fetchPaketList(); // pastikan fungsi ini ada
@@ -196,6 +209,7 @@ function DaftarPaket() {
             title: 'Berhasil!',
             text: 'Data paket berhasil diperbarui.',
             confirmButtonColor: '#F6B543',
+                confirmButtonColor: '#F6B543',
           });
         } else {
           // Insert data
@@ -205,6 +219,7 @@ function DaftarPaket() {
             title: 'Berhasil!',
             text: 'Data paket berhasil ditambahkan.',
             confirmButtonColor: '#F6B543',
+                confirmButtonColor: '#F6B543',
           });
         }
     
@@ -400,67 +415,74 @@ function DaftarPaket() {
                 </div>
             </Dialog>
             
-            {/* Card Paket Langganan */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-5 pb-10">
-                {paketList.map((paket, index) => (
-                    <div key={index} className="bg-[#FFF3E6] rounded-xl p-6 shadow-sm relative">
+          {/* Card Paket Langganan */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-5 pb-10">
+            {paketList.map((paket, index) => {
+              // Mengonversi harga ke angka
+              const formattedPrice = paket.price 
+                ? paket.price.replace(/[^0-9,-]+/g, '').replace(',', '.').replace('.', '') // Menghapus simbol dan mengubah format
+                : 'Harga Tidak Tersedia';
+                
+              // Format harga menggunakan Intl
+              const price = !isNaN(formattedPrice) ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(formattedPrice)) : 'Harga Tidak Tersedia';
+
+              return (
+                <div key={paket.package_id} className="relative rounded-xl p-6 shadow overflow-hidden bg-white border-gray-300 border">
+                  {/* Gradient hanya di atas (30%) */}
+                  <div className="absolute top-0 left-0 w-full h-[30%] bg-gradient-to-b from-orange-100 to-transparent pointer-events-none z-0"></div>
+                  {/* Konten paket di atas gradient */}
+                  <div className="relative z-10">
                     {/* Titik tiga icon */}
-                    <div className="absolute top-4 right-4">
-                      <button
-                        onClick={() => toggleMenu(index)}
-                        className="text-gray-600 hover:text-black focus:outline-none"
-                      >
-                        <EllipsisVerticalIcon className="h-5 w-5" />
+                    <div className="absolute right-1">
+                      <button onClick={() => toggleMenu(index)} className="text-gray-600 hover:text-black focus:outline-none">
+                        <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer" />
                       </button>
-                  
+
                       {openMenuIndex === index && (
-                        <div className="absolute right-0 mt-2 w-28 bg-white rounded shadow-md z-10">
-                          <button
-                            onClick={() => handleEdit(paket)}
-                            className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100"
-                          >
+                        <div ref={menuRef} className="absolute right-0 mt-2 w-37 bg-white rounded shadow-md z-50">
+                          <button onClick={() => handleEdit(paket)} className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100">
                             Edit
                           </button>
-                          <button
-                            onClick={() => handleDelete(paket.package_id)}
-                            className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                            >
+                          <button onClick={handleDetailPengguna} className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100">
+                            Detail Pengguna
+                          </button>
+                          <button onClick={() => handleDelete(paket.package_id)} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
                             Hapus
                           </button>
                         </div>
                       )}
                     </div>
-                  
-                    {/* Nama Paket */}
-                    <h2 className="text-lg font-semibold text-center text-black mb-4">
+
+                    {/* Judul, harga, dan fitur di sini */}
+                    <h2 className="text-lg font-semibold text-black mb-1">
                       {paket.package_name}
                     </h2>
-                  
-                    {/* Deskripsi */}
-                    <p className="text-sm text-center text-gray-700 mb-4">{paket.description}</p>
-                  
-                    {/* Fitur */}
-                    <ul className="space-y-2 text-sm text-black">
-                        {paket.features.map((fitur, idx) => (
-                            <li key={idx}>
-                                {fitur.is_active ? (
-                                    <>✅ {fitur.feature_name}</>
-                                ) : (
-                                    <>❌ {fitur.feature_name}</>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-                  
-                    {/* Harga dari API */}
-                    <div className="absolute bottom-4 right-4 text-black font-semibold text-sm">
-                      {paket.price}
-                    </div>
-                  </div>
-                  
-                ))}
-            </div>
+                    <p className="text-2xl font-bold text-orange-800 mb-4">
+                      {price}
+                    </p>
 
+                    {/* List fitur */}
+                    <ul className="space-y-3 text-base text-black">
+                      {paket.features.length > 0 ? (
+                        paket.features.map((fitur) => (
+                          <li key={fitur.feature_id} className="flex items-start gap-2">
+                            {fitur.is_active ? (
+                              <span>✅</span>
+                            ) : (
+                              <span className="text-red-500">❌</span>
+                            )}
+                            {fitur.is_active ? fitur.feature_name : fitur.feature_name}
+                          </li>
+                        ))
+                      ) : (
+                        <li className="text-red-500">Tidak ada fitur tersedia</li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

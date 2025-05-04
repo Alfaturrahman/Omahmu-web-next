@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useRef, useEffect} from 'react';
-import '@/globals.css';
+import { Filter, Eye, X } from "lucide-react";
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import Swal from "sweetalert2";
-import { Filter, Eye } from "lucide-react";
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import '@/globals.css';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
 
@@ -22,17 +24,22 @@ function DaftarPengajuanToko() {
     const [filteredData, setFilteredData] = useState(data);
     const [storeId, setStoreId] = useState(null); // Atau props storeId jika itu berasal dari luar
     const [showFilter, setShowFilter] = useState(false);
-
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+    const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+    const [previewImage, setPreviewImage] = useState('');
+    const [previewPdf, setPreviewPdf] = useState('');
+    const [modalContent, setModalContent] = useState(null); // Bisa URL gambar atau PDF
+    const [modalType, setModalType] = useState(null); // 'image' atau 'pdf'
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    
     // Referensi untuk elemen filter
     const filterRef = useRef(null);
   
-
     const listStoreOwner = async () => {
         try {
             const result = await apiService.getData('/superadmin/show_store_owners/');
             console.log("Full API response:", result);
-
-            // Cek apakah result.data dan result.data.data ada
+    
             if (result && result.data && Array.isArray(result.data)) {
                 const rawData = result.data;
                 const mappedData = rawData.map((item, index) => ({
@@ -41,7 +48,7 @@ function DaftarPengajuanToko() {
                     storeid: item.store_id,
                     email: item.email,
                     paket: `PAKET ${item.package_id}`,
-                    tanggal: item.created_at ? item.created_at.slice(0, 10) : 'Tanggal tidak tersedia', // Periksa validitas created_at
+                    tanggal: item.created_at ? new Date(item.created_at) : null, // <-- ubah jadi Date object
                     status: item.account_status === "Done" ? "Selesai" : (item.account_status === "In Progress" ? "Diproses" : "Ditolak"),
                     statuspembayaran: item.payment_status ? "Lunas" : "Belum Lunas"
                 }));
@@ -129,29 +136,35 @@ function DaftarPengajuanToko() {
     useEffect(() => {
         console.log("Filtering:", { selectedStatus, selectedDate });
         let filtered = data;
-
+    
         if (selectedStatus) {
             filtered = filtered.filter((item) => item.status === selectedStatus);
         }
-
+    
         if (selectedDate) {
             filtered = filtered.filter((item) => {
-                const itemDate = new Date(item.tanggal).toISOString().slice(0, 10);
-                return itemDate === selectedDate;
+                const itemDate = new Date(item.tanggal);
+                const selected = new Date(selectedDate); // `selectedDate` sudah berupa Date
+    
+                // Cek apakah tahun, bulan, dan hari sesuai
+                return (
+                    itemDate.getFullYear() === selected.getFullYear() &&
+                    itemDate.getMonth() === selected.getMonth() &&
+                    itemDate.getDate() === selected.getDate()
+                );
             });
         }
-
+    
         setFilteredData(filtered);
     }, [data, selectedStatus, selectedDate]);
-     
 
     const handleSelectStatus = (status) => {
         setSelectedStatus(status);
     };
 
     const handleClearFilter = () => {
-        setSelectedStatus("");
-        setSelectedDate("");
+        setSelectedStatus(""); // Clear status filter
+        setSelectedDate(null); // Clear date filter
     };
 
     const handleCardClick = (status) => {
@@ -188,7 +201,7 @@ function DaftarPengajuanToko() {
     const statusColor = {
         'Selesai': 'bg-[#CFF0E7] text-[#57AD94]',
         'Lunas': 'bg-[#ABF291] text-[#04A20F]',
-        'Diproses': 'bg-[#FFF4D8] text-[#F1D779]',
+        'Diproses': 'bg-orange-100 text-orange-600',
         'Ditolak': 'bg-[#EF9DAD] text-[#EF4946]',
         'Belum Lunas': 'bg-[#FFC1AF] text-[#FE4C4C]',
     };
@@ -216,51 +229,53 @@ function DaftarPengajuanToko() {
 
                             <button
                                 onClick={() => setShowFilter((prev) => !prev)}
-                                className="flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md"
+                                className="flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md cursor-pointer"
                                 >
                                 Filter
                                 <Filter className="w-5 h-5 ml-2 text-black" />
                             </button>
 
-                                {/* Filter Dropdown */}
-                                {showFilter && (
-                                    <div ref={filterRef} className="absolute right-5 top-[90px] bg-white border rounded-md shadow-md w-60 p-4 z-50">
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                Status
-                                            </label>
-                                            <select
-                                                value={selectedStatus}
-                                                onChange={(e) => handleSelectStatus(e.target.value)}
-                                                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            >
-                                                {statuses.map((status, i) => (
-                                                <option key={i} value={status}>
-                                                    {status === "" ? "Semua Status" : status}
-                                                </option>
-                                                ))}
-                                            </select>
-                                        </div>
-
-                                        <div className="mb-2">
-                                            <label className="block text-sm font-medium text-black mb-1">
-                                                Tanggal
-                                            </label>
-                                            <input
-                                                type="date"
-                                                value={selectedDate}
-                                                onChange={(e) => setSelectedDate(e.target.value)}
-                                                className="w-full border border-gray-300 text-black rounded px-2 py-1 text-sm"
-                                            />
-                                        </div>
-                                        <button
-                                            onClick={handleClearFilter}
-                                            className="mt-2 w-full text-sm bg-red-100 text-red-600 py-1 rounded hover:bg-red-200"
-                                            >
-                                            Reset Filter
-                                        </button>
+                            {/* Filter Dropdown */}
+                            {showFilter && (
+                                <div ref={filterRef} className="absolute right-5 top-[140px] bg-white border rounded-md shadow-md w-60 p-4 z-50">
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                            Status
+                                        </label>
+                                        <select
+                                            value={selectedStatus}
+                                            onChange={(e) => handleSelectStatus(e.target.value)}
+                                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            {statuses.map((status, i) => (
+                                            <option key={i} value={status}>
+                                                {status === "" ? "Semua Status" : status}
+                                            </option>
+                                            ))}
+                                        </select>
                                     </div>
-                                )}
+
+                                    <div className="mb-2">
+                                        <label className="block text-sm font-medium text-black mb-1">
+                                            Tanggal
+                                        </label>
+                                        <DatePicker
+                                            selected={selectedDate}
+                                            onChange={(date) => setSelectedDate(date)} // Pastikan ini adalah objek Date
+                                            className="w-full border border-gray-300 text-black rounded px-2 py-1 text-sm"
+                                            placeholderText="00-00-0000"
+                                            dateFormat="dd-MM-yyyy"
+                                            popperPlacement="bottom"
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleClearFilter}
+                                        className="mt-2 w-full text-sm bg-red-100 text-red-600 py-1 rounded hover:bg-red-200"
+                                        >
+                                        Reset Filter
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Stat Card */}
@@ -354,19 +369,18 @@ function DaftarPengajuanToko() {
                                 onClick={() => setStoreDetail(null)} // <- tutup drawer
                             ></div>
 
-                            {/* Drawer Panel */}
-                            <div className="fixed top-0 right-0 w-full md:w-[480px] h-full bg-white z-70 shadow-lg overflow-y-auto text-black transition-transform duration-300 transform translate-x-0">
-                            
-                            {/* Header */}
-                            <div className="bg-[#FFF6ED] p-4 flex justify-between items-center">
-                                <h2 className="text-center font-bold text-lg flex-1">DETAIL PENGAJUAN</h2>
-                                <button
-                                    onClick={() => setStoreDetail(null)} // <- tutup drawer
-                                    className="text-gray-600 hover:text-red-500 text-xl font-bold"
-                                >
-                                    ×
-                                </button>
-                            </div>
+                                    {/* Drawer Panel */}
+                                    <div className="fixed top-0 right-0 w-full md:w-[480px] h-full bg-white z-70 shadow-lg overflow-y-auto text-black transition-transform duration-300 transform translate-x-0">
+                                    {/* Header */}
+                                    <div className="bg-[#FFF6ED] p-4 flex justify-between items-center">
+                                        <h2 className="text-center font-bold text-lg flex-1">DETAIL PENGAJUAN</h2>
+                                        <button
+                                        onClick={() => setSelectedItem(null)}
+                                        className="text-gray-600 hover:text-red-500 text-xl font-bold"
+                                        >
+                                        ×
+                                        </button>
+                                    </div>
 
                             {/* Body */}
                             <div className="p-5 text-sm space-y-5">
@@ -416,7 +430,8 @@ function DaftarPengajuanToko() {
                                                 <img
                                                     src={`http://localhost:8000/media/${storeDetail.store_picture}`} // bangun URL manual
                                                     alt="Foto Toko"
-                                                    className="w-[120px] h-auto object-cover rounded border shadow"
+                                                    className="w-[120px] h-auto object-cover rounded border shadow cursor-pointer"
+                                                    onClick={() => handleImageClick('/Logo-Toko.png')}
                                                 />
                                             </div>
                                         </div>
@@ -424,28 +439,23 @@ function DaftarPengajuanToko() {
                                 </div>
                                 </div>
 
-                                {/* Dokumen Pendukung */}
-                                <div>
-                                <h3 className="text-center font-bold mb-4">DOKUMEN PENDUKUNG</h3>
-                                {[
-                                    { label: 'KTP PEMILIK TOKO', filename: storeDetail.ktp_picture },
-                                    { label: 'SURAT PERNYATAAN KEABSAHAN DATA', filename: storeDetail.statement_letter },
-                                    { label: 'SURAT IZIN USAHA (OPSIONAL)', filename: storeDetail.business_license },
-                                ].map((doc, idx) => (
-                                    <div key={idx} className="mb-3">
-                                    <p className="text-xs font-semibold mb-1">{doc.label}</p>
-                                    <a
-                                        href={`http://localhost:8000/media/${doc.filename}`} // Gunakan URL yang benar
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center border rounded px-3 py-2 bg-gray-50 text-sm hover:underline"
-                                    >
-                                        <span className="mr-2">📄</span> {doc.filename}
-                                    </a>
+                                        {/* Dokumen Pendukung */}
+                                        <div>
+                                        <h3 className="text-center font-bold mb-4">DOKUMEN PENDUKUNG</h3>
+                                        {[
+                                            'KTP PEMILIK TOKO',
+                                            'SURAT PERNYATAAN KEABSAHAN DATA',
+                                            'SURAT IZIN USAHA (OPSIONAL)',
+                                        ].map((label, idx) => (
+                                            <div key={idx} className="mb-3">
+                                            <p className="text-xs font-semibold mb-1">{label}</p>
+                                            <div className="flex items-center border rounded px-3 py-2 bg-gray-50 text-sm">
+                                                <span className="mr-2">📄</span> pdf document.pdf
+                                            </div>
+                                            </div>
+                                        ))}
+                                        </div>
                                     </div>
-                                ))}
-                                </div>
-                            </div>
 
                                 {/* Footer */}
                                 {(storeDetail.account_status !== "Done" && storeDetail.account_status !== "Reject") && (
@@ -461,9 +471,100 @@ function DaftarPengajuanToko() {
                                         className="px-4 py-2 border border-green-500 text-green-500 rounded-lg hover:bg-green-500 hover:text-white"
                                     >
                                         Terima
-                                    </button>
-                                </div>
-                                )}
+                                        </button>
+                                    </div>
+                                    )}
+
+                                    {/* Modal Tolak */}
+                                    {showRejectModal && (
+                                    <div className="fixed inset-0 flex items-center justify-center backdrop-brightness-50 z-80">
+                                        <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
+                                        <h2 className="text-center text-black text-lg font-bold mb-5">Tolak Pengajuan Toko</h2>
+                                        <form className="space-y-4">
+                                            <div>
+                                            <label className="text-xs text-black font-semibold">NAMA</label>
+                                            <input type="text" className="text-black w-full mt-1 border rounded px-3 py-2" placeholder="Alfatturrizki" />
+                                            </div>
+                                            <div>
+                                            <label className="text-xs text-black font-semibold">ALASAN PENOLAKAN</label>
+                                            <textarea className="w-full text-black mt-1 border rounded px-3 py-2" placeholder="Dokumen belum lengkap, foto buram, dsb"></textarea>
+                                            </div>
+                                            <div>
+                                            <label className="text-xs text-black font-semibold">CATATAN UNTUK PENGGUNA (OPSIONAL)</label>
+                                            <textarea className="w-full text-black mt-1 border rounded px-3 py-2" placeholder="Silakan unggah ulang foto KTP yang jelas"></textarea>
+                                            </div>
+
+                                            <div className="flex justify-end gap-4 mt-6">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowRejectModal(false)}
+                                                className="px-4 py-2 border cursor-pointer border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white"
+                                            >
+                                                Batal
+                                            </button>
+                                            <button type="submit" className="px-4 py-2 border cursor-pointer border-green-500 text-green-500 rounded hover:bg-green-500 hover:text-white">
+                                                Kirim
+                                            </button>
+                                            </div>
+                                        </form>
+                                        </div>
+                                    </div>
+                                    )}
+
+                                    {/* Modal Terima */}
+                                    {showAcceptModal && (
+                                    <div className="fixed inset-0 flex items-center justify-center backdrop-brightness-50 z-80">
+                                        <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 overflow-y-auto max-h-screen">
+                                        <h2 className="text-center text-black text-lg font-bold mb-5">BUAT AKUN TOKO</h2>
+                                        <form className="space-y-4">
+                                            <div>
+                                            <label className="text-xs text-black  font-semibold">NAMA</label>
+                                            <input type="text" className="w-full text-black  mt-1 border rounded px-3 py-2 " placeholder='Masukkan Nama Pengguna'/>
+                                            </div>
+                                            <div>
+                                            <label className="text-xs text-black  font-semibold">EMAIL LOGIN</label>
+                                            <input type="email" className="text-black w-full mt-1 border rounded px-3 py-2" placeholder='Masukkan Email'/>
+                                            </div>
+                                            <div>
+                                            <label className="text-xs text-black font-semibold">KATA SANDI AKUN</label>
+                                            <input type="password" className="w-full mt-1 border text-black rounded px-3 py-2" placeholder='Masukkan Password'/>
+                                            </div>
+                                            <div>
+                                            <label className="text-xs text-black font-semibold">NAMA TOKO</label>
+                                            <input type="text" className="w-full mt-1 border text-black rounded px-3 py-2" placeholder='Masukkan Nama Toko'/>
+                                            </div>
+                                            <div>
+                                            <label className="text-xs text-black font-semibold">DURASI</label>
+                                            <input type="date" className="w-full mt-1 text-black border rounded px-3 py-2" placeholder='Masukkan Durasi Paket Yang Dipilih'/>
+                                            </div>
+                                            <div>
+                                            <label className="text-xs text-black font-semibold">HARGA</label>
+                                            <input type="number" className="w-full mt-1 border text-black rounded px-3 py-2" placeholder="Masukkan Harga Paket (Rp)"/>
+                                            </div>
+                                            <div>
+                                            <label className="text-xs text-black font-semibold">JENIS PAKET</label>
+                                            <select className="w-full text-black mt-1 border rounded px-3 py-2">
+                                                <option value="">Pilih salah satu</option>
+                                                <option value="paket1">Paket 1</option>
+                                                <option value="paket2">Paket 2</option>
+                                            </select>
+                                            </div>
+                                            <div className="flex justify-end gap-4 mt-6">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowAcceptModal(false)}
+                                                className="px-4 py-2 border border-red-500 text-red-500 rounded hover:bg-red-500 hover:text-white cursor-pointer"
+                                            >
+                                                Batal
+                                            </button>
+                                            <button type="submit" className="px-4 py-2 border border-green-500 text-green-500 rounded hover:bg-green-500 hover:text-white cursor-pointer">
+                                                Kirim
+                                            </button>
+                                            </div>
+                                        </form>
+                                        </div>
+                                    </div>
+                                    )}
                             </div>
                         </>
                     )}

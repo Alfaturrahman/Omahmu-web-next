@@ -10,9 +10,11 @@ import { ShoppingCart, X, Minus, Plus, ScanQrCode, Calendar, Clock   } from 'luc
 import '@/globals.css';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
-
+import { useSearchParams } from 'next/navigation';
 
 function Kasir() {
+    const searchParams = useSearchParams();
+    const storeId = searchParams.get('store_id'); // Ambil nilai store_id dari URL
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [activeCategory, setActiveCategory] = useState("Semua");
@@ -34,9 +36,9 @@ function Kasir() {
     const [orderDate, setOrderDate] = useState("");
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
 
-
     const [formData, setFormData] = useState({
         phoneNumber: "",
+        deliveryAddress: "",
     });
     
     const handleInputChange = (e) => {
@@ -49,7 +51,8 @@ function Kasir() {
 
     async function fetchDataMenu() {
         try {
-            const storeId = 5; // atau localStorage.getItem('store_id')
+            if (!storeId) return;
+
             const result = await apiService.getData(`/storeowner/daftar_menu/?store_id=${storeId}`);
     
             const formatted = result.data.map((item) => ({
@@ -117,7 +120,7 @@ function Kasir() {
                 customer_name: customerName,
                 date: orderDate,
                 total_amount: total,
-                order_status: "completed",
+                order_status: "in_progress",
                 payment_method: selected,
                 is_pre_order: false,
                 is_delivered: false,
@@ -135,8 +138,6 @@ function Kasir() {
                 })),
             };
     
-            // const storeId = localStorage.getItem('store_id');
-            const storeId = 5;
             if (!storeId) {
                 Swal.fire({
                     icon: "error",
@@ -184,7 +185,6 @@ function Kasir() {
     
     const handlePayment = () => {
         if (!validateForm()) {
-            // Jika form tidak valid, tidak lanjut proses
             return;
         }
     
@@ -275,6 +275,9 @@ function Kasir() {
           if (!pickupTime) {
             newErrors.pickupTime = "Jam pengambilan wajib diisi.";
           }
+          if (!formData.deliveryAddress) {
+            newErrors.deliveryAddress = "Alamat wajib diisi.";
+          }
         }
       
         if (orderType === "dinein") {
@@ -285,7 +288,7 @@ function Kasir() {
             newErrors.pickupTime = "Jam pengambilan wajib diisi.";
           }
         }
-      
+
         if (!formData.phoneNumber) {
           newErrors.phoneNumber = "Nomor HP wajib diisi.";
         } else if (!/^\d+$/.test(formData.phoneNumber)) {
@@ -363,37 +366,37 @@ function Kasir() {
                     {/* Daftar Menu */}
                     <div className={`grid gap-4 transition-all duration-300 ${
                         isCartOpen
-                            ? "grid-cols-3 pr-[370px]"  // Cart terbuka, hanya 2 kolom dan beri ruang untuk cart
+                            ? "grid-cols-3 pr-[370px]"  // Cart terbuka, hanya 3 kolom dan beri ruang untuk cart
                             : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 pr-0"  // Normal grid dengan ukuran kolom responsif
                     }`}>
-                            {listMenu
-                                .filter((item) => activeCategory === "Semua" || item.category === activeCategory || (activeCategory === "Favorit" && item.favorite))
-                                .map((item) => (
-                                    <div key={item.product_id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
-                                        <img
-                                            src={item.image ? `http://localhost:8000${item.image}` : '/default-image.png'}
-                                            alt={item.name}
-                                            className="rounded-lg w-full h-40 object-cover"
-                                        />
-                                        <div className="mt-2">
-                                            <h3 className="font-semibold text-sm text-black flex items-center">
-                                                {item.favorite && <span className="text-yellow-400 mr-1">⭐</span>}
-                                                {item.name}
-                                            </h3>
-                                            <div className="flex justify-between items-end mt-2">
-                                                <p className="text-gray-500 text-xs mt-1">Stok: {item.stock}</p>
-                                                <p className="text-[#ECA641] font-bold text-sm ml-auto">Rp {item.price.toLocaleString("id-ID")},00</p>
-                                            </div>
+                        {listMenu
+                            .filter((item) => activeCategory === "Semua" || item.category === activeCategory || (activeCategory === "Favorit" && item.favorite))
+                            .map((item) => (
+                                <div key={`${item.product_id}-${item.name}`} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
+                                    <img
+                                        src={item.image ? `http://localhost:8000${item.image}` : '/default-image.png'}
+                                        alt={item.name}
+                                        className="rounded-lg w-full h-40 object-cover" // Set image size with auto aspect ratio
+                                    />
+                                    <div className="mt-2">
+                                        <h3 className="font-semibold text-sm text-black flex items-center">
+                                            {item.favorite && <span className="text-yellow-400 mr-1">⭐</span>}
+                                            {item.name}
+                                        </h3>
+                                        <div className="flex justify-between items-end mt-2">
+                                            <p className="text-gray-500 text-xs mt-1">Stok: {item.stock}</p>
+                                            <p className="text-[#ECA641] font-bold text-sm ml-auto">Rp {item.price.toLocaleString("id-ID")},00</p>
                                         </div>
-                                        <button
-                                            onClick={() => addToCart(item)}
-                                            className="mt-2 bg-[#ECA641] text-white px-4 py-2 w-full rounded-lg flex items-center justify-center gap-2 cursor-pointer"
-                                        >
-                                            Tambah Ke Keranjang <ShoppingCart size={16} />
-                                        </button>
                                     </div>
-                                ))
-                            }
+                                    <button
+                                        onClick={() => addToCart(item)}
+                                        className="mt-2 bg-[#ECA641] text-white px-4 py-2 w-full rounded-lg flex items-center justify-center gap-2 cursor-pointer"
+                                    >
+                                        Tambah Ke Keranjang <ShoppingCart size={16} />
+                                    </button>
+                                </div>
+                            ))
+                        }
                     </div>
 
                     {/* Modal Keranjang */}
@@ -522,65 +525,81 @@ function Kasir() {
 
                         {/* Jika Pre-order */}
                         {orderType === "preorder" && (
-                        <div className="mt-4 space-y-4">
-                            <div className="flex gap-4">
-                                <label className="flex items-center gap-2 text-sm text-black">
-                                    <input
-                                        type="radio"
-                                        name="preorderOption"
-                                        value="diantar"
-                                        checked={preorderOption === "diantar"}
-                                        onChange={() => setPreorderOption("diantar")}
-                                        className="form-radio text-[#ECA641]"
-                                    />
-                                    Diantar
-                                </label>
-                                <label className="flex items-center gap-2 text-sm text-black">
-                                    <input
-                                        type="radio"
-                                        name="preorderOption"
-                                        value="pickup"
-                                        checked={preorderOption === "pickup"}
-                                        onChange={() => setPreorderOption("pickup")}
-                                        className="form-radio text-[#ECA641]"
-                                    />
-                                    Bayar Sendiri
-                                </label>
-                            </div>
-                            {errors.preorderOption && <p className="text-red-500 text-sm">{errors.preorderOption}</p>}
-
-                            {/* Pickup Date dan Time sama seperti sebelumnya */}
-                            <div className="flex gap-4">
-                                {/* Tanggal Pengambilan */}
-                                <div className="flex flex-col w-1/2">
-                                    <label className="text-sm text-black mb-1">Tanggal Pengambilan</label>
-                                    <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 gap-2">
+                            <div className="mt-4 space-y-4">
+                                <div className="flex gap-4">
+                                    <label className="flex items-center gap-2 text-sm text-black">
                                         <input
-                                            type="date"
-                                            name="pickupDate"
-                                            className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupDate ? 'border-red-500' : ''}`}
-                                            onChange={(e) => setPickupDate(e.target.value)}
+                                            type="radio"
+                                            name="preorderOption"
+                                            value="diantar"
+                                            checked={preorderOption === "diantar"}
+                                            onChange={() => setPreorderOption("diantar")}
+                                            className="form-radio text-[#ECA641]"
                                         />
+                                        Diantar
+                                    </label>
+                                    <label className="flex items-center gap-2 text-sm text-black">
+                                        <input
+                                            type="radio"
+                                            name="preorderOption"
+                                            value="pickup"
+                                            checked={preorderOption === "pickup"}
+                                            onChange={() => setPreorderOption("pickup")}
+                                            className="form-radio text-[#ECA641]"
+                                        />
+                                        Bayar Sendiri
+                                    </label>
+                                </div>
+                                {errors.preorderOption && <p className="text-red-500 text-sm">{errors.preorderOption}</p>}
+
+                                {/* Pickup Date dan Time sama seperti sebelumnya */}
+                                <div className="flex gap-4">
+                                    {/* Tanggal Pengambilan */}
+                                    <div className="flex flex-col w-1/2">
+                                        <label className="text-sm text-black mb-1">Tanggal Pengambilan</label>
+                                        <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 gap-2">
+                                            <input
+                                                type="date"
+                                                name="pickupDate"
+                                                className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupDate ? 'border-red-500' : ''}`}
+                                                onChange={(e) => setPickupDate(e.target.value)}
+                                            />
+                                        </div>
+                                        {errors.pickupDate && <p className="text-red-500 text-sm">{errors.pickupDate}</p>}
                                     </div>
-                                    {errors.pickupDate && <p className="text-red-500 text-sm">{errors.pickupDate}</p>}
+
+                                    {/* Jam Pengambilan */}
+                                    <div className="flex flex-col w-1/2">
+                                        <label className="text-sm text-black mb-1">Jam Pengambilan</label>
+                                        <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 gap-2">
+                                            <input
+                                                type="time"
+                                                name="pickupTime"
+                                                className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupTime ? 'border-red-500' : ''}`}
+                                                onChange={(e) => setPickupTime(e.target.value)}
+                                            />
+                                        </div>
+                                        {errors.pickupTime && <p className="text-red-500 text-sm">{errors.pickupTime}</p>}
+                                    </div>
                                 </div>
 
-                                {/* Jam Pengambilan */}
-                                <div className="flex flex-col w-1/2">
-                                    <label className="text-sm text-black mb-1">Jam Pengambilan</label>
-                                    <div className="flex items-center border border-gray-300 rounded-md px-3 py-2 gap-2">
-                                        <input
-                                            type="time"
-                                            name="pickupTime"
-                                            className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupTime ? 'border-red-500' : ''}`}
-                                            onChange={(e) => setPickupTime(e.target.value)}
+                                {/* Alamat */}
+                                {preorderOption === "diantar" && (
+                                    <div className="flex flex-col">
+                                        <label className="text-sm text-black mb-1">Alamat Pengiriman</label>
+                                        <textarea
+                                            name="deliveryAddress"
+                                            className={`outline-none text-sm text-black border border-gray-300 rounded-md px-3 py-2 ${errors.deliveryAddress ? 'border-red-500' : ''}`}
+                                            rows="2"
+                                            placeholder="Masukkan alamat lengkap"
+                                            onChange={(e) => setDeliveryAddress(e.target.value)}
                                         />
+                                        {errors.deliveryAddress && <p className="text-red-500 text-sm">{errors.deliveryAddress}</p>}
                                     </div>
-                                    {errors.pickupTime && <p className="text-red-500 text-sm">{errors.pickupTime}</p>}
-                                </div>
+                                )}
                             </div>
-                        </div>
                         )}
+
 
                         {/* Jika Makan di Tempat */}
                         {orderType === "dinein" && (

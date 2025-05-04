@@ -5,7 +5,7 @@ import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import Image from 'next/image';
 import Swal from "sweetalert2";
-import { ShoppingCart, X, Minus, Plus, ScanQrCode, Banknote  } from 'lucide-react';
+import { ShoppingCart, X, Minus, Plus, ScanQrCode, Banknote, Search  } from 'lucide-react';
 import '@/globals.css';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
@@ -111,6 +111,7 @@ function Kasir() {
             setRemarks("");
             setSelected(null);
             fetchDataAntrian();
+            fetchDataMenu();
     
         } catch (err) {
             console.error(err.message);
@@ -266,9 +267,8 @@ function Kasir() {
     
 
     // Menghitung subtotal, pajak, dan total
-    const subtotal = cart.reduce((acc, item) => acc + parseInt(item.selling_price) * item.quantity, 0);
-    const tax = subtotal * 0.12;
-    const total = subtotal + tax;
+    const subtotal = cart.reduce((acc, item) => acc + (item.selling_price || 0) * item.quantity, 0);
+    const total = subtotal;
 
     const updateAmount = (digit) => {
         setAmountPaid(prevAmount => prevAmount * 10 + digit);
@@ -331,7 +331,7 @@ function Kasir() {
                                 </p>
                                 <button
                                 onClick={() => showModal(order.order_id)}  // Menambahkan order_id ke dalam fungsi
-                                className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm"
+                                className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer"
                                 >
                                 Selesai
                                 </button>
@@ -350,21 +350,39 @@ function Kasir() {
                     {/* Kategori Menu */}
                     <div className="mb-6">
                         <h2 className="text-lg md:text-xl text-black font-semibold mb-3">Menu Pesanan</h2>
-                        <div className="overflow-x-auto max-w-full">
-                            <div className="flex space-x-2 md:space-x-4 w-full flex-wrap">
+                        <div className="flex flex-wrap items-center justify-between mb-4">
+                            {/* Kategori Buttons */}
+                            <div className="overflow-x-auto max-w-full">
+                                <div className="flex space-x-2 md:space-x-4 w-full flex-wrap">
                                 {categories.map((category) => (
-                                <button
+                                    <button
                                     key={category}
                                     onClick={() => setActiveCategory(category)}
-                                    className={`px-3 py-1 md:px-4 md:py-2 mb-3 rounded-lg text-sm md:text-lg font-medium whitespace-nowrap ${
-                                    activeCategory === category ? "bg-[#ECA641] text-white" : "bg-white text-[#ECA641] border border-[#ECA641]"
+                                    className={`px-3 py-1 md:px-4 md:py-2 mb-3 rounded-lg text-sm md:text-lg font-medium whitespace-nowrap cursor-pointer ${
+                                        activeCategory === category
+                                        ? "bg-[#ECA641] text-white"
+                                        : "bg-white text-[#ECA641] border border-[#ECA641]"
                                     }`}
-                                >
+                                    >
                                     {category}
-                                </button>
+                                    </button>
                                 ))}
+                                </div>
+                            </div>
+
+                            {/* Search Input */}
+                            <div className="relative mb-3">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                            <input
+                                type="text"
+                                placeholder="Cari nama produk"
+                                // value={searchQuery}
+                                // onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-10 pr-4 py-3 border border-gray-300 text-gray-500 rounded-lg text-sm md:text-base w-full"
+                            />
                             </div>
                         </div>
+
                     </div>
 
                     {showQrisModal && (
@@ -467,7 +485,7 @@ function Kasir() {
                     {/* Daftar Menu */}
                     <div className={`grid gap-4 transition-all duration-300 ${
                         isCartOpen
-                            ? "grid-cols-2 pr-[370px]"  // Cart terbuka, hanya 2 kolom dan beri ruang untuk cart
+                            ? "grid-cols-3 pr-[370px]"  // Cart terbuka, hanya 2 kolom dan beri ruang untuk cart
                             : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 pr-0"  // Normal grid dengan ukuran kolom responsif
                     }`}>
                         {listMenu
@@ -497,7 +515,7 @@ function Kasir() {
                                     </div>
                                     <button
                                         onClick={() => addToCart(item)}
-                                        className="mt-2 bg-[#ECA641] text-white px-4 py-2 w-full rounded-lg flex items-center justify-center gap-2"
+                                        className="mt-2 cursor-pointer bg-[#ECA641] text-white px-4 py-2 w-full rounded-lg flex items-center justify-center gap-2"
                                     >
                                         Tambah Ke Keranjang <ShoppingCart size={16} />
                                     </button>

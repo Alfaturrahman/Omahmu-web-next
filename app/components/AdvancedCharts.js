@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Legend, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Legend, Tooltip, ResponsiveContainer, Label  } from 'recharts';
 
 const COLORS = ['#ECA641', '#BFBFBF'];
 
@@ -18,7 +18,8 @@ export default function AdvancedCharts({ data }) {
   const pieRawData = data?.dashboard_presentase || [];
   const pieData = pieRawData.map(item => ({
     name: item.product_type,
-    value: parseFloat(item.persentase),
+    value: parseFloat(item.persentase), // Store it as a number for the Pie chart
+    percentage: `${parseFloat(item.persentase).toFixed(2)}%` // For displaying with %
   }));
 
   // Handle bar chart data
@@ -57,12 +58,10 @@ export default function AdvancedCharts({ data }) {
   return (
     <div className="flex flex-col md:flex-row lg:flex-col items-center justify-center gap-6">
       
-      {/* Grafik Batang (Penjualan Harian) */}
-      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[380px]">
-        <h3 className="text-center text-black font-bold mb-2">Penjualan Harian</h3>
-      
-        {/* Grafik */}
-        <div className="w-full h-[260px]">
+      {/* Grafik Batang */}
+      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[260px]">
+        <h3 className="text-center text-black font-bold mb-4">Penjualan Terlaris</h3>
+        <div className="w-full h-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={emptyBarData}>
               <XAxis dataKey="tanggal" />
@@ -103,14 +102,25 @@ export default function AdvancedCharts({ data }) {
         <h2 className="text-center text-black font-bold mb-4">Produk Terlaris</h2>
         <div className="w-full h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie data={pieData} cx="50%" cy="50%" outerRadius={70} dataKey="value">
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
+          <PieChart width={400} height={400}>
+            <Pie
+              data={pieData}
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              dataKey="value"
+              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(2)}%`} // Show label outside slice
+            >
+              {pieData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+
+            <Tooltip
+              formatter={(value, name, props) => [`${value}%`, name]}
+              labelFormatter={() => ''}
+            />
+          </PieChart>
           </ResponsiveContainer>
         </div>
 

@@ -218,8 +218,9 @@ const Register = () => {
                 
             <div>
                 <label className="text-black block mb-1 font-bold">Surat Pernyataan Keabsahan Data</label>
-                <a href="/document.pdf" download className="text-[#ECA641] hover:underline text-sm">⬇️ Download document.pdf</a>
+                <a href="/Surat_Pernyataan_Keabsahan_Data.docx" download className="text-[#ECA641] hover:underline text-sm">⬇️ Download surat_pernyataan.docx</a>
             </div>
+
 
             {/* Paket */}
             <div>
