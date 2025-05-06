@@ -243,7 +243,7 @@ const Header = ({ toggleSidebar }) => {
           </div>
 
           {/* Toggle Switch */}
-          {(userRoleId === 1 || userRoleId === 2) && (
+          {(userRoleId === 2) && (
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"

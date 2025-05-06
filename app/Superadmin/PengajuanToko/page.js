@@ -390,7 +390,14 @@ function DaftarPengajuanToko() {
                                 {/* Nomor & Tanggal */}
                                 <div className="flex justify-between text-xs mb-2 px-1">
                                     <span><strong>NOMOR PENGAJUAN</strong> : {storeDetail.submission_code}</span>
-                                    <span><strong>TANGGAL</strong> : {storeDetail.created_at}</span>
+                                    <span>
+                                    <strong>TANGGAL</strong> : {new Date(storeDetail.created_at).toLocaleDateString('id-ID', {
+                                        weekday: 'long',
+                                        day: '2-digit',
+                                        month: 'long',
+                                        year: 'numeric'
+                                    })}
+                                    </span>
                                 </div>
 
                                 {/* Detail Pengajuan */}
@@ -440,24 +447,28 @@ function DaftarPengajuanToko() {
                                     </div>
                                 </div>
                                 </div>
-
-                                        {/* Dokumen Pendukung */}
-                                        <div>
-                                        <h3 className="text-center font-bold mb-4">DOKUMEN PENDUKUNG</h3>
-                                        {[
-                                            'KTP PEMILIK TOKO',
-                                            'SURAT PERNYATAAN KEABSAHAN DATA',
-                                            'SURAT IZIN USAHA (OPSIONAL)',
-                                        ].map((label, idx) => (
-                                            <div key={idx} className="mb-3">
-                                            <p className="text-xs font-semibold mb-1">{label}</p>
-                                            <div className="flex items-center border rounded px-3 py-2 bg-gray-50 text-sm">
-                                                <span className="mr-2">📄</span> pdf document.pdf
-                                            </div>
-                                            </div>
-                                        ))}
+                                    {/* Dokumen Pendukung */}
+                                    <div>
+                                    <h3 className="text-center font-bold mb-4">DOKUMEN PENDUKUNG</h3>
+                                    {[
+                                        { label: 'KTP PEMILIK TOKO', file: storeDetail.ktp_picture },
+                                        { label: 'SURAT PERNYATAAN KEABSAHAN DATA', file: storeDetail.statement_letter },
+                                        { label: 'SURAT IZIN USAHA (OPSIONAL)', file: storeDetail.business_license },
+                                    ].map((doc, idx) => (
+                                        <div key={idx} className="mb-3">
+                                        <p className="text-xs font-semibold mb-1">{doc.label}</p>
+                                        <a
+                                            href={`http://localhost:8000/media/${doc.file}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center border rounded px-3 py-2 bg-gray-50 text-sm hover:underline"
+                                        >
+                                            <span className="mr-2">📄</span> {doc.file}
+                                        </a>
                                         </div>
+                                    ))}
                                     </div>
+                            </div>
 
                                 {/* Footer */}
                                 {(storeDetail.account_status !== "Done" && storeDetail.account_status !== "Reject") && (
