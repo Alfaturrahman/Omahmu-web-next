@@ -341,7 +341,9 @@ function DaftarPengajuanToko() {
                                         <td className="py-3 px-4 relative">{item.kode}</td>
                                         <td className="py-3 px-4 relative uppercase">{item.email}</td>
                                         <td className="py-3 px-4 relative">{item.paket}</td>
-                                        <td className="py-3 px-4 relative">{item.tanggal}</td>
+                                        <td className="py-3 px-4 relative">
+                                        {item.tanggal ? item.tanggal.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}
+                                        </td>
                                         <td className="py-3 px-4 relative">
                                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[item.status]}`}>
                                             {item.status}
@@ -476,7 +478,7 @@ function DaftarPengajuanToko() {
                                     )}
 
                                     {/* Modal Tolak */}
-                                    {showRejectModal && (
+                                    {/* {showRejectModal && (
                                     <div className="fixed inset-0 flex items-center justify-center backdrop-brightness-50 z-80">
                                         <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
                                         <h2 className="text-center text-black text-lg font-bold mb-5">Tolak Pengajuan Toko</h2>
@@ -509,10 +511,10 @@ function DaftarPengajuanToko() {
                                         </form>
                                         </div>
                                     </div>
-                                    )}
+                                    )} */}
 
                                     {/* Modal Terima */}
-                                    {showAcceptModal && (
+                                    {/* {showAcceptModal && (
                                     <div className="fixed inset-0 flex items-center justify-center backdrop-brightness-50 z-80">
                                         <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 overflow-y-auto max-h-screen">
                                         <h2 className="text-center text-black text-lg font-bold mb-5">BUAT AKUN TOKO</h2>
@@ -564,7 +566,7 @@ function DaftarPengajuanToko() {
                                         </form>
                                         </div>
                                     </div>
-                                    )}
+                                    )} */}
                             </div>
                         </>
                     )}

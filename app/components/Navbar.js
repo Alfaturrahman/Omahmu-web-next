@@ -209,15 +209,17 @@ const Header = ({ toggleSidebar }) => {
           </div>
 
           {/* Toggle Switch */}
-          <label className="relative inline-flex items-center cursor-pointer">
-            <input
-              type="checkbox"
-              className="sr-only peer"
-              checked={toggle}
-              onChange={() => setToggle(!toggle)}
-            />
-            <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 relative after:content-[''] after:absolute after:left-[2px] after:top-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
-          </label>
+          {(userRole === '1' || userRole === '2') && (
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={toggle}
+                onChange={() => setToggle(!toggle)}
+              />
+              <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 relative after:content-[''] after:absolute after:left-[2px] after:top-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
+            </label>
+          )}
         </div>
 
         <span className="text-[11px] md:text-[13px] lg:text-[15px] text-black font-semibold">

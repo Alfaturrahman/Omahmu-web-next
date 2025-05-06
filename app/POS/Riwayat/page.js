@@ -282,7 +282,7 @@ function Riwayat() {
                                             : 'bg-orange-100 text-orange-600'
                                         }`}
                                         >
-                                        {item.order_status === 'completed' ? 'Selesai' : 'Proses'}
+                                        {item.order_status === 'completed' ? 'Completesd' : 'In Progress'}
                                         </span>
                                         <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                     </td>
