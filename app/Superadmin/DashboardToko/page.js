@@ -9,31 +9,23 @@ import AdvancedCharts from '@/components/AdvancedCharts';
 import { Calendar, ArrowLeftIcon } from 'lucide-react';
 import Header from '@/components/Navbar';
 import '@/globals.css';
+import { useSearchParams } from 'next/navigation';
+import withAuth from 'hoc/withAuth';
+import * as apiService from 'services/authService';
+import { useMemo } from 'react';
 
-export default function Home() {
+function DashboardToko() {
+    const searchParams = useSearchParams();
+    const storeId = searchParams.get('store_id'); // Ambil dari URL
     const router = useRouter();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar
-    const [isCollapsed, setIsCollapsed] = useState(false); // Desktop sidebar
-    const [isFilterOpen, setIsFilterOpen] = useState(false); // Filter calendar
+
+    const [dashboardData, setDashboardData] = useState(null);
+    const [menuItems, setMenuItems] = useState([]);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("dashboard");
-    // const [activeCategory, setActiveCategory] = useState("Semua");
-
-    const menuItems = [
-        { id: 1, name: "Sate Kambing", price: 15000, image: "/sate-kambing.png", category: "Makanan", favorite: true },
-        { id: 2, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
-        { id: 3, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
-        { id: 4, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
-        { id: 5, name: "Sate Kambing", price: 15000, image: "/sate-kambing.png", category: "Makanan", favorite: true },
-        { id: 6, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
-        { id: 7, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
-        { id: 8, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
-        { id: 9, name: "Sate Kambing", price: 15000, image: "/sate-kambing.png", category: "Makanan", favorite: true },
-        { id: 10, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
-        { id: 11, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
-        { id: 12, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
-    ];
-
-    // const categories = ["Semua", "Makanan", "Minuman", "Favorit"];
+    const [loading, setLoading] = useState(false);
 
     const [selectedDate, setSelectedDate] = useState({
         year: new Date().getFullYear(),
@@ -43,19 +35,65 @@ export default function Home() {
 
     const filterRef = useRef(null);
 
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-        if (filterRef.current && !filterRef.current.contains(event.target)) {
-            setIsFilterOpen(false);
+    // Format tanggal ke objek Date (untuk fetch dashboard)
+    const selectedDateObj = useMemo(() => {
+        return new Date(selectedDate.year, selectedDate.month - 1, selectedDate.day);
+      }, [selectedDate]);
+      
+    // Fetch dashboard data
+    const fetchDashboardData = async () => {
+        if (!storeId) return;
+        setLoading(true);
+        try {
+        let url = `/storeowner/dashboard/?store_id=${storeId}`;
+        if (selectedDateObj) {
+            const year = selectedDateObj.getFullYear();
+            const month = selectedDateObj.getMonth() + 1;
+            const day = selectedDateObj.getDate();
+            url += `&year=${year}&month=${month}&day=${day}`;
         }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
 
+        const result = await apiService.getData(url);
+        setDashboardData(result.data);
+        } catch (err) {
+        console.error(err.message);
+        } finally {
+        setLoading(false);
+        }
+    };
+
+    // Fetch menu items
+    const fetchMenuItems = async () => {
+        if (!storeId) return;
+        try {
+        const result = await apiService.getData(`/storeowner/daftar_menu/?store_id=${storeId}`);
+        const transformedData = result.data.map((item) => ({
+            id: item.product_id,
+            name: item.product_name,
+            price: Number(item.selling_price), // Konversi ke number
+            image: item.product_picture,
+            category: item.product_type,
+            favorite: item.favorite_status,
+          }));
+      
+          setMenuItems(transformedData);
+        } catch (err) {
+        console.error(err.message);
+        }
+    };
+
+    // Combined effect
+    useEffect(() => {
+        fetchDashboardData();
+    }, [storeId, selectedDate]);
+
+    useEffect(() => {
+        fetchMenuItems();
+    }, [storeId]);
+
+    // Others (UI handlers)
     const handleTabClick = (tab) => {
         setActiveTab(tab);
-        setCurrentPage(1);
     };
 
     const handleFilterToggle = () => {
@@ -69,6 +107,16 @@ export default function Home() {
         setIsCollapsed(!isCollapsed);
         }
     };
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+        if (filterRef.current && !filterRef.current.contains(event.target)) {
+            setIsFilterOpen(false);
+        }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
   return (
     <div className="h-screen flex flex-col bg-white">
@@ -151,11 +199,11 @@ export default function Home() {
                 {/* Konten Utama Dashboard */}
                 <div className="flex flex-col lg:flex-row gap-8">
                     <div className="flex-1 space-y-6">
-                    <SummaryCards />
-                    <ChartSection />
+                    <SummaryCards data={dashboardData?.dashboard_monthly} />
+                    <ChartSection data={dashboardData?.dashboard_yearly} />
                     </div>
                     <div className="lg:w-1/3 w-full">
-                    <AdvancedCharts />
+                    <AdvancedCharts data={{ dashboard_daily: dashboardData?.dashboard_daily, dashboard_presentase: dashboardData?.dashboard_presentase }} />
                     </div>
                 </div>
                 </>
@@ -168,14 +216,18 @@ export default function Home() {
                         {menuItems
                         .map((item) => (
                             <div key={item.id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
-                                <Image src={item.image} width={300} height={200} alt={item.name} className="rounded-lg w-full h-40 object-cover" />
+                                <img
+                                src={item.image ? `http://localhost:8000${item.image}` : '/default-image.png'}
+                                alt={item.product_name}
+                                className="rounded-lg w-full h-40 object-cover w-full"
+                                />
                                 <div className="flex items-center justify-between mt-2">
                                     <h3 className="font-semibold text-sm text-black flex items-center">
                                         {item.favorite && <span className="text-yellow-400 mr-1">⭐</span>}
                                         {item.name}
                                     </h3>
                                     <p className="text-[#ECA641] font-bold text-sm whitespace-nowrap">
-                                        Rp {item.price.toLocaleString("id-ID")},00
+                                    Rp {typeof item.price === 'number' ? item.price.toLocaleString("id-ID") + ',00' : 'N/A'}
                                     </p>
                                 </div>
                             </div>
@@ -188,3 +240,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default withAuth(DashboardToko,['1'])

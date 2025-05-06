@@ -8,8 +8,10 @@ import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
 import { Search } from "lucide-react";
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 function SuperadminDashboard() {
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [search, setSearch] = useState("");
@@ -188,12 +190,12 @@ function SuperadminDashboard() {
                   </div>
 
                       <div className="flex justify-end">
-                    <Link
-                      href="/Superadmin/DashboardToko"
-                      className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded"
-                    >
+                      <button
+                        onClick={() => router.push(`/Superadmin/DashboardToko?store_id=${store.store_id}`)}
+                        className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded"
+                      >
                         Pantau Toko
-                    </Link>
+                      </button>
                     </div>
                 </div>
               ))}

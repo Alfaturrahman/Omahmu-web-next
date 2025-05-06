@@ -87,6 +87,7 @@ const Header = ({ toggleSidebar }) => {
       "/POS/Menu": "Menu",
       "/POS/Riwayat": "Riwayat Pesanan",
       "/Superadmin/Dashboard": "Dashboard",
+      "/Superadmin/DashboardToko": "Dashboard",
       "/Superadmin/PengajuanToko": "Pengajuan Toko",
       "/Superadmin/DaftarPaket": "Daftar Paket",
       "/Cust/Dashboard": "Dashboard",
