@@ -3,8 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { Search, Filter, ArrowLeftIcon } from "lucide-react";
 import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation';
+import * as apiService from 'services/authService';
+
 
 export default function DetailPenggunaPaket() {
+    const searchParams = useSearchParams();
+    const package_id = searchParams.get('package_id'); // Ambil dari URL
     const router = useRouter();
     const statusOptions = ["Semua", "AKTIF", "NONAKTIF"];
     const [search, setSearch] = useState("");
@@ -13,93 +18,31 @@ export default function DetailPenggunaPaket() {
     const [currentPage, setCurrentPage] = useState(1);
     const entriesPerPage = 10;
     const filterRef = useRef(null);
+    const [listPengguna, setListPengguna] = useState([]);
     
-    const dummyData = [
-        {
-        id: 1,
-        namaToko: "Warung Seger",
-        pemilikToko: "Rina Kurnia",
-        emailPemilik: "rina.kurnia@gmail.com",
-        status: "AKTIF",
-        },
-        {
-        id: 2,
-        namaToko: "Kopi Pagi",
-        pemilikToko: "Andi Saputra",
-        emailPemilik: "andi.saputra@yahoo.com",
-        status: "TIDAK AKTIF",
-        },
-        {
-        id: 3,
-        namaToko: "Bakso Mantap",
-        pemilikToko: "Siti Aminah",
-        emailPemilik: "siti.aminah@mail.com",
-        status: "AKTIF",
-        },
-        {
-        id: 4,
-        namaToko: "Martabak Manis",
-        pemilikToko: "Budi Hartono",
-        emailPemilik: "budi.hartono@outlook.com",
-        status: "PENDING",
-        },
-        {
-        id: 5,
-        namaToko: "Nasi Goreng Gila",
-        pemilikToko: "Eka Prasetya",
-        emailPemilik: "eka.pra@gmail.com",
-        status: "AKTIF",
-        },
-        {
-        id: 6,
-        namaToko: "Warung Seger",
-        pemilikToko: "Rina Kurnia",
-        emailPemilik: "rina.kurnia@gmail.com",
-        status: "AKTIF",
-        },
-        {
-        id: 7,
-        namaToko: "Kopi Pagi",
-        pemilikToko: "Andi Saputra",
-        emailPemilik: "andi.saputra@yahoo.com",
-        status: "TIDAK AKTIF",
-        },
-        {
-        id: 8,
-        namaToko: "Bakso Mantap",
-        pemilikToko: "Siti Aminah",
-        emailPemilik: "siti.aminah@mail.com",
-        status: "AKTIF",
-        },
-        {
-        id: 9,
-        namaToko: "Martabak Manis",
-        pemilikToko: "Budi Hartono",
-        emailPemilik: "budi.hartono@outlook.com",
-        status: "PENDING",
-        },
-        {
-        id: 10,
-        namaToko: "Nasi Goreng Gila",
-        pemilikToko: "Eka Prasetya",
-        emailPemilik: "eka.pra@gmail.com",
-        status: "AKTIF",
-        },
-        {
-        id: 11,
-        namaToko: "Nasi Goreng Gila",
-        pemilikToko: "Eka Prasetya",
-        emailPemilik: "eka.pra@gmail.com",
-        status: "AKTIF",
-        },
-    ];
+    const fetchListPengguna = async () => {
+        try {
+          const result = await apiService.getData(`/superadmin/detail_pengguna_paket/?package_id=${package_id}`);
+          
+          setListPengguna(result.data);
+        } catch (err) {
+          console.error('Gagal ambil data paket:', err.message);
+        }
+      };
 
-    const filteredData = dummyData.filter((item) => {
-        const matchStatus =
-        filterStatus === "Semua" ? true : item.status === filterStatus;
-        const matchSearch = item.namaToko
+      useEffect(() => {
+        fetchListPengguna();
+    }, [package_id]);
+
+
+    const filteredData = listPengguna.filter((item) => {
+        const matchSearch = (item.nama_toko || "")
         .toLowerCase()
         .includes(search.toLowerCase());
+
+        const matchStatus =
+        filterStatus === "Semua" ? true : item.status === filterStatus;
+
         return matchStatus && matchSearch;
     });
 
@@ -229,19 +172,19 @@ export default function DetailPenggunaPaket() {
                                         alt="Logo"
                                         className="w-6 h-6 rounded-full"
                                         />
-                                        <span className="text-left">{item.namaToko}</span>
+                                        <span className="text-left">{item.nama_toko}</span>
                                     </div>
                                     <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                 </td>
 
 
                                 <td className="py-3 px-4 relative">
-                                {item.pemilikToko}
+                                {item.pemilik_toko}
                                 <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                 </td>
 
                                 <td className="py-3 px-4 relative">
-                                    {item.emailPemilik}
+                                    {item.email_pemilik_toko}
                                     <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                 </td>
 
@@ -277,7 +220,7 @@ export default function DetailPenggunaPaket() {
                         onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
                         disabled={currentPage === 1}
                         >
-                        Sebelumnya
+                        &lt;
                         </button>
 
                         {Array.from({ length: totalPages }, (_, i) => (
@@ -299,7 +242,7 @@ export default function DetailPenggunaPaket() {
                         onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
                         disabled={currentPage === totalPages}
                         >
-                        Selanjutnya
+                        &gt;
                         </button>
                     </div>
                 </div>

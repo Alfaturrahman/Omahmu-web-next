@@ -443,7 +443,9 @@ function DaftarPaket() {
                           <button onClick={() => handleEdit(paket)} className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100">
                             Edit
                           </button>
-                          <button onClick={handleDetailPengguna} className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100">
+                          <button
+                          onClick={() => router.push(`/Superadmin/DetailPenggunaPaket?package_id=${paket.package_id}`)}
+                          className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100">
                             Detail Pengguna
                           </button>
                           <button onClick={() => handleDelete(paket.package_id)} className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
