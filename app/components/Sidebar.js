@@ -13,7 +13,7 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
       items: [
         { name: "Dashboard", icon: LayoutDashboard, path: "/Superadmin/Dashboard" },
         { name: "Pengajuan Toko", icon: Monitor, path: "/Superadmin/PengajuanToko" },
-        { name: "Daftar Paket", icon: Package, path: "/Superadmin/DaftarPaket" },
+        { name: "Daftar Paket", icon: Package, path: ["/Superadmin/DaftarPaket", "/Superadmin/DetailPenggunaPaket"] },
       ],
     },
     {
@@ -61,19 +61,22 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
 
         <div className="mt-4 flex-1">
           {currentMenu.items.map((item, index) => (
-            <Link key={index} href={item.path} className="block">
+            <Link key={index} href={Array.isArray(item.path) ? item.path[0] : item.path} className="block">
               <div
-                className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-300 
-                  ${pathname === item.path
+                className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-300 ${
+                  (Array.isArray(item.path)
+                    ? item.path.some((p) => pathname.startsWith(p))
+                    : pathname.startsWith(item.path))
                     ? "bg-[#ECA641] text-white"
-                    : "text-[#ECA641] hover:bg-[#F6B543] hover:text-white"}`}
+                    : "text-[#ECA641] hover:bg-[#F6B543] hover:text-white"
+                }`}
               >
                 <item.icon className="h-6 w-6" />
                 {!isCollapsed && <span className="text-lg font-medium">{item.name}</span>}
               </div>
             </Link>
           ))}
-        </div>
+        </div>  
       </div>
     </>
   );

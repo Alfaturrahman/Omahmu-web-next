@@ -122,6 +122,7 @@ const Header = ({ toggleSidebar }) => {
       "/Superadmin/DashboardToko": "Dashboard",
       "/Superadmin/PengajuanToko": "Pengajuan Toko",
       "/Superadmin/DaftarPaket": "Daftar Paket",
+      "/Superadmin/DetailPenggunaPaket": "Detail Pengguna Paket",
       "/Cust/Dashboard": "Dashboard",
       "/Cust/Kasir": "Kasir",
       "/Cust/Log": "Log Pemesanan",
