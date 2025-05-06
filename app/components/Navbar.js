@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Menu, Bell, User, LogOut, Lock, Moon, Sun, PackageCheck, AlertTriangle  } from "lucide-react";
 import { useRouter } from 'next/navigation'
 import { jwtDecode } from "jwt-decode";
+import * as apiService from 'services/authService';
 
 const Header = ({ toggleSidebar }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,18 +17,23 @@ const Header = ({ toggleSidebar }) => {
     router.push('/Login');
   };
   const token = localStorage.getItem("token");
+  const store_id = localStorage.getItem("store_id");
+
 
   let userEmail = "";
   let userRole = "";
+  let userRoleId = "";
 
   if (token) {
     const decoded = jwtDecode(token);
-    console.log("TESSSSS", decoded);
 
     userEmail = decoded.email;
     userRole = decoded.role_name;
+    userRoleId = decoded.role_id;
+
   }
-    const [toggle, setToggle] = useState(false);
+  const [toggle, setToggle] = useState(false);
+  const storeId = store_id; 
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("order");
   const notifRef = useRef(null);
@@ -64,6 +70,32 @@ const Header = ({ toggleSidebar }) => {
   };
   
   const filteredNotifications = notifications[activeTab] || [];
+
+  const handleToggleStore = async () => {
+    try {
+      const newStatus = !toggle;
+      await apiService.putData(
+        `/storeowner/update_open_status/?store_id=${storeId}&is_open=${newStatus}`
+      );
+      setToggle(newStatus);
+      toast.success(`Toko berhasil ${newStatus ? 'dibuka' : 'ditutup'}`);
+    } catch (error) {
+      toast.error("Gagal memperbarui status toko");
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchStoreStatus = async () => {
+      try {
+        const result = await apiService.getData(`/storeowner/profile/${storeId}/`);
+        setToggle(result.data.is_open);
+      } catch (error) {
+        console.error("Gagal ambil status toko:", error);
+      }
+    };
+    fetchStoreStatus();
+  }, [storeId]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -210,13 +242,13 @@ const Header = ({ toggleSidebar }) => {
           </div>
 
           {/* Toggle Switch */}
-          {(userRole === '1' || userRole === '2') && (
+          {(userRoleId === 1 || userRoleId === 2) && (
             <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 className="sr-only peer"
                 checked={toggle}
-                onChange={() => setToggle(!toggle)}
+                onChange={handleToggleStore}
               />
               <div className="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 relative after:content-[''] after:absolute after:left-[2px] after:top-[2px] after:bg-white after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4" />
             </label>
