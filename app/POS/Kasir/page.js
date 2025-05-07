@@ -358,7 +358,7 @@ function Kasir() {
                                     <button
                                     key={category}
                                     onClick={() => setActiveCategory(category)}
-                                    className={`px-3 py-1 md:px-4 md:py-2 mb-3 rounded-lg text-sm md:text-lg font-medium whitespace-nowrap cursor-pointer ${
+                                    className={`px-3 py-1 md:px-4 md:py-2 rounded-lg text-sm md:text-lg font-medium whitespace-nowrap cursor-pointer ${
                                         activeCategory === category
                                         ? "bg-[#ECA641] text-white"
                                         : "bg-white text-[#ECA641] border border-[#ECA641]"
@@ -371,7 +371,7 @@ function Kasir() {
                             </div>
 
                             {/* Search Input */}
-                            <div className="relative mb-3">
+                            <div className="relative">
                             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
                             <input
                                 type="text"

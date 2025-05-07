@@ -98,7 +98,7 @@ export default function AdvancedCharts({ data }) {
       </div>
 
       {/* Grafik Pie (Produk Terlaris) */}
-      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[320px]">
+      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[285px]">
         <h2 className="text-center text-black font-bold mb-4">Produk Terlaris</h2>
         <div className="w-full h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
@@ -107,7 +107,7 @@ export default function AdvancedCharts({ data }) {
               data={pieData}
               cx="50%"
               cy="50%"
-              outerRadius={100}
+              outerRadius={70}
               dataKey="value"
               label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(2)}%`} // Show label outside slice
             >

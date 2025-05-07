@@ -37,7 +37,7 @@ export default function ChartSection({ data }) {
   return (
     <div className="bg-[#FFF4E8] p-4 rounded-lg shadow-lg">
       <h2 className="text-lg text-black font-semibold text-center mb-4">Grafik Penjualan Tahun Ini</h2>
-      <ResponsiveContainer width="100%" height={480}>
+      <ResponsiveContainer width="100%" height={327}>
         <LineChart data={formattedData}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />

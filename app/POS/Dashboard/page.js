@@ -88,7 +88,7 @@ function Dashboard() {
         <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
         {/* Konten Dashboard */}
-        <div className="flex-1 flex flex-col gap-6 p-4 transition-all overflow-y-auto min-h-0 duration-300">
+        <div className="flex-1 flex flex-col gap-6 p-3 transition-all overflow-auto min-h-0 duration-300">
           {loading ? (
             // Loading Spinner
             <div className="flex-1 flex justify-center items-center">

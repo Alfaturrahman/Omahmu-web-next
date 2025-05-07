@@ -49,9 +49,9 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
       )}
 
       <div
-        className={`bg-white shadow-lg p-4 me-3 transition-all duration-500 flex flex-col fixed lg:relative z-50 h-screen 
+        className={`bg-white shadow-lg p-4 transition-all duration-500 flex flex-col fixed lg:relative z-50 h-screen 
           transform ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} 
-          ${isCollapsed ? "lg:w-20" : "lg:w-64"}`}
+          ${isCollapsed ? "lg:w-20" : "lg:w-75"}`}
       >
         <div className="flex justify-end lg:hidden">
           <button onClick={toggleSidebar} className="p-2">
@@ -59,7 +59,7 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
           </button>
         </div>
 
-        <div className="mt-4 flex-1">
+        <div className="flex-1">
           {currentMenu.items.map((item, index) => (
             <Link key={index} href={Array.isArray(item.path) ? item.path[0] : item.path} className="block">
               <div
