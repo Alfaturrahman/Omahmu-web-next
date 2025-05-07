@@ -82,7 +82,7 @@ function Home() {
                   </div>
                 ) : filteredToko.length > 0 ? (
                   filteredToko.map((toko, i) => {
-                    const isOpen = toko.store_status === "active"; // Pastikan status toko sesuai
+                    const isOpen = toko.is_open === true; // Pastikan status toko sesuai
                     const color = isOpen ? "green" : "red";
     
                     return (
@@ -102,7 +102,7 @@ function Home() {
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          {toko.alamat_toko}
+                          {toko.store_address}
                         </div>
     
                         {/* Status */}

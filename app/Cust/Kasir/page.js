@@ -11,6 +11,7 @@ import '@/globals.css';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
 import { useSearchParams } from 'next/navigation';
+import { jwtDecode } from "jwt-decode";
 
 function Kasir() {
     const searchParams = useSearchParams();
@@ -41,6 +42,24 @@ function Kasir() {
         deliveryAddress: "",
     });
     
+
+     const token = localStorage.getItem("token");
+      const store_id = localStorage.getItem("store_id");
+    
+    
+      let userEmail = "";
+      let userRole = "";
+      let userRoleId = "";
+    
+      if (token) {
+        const decoded = jwtDecode(token);
+    
+        userEmail = decoded.email;
+        userRole = decoded.role_name;
+        userRoleId = decoded.role_id;
+    
+      }
+
     const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -85,6 +104,16 @@ function Kasir() {
 
     const handleBayarSekarang = () => {
         if (!validateForm()) return;
+
+        if (!customerName || !orderDate || !selected || cart.length === 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "Lengkapi semua data sebelum membayar",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#ECA641",
+            });
+            return;
+        }
     
         if (selected === "qris") {
             setShowQrisModal(true); // Modal QRIS muncul
@@ -106,15 +135,6 @@ function Kasir() {
 
     const insertOrder = async () => {
         try {
-            if (!customerName || !orderDate || !selected || cart.length === 0) {
-                Swal.fire({
-                    icon: "warning",
-                    title: "Lengkapi semua data sebelum membayar",
-                    confirmButtonText: "OK",
-                    confirmButtonColor: "#ECA641",
-                });
-                return;
-            }
     
             const payload = {
                 customer_name: customerName,
@@ -128,6 +148,7 @@ function Kasir() {
                 remarks: remarks,
                 pickup_date: null,
                 pickup_time: null,
+                user_id: userRoleId,
                 no_hp: formData.phoneNumber || null,  // Menggunakan formData.phoneNumber
                 delivery_address: deliveryAddress,
                 order_items: cart.map(item => ({
@@ -428,6 +449,7 @@ function Kasir() {
                                     type="date"
                                     name="orderDate"
                                     value={orderDate}
+                                    min={new Date().toISOString().split('T')[0]} // hanya bisa pilih dari hari ini ke depan
                                     onChange={(e) => setOrderDate(e.target.value)}
                                     className="bg-transparent border-none text-black font-semibold text-sm focus:outline-none text-right"
                                     />
@@ -561,6 +583,7 @@ function Kasir() {
                                             <input
                                                 type="date"
                                                 name="pickupDate"
+                                                min={new Date().toISOString().split('T')[0]} // hanya bisa pilih dari hari ini ke depan
                                                 className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupDate ? 'border-red-500' : ''}`}
                                                 onChange={(e) => setPickupDate(e.target.value)}
                                             />
@@ -611,7 +634,8 @@ function Kasir() {
                                     <input
                                         type="date"
                                         name="pickupDate"
-                                        className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupDate ? 'border-red-500' : ''}`}
+                                        min={new Date().toISOString().split('T')[0]} // hanya bisa pilih dari hari ini ke depan
+                                                className={`outline-none text-sm text-black flex-1 bg-transparent ${errors.pickupDate ? 'border-red-500' : ''}`}
                                         onChange={(e) => setPickupDate(e.target.value)}
                                     />
                                 </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import React, { useState } from "react";
 import Flag from "react-world-flags";
 import { registerCustomer } from '../../services/authService';
+import Swal from 'sweetalert2';
 
 const countryFlags = {
   ID: { code: "+62", label: "ID" },
@@ -51,16 +52,32 @@ const Register = () => {
         phoneNumber: selectedCountry + formData.phoneNumber,
         password: formData.password,
       };
-
+    
       const response = await registerCustomer(payload);
-
+    
       if (response.messagetype === 'S') {
-        alert('Registrasi Berhasil');
+        Swal.fire({
+          icon: 'success',
+          title: 'Registrasi Berhasil',
+          text: 'Akun Anda telah berhasil didaftarkan.',
+          timer: 2000,
+          showConfirmButton: false,
+        }).then(() => {
+          window.location.href = 'http://localhost:3000/Login';
+        });
       } else {
-        setError('Pendaftaran gagal. Silakan coba lagi.');
+        Swal.fire({
+          icon: 'error',
+          title: 'Pendaftaran Gagal',
+          text: 'Silakan coba lagi.',
+        });
       }
     } catch (err) {
-      setError(err.message || 'Terjadi kesalahan');
+      Swal.fire({
+        icon: 'error',
+        title: 'Terjadi Kesalahan',
+        text: err.message || 'Silakan coba beberapa saat lagi.',
+      });
     } finally {
       setIsLoading(false);
     }
