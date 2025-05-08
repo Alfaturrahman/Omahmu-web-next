@@ -279,6 +279,17 @@ const Header = ({ toggleSidebar }) => {
             </div>
 
               <div className="py-2">
+
+              {userRoleId === 3 && (
+                  <button
+                    onClick={() => router.push('/Cust/Profile')} // Arahkan ke /Cust/Profile untuk userRoleId 3
+                    className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg cursor-pointer"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Profil
+                  </button>
+                )}
+              {userRoleId === 2 && (
                 <button
                   onClick={() => router.push('/POS/Profile')}
                   className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg cursor-pointer"
@@ -286,6 +297,7 @@ const Header = ({ toggleSidebar }) => {
                   <User className="w-4 h-4 mr-2" />
                   Profil
                 </button>
+                )}
                 <button
                   onClick={() => router.push('/POS/GantiSandi')}
                   className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg cursor-pointer"

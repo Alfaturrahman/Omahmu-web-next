@@ -9,6 +9,8 @@ import { ShoppingCart, X, Minus, Plus, ScanQrCode, Banknote, Search  } from 'luc
 import '@/globals.css';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
+import { jwtDecode } from "jwt-decode";
+
 
 function Kasir() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -27,6 +29,20 @@ function Kasir() {
     const [phoneNumber, setPhoneNumber] = useState("");
     const [deliveryAddress, setDeliveryAddress] = useState("");
     const [remarks, setRemarks] = useState("");
+
+    const token = localStorage.getItem("token");
+    let userEmail = "";
+      let userRole = "";
+      let userRoleId = "";
+    
+      if (token) {
+        const decoded = jwtDecode(token);
+    
+        userEmail = decoded.email;
+        userRole = decoded.role_name;
+        userRoleId = decoded.role_id;
+    
+      }
 
     async function fetchDataAntrian() {
             try {
@@ -50,16 +66,8 @@ function Kasir() {
 
     const insertOrder = async () => {
         try {
-            if (!customerName || !orderDate || !selected || cart.length === 0) {
-                Swal.fire({
-                    icon: "warning",
-                    title: "Lengkapi semua data sebelum membayar",
-                    confirmButtonText: "OK",
-                    confirmButtonColor: "#ECA641",
-                });
-                return;
-            }
     
+            const storeId = localStorage.getItem('store_id');
             const payload = {
                 customer_name: customerName,
                 date: orderDate,
@@ -72,6 +80,9 @@ function Kasir() {
                 remarks: remarks, // bisa kosong string
                 pickup_date: null, // default null
                 pickup_time: null, // default null
+                role_id: userRoleId, // default null
+                reference_id: storeId, // default null
+                pickup_time: null, // default null
                 no_hp: phoneNumber || null,
                 delivery_address: deliveryAddress,
                 order_items: cart.map(item => ({
@@ -81,7 +92,6 @@ function Kasir() {
                     item: item.quantity,
                 })),
             };
-            const storeId = localStorage.getItem('store_id');
             if (!storeId) {
                 Swal.fire({
                     icon: "error",
@@ -126,6 +136,15 @@ function Kasir() {
     };
 
     const handleBayarSekarang = () => {
+        if (!customerName || !orderDate || !selected || cart.length === 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "Lengkapi semua data sebelum membayar",
+                confirmButtonText: "OK",
+                confirmButtonColor: "#ECA641",
+            });
+            return;
+        }
         handlePayment();
     };
     

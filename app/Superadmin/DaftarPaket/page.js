@@ -96,19 +96,21 @@ function DaftarPaket() {
     }
 
     const handleEdit = (paket) => {
-      const fiturSelected = (paket.features || []).map((fitur) => {
-        const found = fiturList.find(f => f.value === fitur.feature_id); 
+      const fiturSelected = (paket.features || [])
+      .filter(fitur => fitur.is_active) // hanya fitur yang aktif
+      .map(fitur => {
+        const found = fiturList.find(f => f.value === fitur.feature_id);
         return found ? found.value : undefined;
-      }).filter(fitur => fitur !== undefined);
-      
-      setFormData({
-        nama: paket.package_name || '',
-        durasi: paket.duration || '',
-        harga: paket.price ? parseInt(paket.price.replace(/[^0-9]/g, ''), 10) : '',
-        deskripsi: paket.description || '',
-        fitur: fiturSelected,
-      });
-      
+      })
+      .filter(fitur => fitur !== undefined);
+    
+    setFormData({
+      nama: paket.package_name || '',
+      durasi: paket.duration || '',
+      harga: paket.price ? parseInt(paket.price.replace(/[^0-9]/g, ''), 10) : '',
+      deskripsi: paket.description || '',
+      fitur: fiturSelected,
+    });
     
       setEditId(paket.package_id); 
       setIsEditMode(true);

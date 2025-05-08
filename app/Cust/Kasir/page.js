@@ -56,7 +56,7 @@ function Kasir() {
     
         userEmail = decoded.email;
         userRole = decoded.role_name;
-        userRoleId = decoded.role_id;
+        userRoleId = decoded.user_id        ;
     
       }
 
