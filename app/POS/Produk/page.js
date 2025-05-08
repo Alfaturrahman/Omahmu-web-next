@@ -35,7 +35,6 @@ const Produk = () => {
     stok: '',
     namaProduk: '',
     tipeProduk: '',
-    keterangan: '',
     hargaModal: '',
     hargaJual: '',
     deskripsi: '',
@@ -120,10 +119,6 @@ const Produk = () => {
     let formErrors = {};
     let isValid = true;
 
-    if (!formData.kodeProduk) {
-      formErrors.kodeProduk = 'Kode Produk tidak boleh kosong';
-      isValid = false;
-    }
     if (!formData.stok) {
       formErrors.stok = 'Stok tidak boleh kosong';
       isValid = false;
@@ -553,7 +548,7 @@ const Produk = () => {
                   {/* Bagian kiri: form */}
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
+                    <div className="hidden">
                         <label className="block text-sm font-medium text-black">Kode Produk</label>
                         <input
                           type="text"
@@ -611,6 +606,7 @@ const Produk = () => {
                         value={formData.keterangan}
                         onChange={(e) => setFormData({ ...formData, keterangan: e.target.value })}
                       >
+                        <option>Pilih Salah Satu</option>
                         <option value="true">Aktif</option>
                         <option value="false">Tidak Aktif</option>
                       </select>

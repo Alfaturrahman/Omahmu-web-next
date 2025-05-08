@@ -49,6 +49,41 @@ function Laporan() {
             }
         }
         
+
+        async function exportPDF() {
+            const token = localStorage.getItem('token');
+            const storeId = localStorage.getItem('store_id');
+        
+            const url = `http://127.0.0.1:8000/api/storeowner/laporan_keutungan/?store_id=${storeId}&export_pdf=true`;
+        
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+        
+                if (!response.ok) {
+                    throw new Error('Gagal mengekspor PDF');
+                }
+        
+                const blob = await response.blob();
+                const blobURL = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobURL;
+                link.download = 'laporan_keuntungan.pdf';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(blobURL);
+            } catch (error) {
+                console.error("Error exporting PDF:", error);
+                alert("Gagal mengekspor PDF");
+            }
+        }
+        
+          
         useEffect(() => {
             fetchDataLaporan();
             fetchDashboardLaporan();
@@ -134,11 +169,11 @@ function Laporan() {
                         <div className="flex items-center gap-2">
                             {/* Button Export */}
                             <button
-                            // onClick={""}
+                            onClick={() => exportPDF()} // Ganti "2" dengan store_id yang sesuai
                             className="cursor-pointer flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md"
                             >
-                                <FileDown className="w-5 h-5 mr-2 text-black" />
-                                Export
+                            <FileDown className="w-5 h-5 mr-2 text-black" />
+                            Export
                             </button>
                             <div ref={filterRef} className="relative inline-block"> {/* Tambahkan div relative disini */}
                                 <button
