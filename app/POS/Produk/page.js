@@ -286,7 +286,8 @@ const Produk = () => {
       const statusString = updatedStatus ? 'true' : 'false';
   
       await apiService.putData(`/storeowner/update_status/?product_id=${id}&is_active=${statusString}`);
-  
+
+      fetchDashboardProducts();
       setProducts(prev =>
         prev.map(p => (p.product_id === id ? { ...p, is_active: updatedStatus } : p))
       );

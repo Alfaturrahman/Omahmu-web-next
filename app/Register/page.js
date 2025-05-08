@@ -45,13 +45,29 @@ const Register = () => {
       return;
     }
 
+    // Fungsi untuk memformat nomor telepon
+    function formatPhoneNumber(phoneNumber) {
+      const countryCode = '+62'; // Kode negara Indonesia
+  
+      // Menghapus spasi, tanda hubung, atau karakter yang tidak diinginkan
+      phoneNumber = phoneNumber.replace(/[^0-9]/g, '');
+  
+      // Jika nomor telepon tidak diawali dengan kode negara, tambahkan kode negara
+      if (!phoneNumber.startsWith('62')) {
+          return countryCode + phoneNumber;
+      }
+  
+      // Jika sudah diawali dengan kode negara (62), kembalikan nomor tersebut tanpa perubahan
+      return countryCode + phoneNumber.substring(1);
+  }
+
     try {
       const payload = {
         name: formData.name,
         email: formData.email,
-        phoneNumber: selectedCountry + formData.phoneNumber,
+        phone_number: formatPhoneNumber(formData.phoneNumber),
         password: formData.password,
-      };
+    };
     
       const response = await registerCustomer(payload);
     
