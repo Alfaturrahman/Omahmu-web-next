@@ -50,13 +50,15 @@ function Kasir() {
       let userEmail = "";
       let userRole = "";
       let userRoleId = "";
+      let userId = "";
     
       if (token) {
         const decoded = jwtDecode(token);
     
         userEmail = decoded.email;
         userRole = decoded.role_name;
-        userRoleId = decoded.user_id        ;
+        userRoleId = decoded.role_id;
+        userId = decoded.user_id;
     
       }
 
@@ -135,29 +137,31 @@ function Kasir() {
 
     const insertOrder = async () => {
         try {
-    
+                
             const payload = {
                 customer_name: customerName,
                 date: orderDate,
                 total_amount: total,
-                order_status: "in_progress",
+                order_status: "in_progress", // Status awal pesanan
                 payment_method: selected,
                 is_pre_order: false,
-                is_delivered: false,
-                is_dine_in: true,
-                remarks: remarks,
-                pickup_date: null,
-                pickup_time: null,
-                user_id: userRoleId,
+                is_delivered: preorderOption === "diantar",  // true kalau "diantar", false kalau "pickup"
+                is_dine_in: preorderOption === "pickup", // Jika "pickup", maka makan di tempat
+                remarks: catatan,
+                pickup_date: pickupDate,
+                pickup_time: `${pickupDate} ${pickupTime}:00`,
+                role_id: userRoleId, // default null
+                reference_id: userId, // default null
                 no_hp: formData.phoneNumber || null,  // Menggunakan formData.phoneNumber
-                delivery_address: deliveryAddress,
-                order_items: cart.map(item => ({
-                    product_id: item.id,
-                    selling_price: item.price,
-                    product_type: item.category,
-                    item: item.quantity,
+                delivery_address: preorderOption === "diantar" ? deliveryAddress : null,
+                order_items: cart.map((item) => ({
+                  product_id: item.id,
+                  selling_price: item.price,
+                  product_type: item.category,
+                  item: item.quantity,
                 })),
-            };
+              };
+              
     
             if (!storeId) {
                 Swal.fire({
@@ -187,7 +191,7 @@ function Kasir() {
                 phoneNumber: "",  // Reset phoneNumber dalam formData
             });
             setDeliveryAddress("");
-            setRemarks("");
+            setCatatan("");
             setSelected(null);
             fetchDataMenu();
             setShowQrisModal(false); // Modal QRIS muncul
@@ -296,10 +300,8 @@ function Kasir() {
           if (!pickupTime) {
             newErrors.pickupTime = "Jam pengambilan wajib diisi.";
           }
-          if (!formData.deliveryAddress) {
-            newErrors.deliveryAddress = "Alamat wajib diisi.";
-          }
         }
+        
       
         if (orderType === "dinein") {
           if (!pickupDate) {
@@ -617,7 +619,6 @@ function Kasir() {
                                             placeholder="Masukkan alamat lengkap"
                                             onChange={(e) => setDeliveryAddress(e.target.value)}
                                         />
-                                        {errors.deliveryAddress && <p className="text-red-500 text-sm">{errors.deliveryAddress}</p>}
                                     </div>
                                 )}
                             </div>
