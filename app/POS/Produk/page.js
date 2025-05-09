@@ -131,10 +131,7 @@ const Produk = () => {
       formErrors.tipeProduk = 'Tipe Produk harus dipilih';
       isValid = false;
     }
-    if (!formData.keterangan) {
-      formErrors.keterangan = 'Keterangan harus dipilih';
-      isValid = false;
-    }
+    
     if (!formData.hargaModal) {
       formErrors.hargaModal = 'Harga Modal tidak boleh kosong';
       isValid = false;
@@ -174,8 +171,11 @@ const Produk = () => {
     formPayload.append('description', formData.deskripsi);
     formPayload.append('capital_price', formData.hargaModal);
     formPayload.append('selling_price', formData.hargaJual);
-    formPayload.append('is_active', String(formData.keterangan === 'true'));
-  
+    console.log("Keterangan sebelum dikirim:", formData.keterangan);
+    formPayload.append('is_active', formData.keterangan); // Mengirim string 'true' atau 'false'
+
+    console.log("Form data before sending:", formData);
+
     // Jika gambar baru dipilih, tambahkan gambar ke dalam FormData
     if (formData.image instanceof File) {
       formPayload.append('product_picture', formData.image);
@@ -209,6 +209,7 @@ const Produk = () => {
       setIsModalOpen(false);
       resetForm();
       fetchProducts();
+      fetchDashboardProducts();
     } catch (error) {
       console.error("Gagal menyimpan produk:", error);
       Swal.fire({
@@ -473,10 +474,12 @@ const Produk = () => {
                       </button>
 
                       {activeDropdown === product.product_id && ( // Periksa dengan `product.product_id` yang benar
-                        <div className="absolute right-0 z-10 mt-2 w-28 bg-white border rounded-md shadow-lg text-sm">
+                        <div ref={dropdownRef} // Hubungkan dropdown dengan ref
+                        className="absolute right-0 z-10 mt-2 w-28 bg-white border rounded-md shadow-lg text-sm">
                           <button
                             className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
                             onClick={() => {
+
                               setFormData({
                                 kodeProduk: product.product_code,
                                 stok: product.stock,
@@ -489,7 +492,11 @@ const Produk = () => {
                                 image: product.product_picture,
                                 productId: product.product_id,
                               });
-                              setPreviewImage(`http://localhost:8000${product.product_picture}`);
+                              if (product.product_picture) {
+                                setPreviewImage(`http://localhost:8000${product.product_picture}`);
+                              } else {
+                                setPreviewImage(null); // Atau gambar default
+                              }
                               setIsEditing(true);
                               setIsModalOpen(true);
                               setTimeout(() => setActiveDropdown(null), 100); // ⬅️ Tambahkan delay di sini
@@ -536,7 +543,7 @@ const Produk = () => {
             <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
               <div className="bg-white rounded-xl p-6 sm:p-8 w-[95%] md:w-[900px] max-h-[90vh] overflow-y-auto shadow-lg">
                 <div className="flex justify-between items-start mb-6">
-                  <h2 className="text-2xl font-bold text-black">Tambah Produk</h2>
+                  <h2 className="text-2xl font-bold text-black">{isEditing ? 'Edit Produk' : 'Tambah Produk'}</h2>
                   <button
                     className="text-gray-500 hover:text-black"
                     onClick={() => setIsModalOpen(false)}

@@ -81,25 +81,32 @@ function Log() {
       async function fetchDataLog() {
         try {
             const result = await apiService.getData(`/customer/log_pemesanan/`);
-            const mappedData = result.data.map((item) => ({
-                id: item.order_id,
-                name: item.store_name,
-                method: item.pickup_method || (item.is_dine_in ? "Makan di tempat" : "Ambil sendiri"),
-                time: new Date(item.created_at).toLocaleTimeString('id-ID', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                }),
-                total: parseInt(item.total_amount),
-                items: item.total_items,
-                status: item.status_label,
-                detail: item // kamu bisa gunakan ini untuk offcanvas/detail view
-            }));
+            const mappedData = result.data.map((item) => {
+                // Mengonversi waktu UTC ke WIB (UTC+7)
+                const time = new Date(item.created_at);
+                const jakartaTime = new Date(time.getTime() + (7 * 60 * 60 * 1000));
+    
+                return {
+                    id: item.order_id,
+                    name: item.store_name,
+                    method: item.pickup_method || (item.is_dine_in ? "Makan di tempat" : "Ambil sendiri"),
+                    time: jakartaTime.toLocaleTimeString('id-ID', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    }),
+                    total: parseInt(item.total_amount),
+                    items: item.total_items,
+                    status: item.status_label,
+                    detail: item // kamu bisa gunakan ini untuk offcanvas/detail view
+                };
+            });
             setListLog(mappedData);
         } catch (err) {
             console.error(err.message);
         }
     }
-
+    
     useEffect(() => {
         fetchDataLog();
         fetchDetailLog();
