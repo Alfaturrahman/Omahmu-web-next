@@ -127,6 +127,24 @@ function Home() {
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                           />
                         </svg>
+                        {toko.open_time} - {toko.close_time}
+                      </div>
+
+                      <div className="flex items-center text-gray-500 text-sm mt-1 mb-3">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 mr-1"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 11c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm0 0c-4 0-7 2-7 4v3h14v-3c0-2-3-4-7-4z"
+                        />
+                        </svg>
                         {toko.store_address}
                       </div>
 

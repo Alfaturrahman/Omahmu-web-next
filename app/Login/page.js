@@ -8,7 +8,7 @@ import Swal from 'sweetalert2';
 
 const LoginPage = () => {
     const router = useRouter();
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState("");
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({ email: '', password: '' });
     const [successMessage, setSuccessMessage] = useState('');
@@ -132,7 +132,7 @@ const LoginPage = () => {
                                 id="email"
                                 placeholder="Masukkan alamat email anda yang aktif"
                                 className={`w-full p-2 text-[#71717A] border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded focus:outline-none focus:ring-2 focus:ring-[#ECA641]`}
-                                value={email}
+                                value={email || ""} // pastikan tidak undefined
                                 onChange={(e) => setEmail(e.target.value)}
                             />
                             {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}

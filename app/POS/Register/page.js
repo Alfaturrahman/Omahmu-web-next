@@ -76,7 +76,7 @@ const Register = () => {
         payload.append('description', formData.deskripsiToko);
         payload.append('package_id', formData.paket);
         console.log('Selected package id:', formData.paket);
-        payload.append('submission_code', "SUBM-001" ); // misalnya: 'SUBM-001'
+        payload.append('submission_code', "" ); // misalnya: 'SUBM-001'
         payload.append('no_virtual_account', "VA123456");         // misalnya: 'VA123456'
         payload.append('start_date', "2025-04-24");   
         payload.append('end_date', "2025-04-24");      
@@ -98,7 +98,7 @@ const Register = () => {
       Swal.fire({
         icon: 'success',
         title: 'Registrasi berhasil!',
-        text: 'Silakan login untuk masuk ke akun Anda.',
+        text: 'Silahkan Tunggu Email Verifikasi Dari Posvana',
         confirmButtonColor: '#ECA641'
       });
       
