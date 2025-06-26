@@ -18,17 +18,17 @@ export default function Home() {
     const filterRef = useRef(null);
     
     const data = [
-        { name: "Nasi Goreng", category: "Makanan", price: "RP 10.000,00", sellingPrice: "RP 20.000,00", quantity: "50", totalSales: "RP 1.000.000,00", profit: "RP 500.000,00" },
-        { name: "Mie Ayam", category: "Makanan", price: "RP 8.000,00", sellingPrice: "RP 15.000,00", quantity: "70", totalSales: "RP 1.050.000,00", profit: "RP 490.000,00" },
-        { name: "Soto Ayam", category: "Makanan", price: "RP 12.000,00", sellingPrice: "RP 22.000,00", quantity: "40", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
-        { name: "Ayam Geprek", category: "Makanan", price: "RP 15.000,00", sellingPrice: "RP 25.000,00", quantity: "60", totalSales: "RP 1.500.000,00", profit: "RP 600.000,00" },
-        { name: "Gado-Gado", category: "Makanan", price: "RP 9.000,00", sellingPrice: "RP 18.000,00", quantity: "45", totalSales: "RP 810.000,00", profit: "RP 405.000,00" },
-        { name: "Es Teh Manis", category: "Minuman", price: "RP 2.000,00", sellingPrice: "RP 5.000,00", quantity: "200", totalSales: "RP 1.000.000,00", profit: "RP 600.000,00" },
-        { name: "Jus Alpukat", category: "Minuman", price: "RP 7.000,00", sellingPrice: "RP 12.000,00", quantity: "90", totalSales: "RP 1.080.000,00", profit: "RP 450.000,00" },
-        { name: "Kopi Hitam", category: "Minuman", price: "RP 5.000,00", sellingPrice: "RP 10.000,00", quantity: "120", totalSales: "RP 1.200.000,00", profit: "RP 600.000,00" },
-        { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
-        { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
-        { name: "Teh Tarik", category: "Minuman", price: "RP 6.000,00", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
+        { name: "Nasi Goreng", category: "Makanan", date: "05/05/2025", sellingPrice: "RP 20.000,00", quantity: "50", totalSales: "RP 1.000.000,00", profit: "RP 500.000,00" },
+        { name: "Mie Ayam", category: "Makanan", date: "05/05/2025", sellingPrice: "RP 15.000,00", quantity: "70", totalSales: "RP 1.050.000,00", profit: "RP 490.000,00" },
+        { name: "Soto Ayam", category: "Makanan", date: "05/05/2025", sellingPrice: "RP 22.000,00", quantity: "40", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
+        { name: "Ayam Geprek", category: "Makanan", date: "05/05/2025", sellingPrice: "RP 25.000,00", quantity: "60", totalSales: "RP 1.500.000,00", profit: "RP 600.000,00" },
+        { name: "Gado-Gado", category: "Makanan", date: "05/05/2025", sellingPrice: "RP 18.000,00", quantity: "45", totalSales: "RP 810.000,00", profit: "RP 405.000,00" },
+        { name: "Es Teh Manis", category: "Minuman", date: "05/05/2025", sellingPrice: "RP 5.000,00", quantity: "200", totalSales: "RP 1.000.000,00", profit: "RP 600.000,00" },
+        { name: "Jus Alpukat", category: "Minuman", date: "05/05/2025", sellingPrice: "RP 12.000,00", quantity: "90", totalSales: "RP 1.080.000,00", profit: "RP 450.000,00" },
+        { name: "Kopi Hitam", category: "Minuman", date: "05/05/2025", sellingPrice: "RP 10.000,00", quantity: "120", totalSales: "RP 1.200.000,00", profit: "RP 600.000,00" },
+        { name: "Teh Tarik", category: "Minuman", date: "05/05/2025", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
+        { name: "Teh Tarik", category: "Minuman", date: "05/05/2025", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
+        { name: "Teh Tarik", category: "Minuman", date: "05/05/2025", sellingPrice: "RP 11.000,00", quantity: "80", totalSales: "RP 880.000,00", profit: "RP 400.000,00" },
     ];
 
     const parseRupiah = (value) => {
@@ -174,7 +174,7 @@ export default function Home() {
                                 <table className="min-w-[900px] w-full shadow-lg">
                                     <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
                                         <tr>
-                                            {['NO', 'MENU PESANAN', 'TIPE MENU', 'HARGA MODAL', 'HARGA JUAL', 'JUMLAH TERJUAL', 'TOTAL PENJUALAN', 'NET PROFIT'].map((header, index) => (
+                                            {['NO', 'TANGGAL', 'MENU PESANAN', 'TIPE MENU', 'HARGA JUAL', 'JUMLAH TERJUAL', 'TOTAL PENJUALAN', 'NET PROFIT'].map((header, index) => (
                                                 <th key={index} className="py-3 px-4 relative">
                                                     {header}
                                                     {index !== 7 && (
@@ -187,7 +187,7 @@ export default function Home() {
                                     <tbody>
                                         {displayedData.map((item, index) => (
                                             <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                                {[index + 1 + (currentPage - 1) * itemsPerPage, item.name, item.category, item.price, item.sellingPrice, item.quantity, item.totalSales, item.profit].map((value, idx) => (
+                                                {[index + 1 + (currentPage - 1) * itemsPerPage, item.date, item.name, item.category, item.sellingPrice, item.quantity, item.totalSales, item.profit].map((value, idx) => (
                                                     <td key={idx} className="py-3 px-4 relative">
                                                         {value}
                                                         {idx !== 7 && (

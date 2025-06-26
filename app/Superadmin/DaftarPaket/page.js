@@ -2,14 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import '@/globals.css';
+import { Plus, X } from "lucide-react";
+import { EllipsisVerticalIcon } from '@heroicons/react/24/outline'
+import { Dialog } from '@headlessui/react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
-import { Plus, X } from "lucide-react";
-import { Dialog } from '@headlessui/react';
-import { EllipsisVerticalIcon } from '@heroicons/react/24/outline'
 import Select from 'react-select';
 import Swal from 'sweetalert2'
+import '@/globals.css';
 
 export default function DaftarPaket() {
     const router = useRouter();
@@ -59,7 +59,7 @@ export default function DaftarPaket() {
             fitur: []
         });
     };
-    
+
     const closeModal = () => {
         setIsModalOpen(false);  // Tutup modal
         setFormData({
@@ -71,7 +71,7 @@ export default function DaftarPaket() {
         });  // Reset form data
         setErrors({});  // Reset errors
     };
-    
+
     const toggleSidebar = () => {
       if (window.innerWidth < 1024) {
         setIsSidebarOpen(!isSidebarOpen);
@@ -79,11 +79,11 @@ export default function DaftarPaket() {
         setIsCollapsed(!isCollapsed);
       }
     };
-    
+
     const toggleMenu = (index) => {
       setOpenMenuIndex(openMenuIndex === index ? null : index);
     };
-    
+
     const handleEdit = (index) => {
         const data = paketList[index];
         setFormData({
@@ -97,7 +97,7 @@ export default function DaftarPaket() {
         setIsEditMode(true);
         setIsModalOpen(true);
     };
-    
+
     const handleDelete = (index) => {
       Swal.fire({
         title: 'Apakah Kamu yakin?',
@@ -122,16 +122,16 @@ export default function DaftarPaket() {
         }
       });
     };
-    
+
     const handleChange = (e) => {
       const { name, value } = e.target;
       setFormData(prev => ({ ...prev, [name]: value }));
     };
-    
+
     const handleFiturChange = (selected) => {
       setFormData(prev => ({ ...prev, fitur: selected }));
     };
-    
+
     const handleSubmit = () => {
         // Reset errors sebelum validasi
         setErrors({});
@@ -207,7 +207,7 @@ export default function DaftarPaket() {
             document.removeEventListener('click', handleClickOutside);
         };
     }, [isModalOpen, openMenuIndex]);    
-    
+
   return (
     <div className="h-screen flex flex-col bg-white">
       {/* Header */}
@@ -348,7 +348,7 @@ export default function DaftarPaket() {
                     </Dialog.Panel>
                 </div>
             </Dialog>
-            
+
             {/* Card Paket Langganan */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-5 pb-10">
                 {[1, 2].map((paket, index) => (
@@ -362,7 +362,7 @@ export default function DaftarPaket() {
                             <button onClick={() => toggleMenu(index)} className="text-gray-600 hover:text-black focus:outline-none">
                             <EllipsisVerticalIcon className="h-5 w-5 cursor-pointer" />
                             </button>
-                    
+
                             {openMenuIndex === index && (
                                 <div ref={menuRef} className="absolute right-0 mt-2 w-37 bg-white rounded shadow-md z-50">
                                 <button onClick={() => handleEdit(index)} className="block w-full text-left px-4 py-2 text-sm text-black hover:bg-gray-100">
@@ -377,7 +377,7 @@ export default function DaftarPaket() {
                                 </div>
                             )}
                             </div>
-                        
+
                             {/* Judul, harga, dan fitur di sini */}
                             <h2 className="text-lg font-semibold text-black mb-1">
                                 {index === 0 ? 'Paket 1 (Basic)' : 'Paket 2 Pro (AI Enhanced)'}

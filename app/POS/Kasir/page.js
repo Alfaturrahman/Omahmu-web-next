@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import Image from 'next/image';
@@ -17,22 +17,39 @@ export default function Kasir() {
     const [selected, setSelected] = useState(null);
     const [showQrisModal, setShowQrisModal] = useState(false);
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
+    const [showBayarNantiModal, setShowBayarNantiModal] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
     const [amountPaid, setAmountPaid] = useState(0);
     
-    const orders = [
-        { queueNumber: 'A001', totalItem: 8, minutesAgo: 12 },
-        { queueNumber: 'A002', totalItem: 4, minutesAgo: 10 },
-        { queueNumber: 'A003', totalItem: 6, minutesAgo: 8 },
-        { queueNumber: 'A004', totalItem: 5, minutesAgo: 6 },
-        { queueNumber: 'A005', totalItem: 7, minutesAgo: 4 },
-        { queueNumber: 'A006', totalItem: 3, minutesAgo: 3 },
-        { queueNumber: 'A007', totalItem: 2, minutesAgo: 2 },
-        { queueNumber: 'A008', totalItem: 9, minutesAgo: 1 },
-    ];
-    
-    // Urutkan dari menit yang terlama ke terbaru
-    const sortedOrders = orders.sort((a, b) => b.minutesAgo - a.minutesAgo);
-    
+    const [orders, setOrders] = useState([
+    {
+        queueNumber: 1,
+        customerName: "Rina",
+        orderDate: "2025-06-19",
+        totalItem: 3,
+        minutesAgo: 5,
+        items: [
+        { name: "Bakso", qty: 2, price: 15000 },
+        { name: "Teh Botol", qty: 1, price: 5000 },
+        ],
+    },
+    {
+        queueNumber: 2,
+        customerName: "Andi",
+        orderDate: "2025-06-19",
+        totalItem: 2,
+        minutesAgo: 12,
+        items: [
+        { name: "Ayam Geprek", qty: 1, price: 18000 },
+        { name: "Es Jeruk", qty: 1, price: 7000 },
+        ],
+    },
+    ]);
+
+    const sortedOrders = useMemo(() => {
+    return [...orders].sort((a, b) => b.minutesAgo - a.minutesAgo);
+    }, [orders]);
+
     const showModal = () => {
         Swal.fire({
             icon: "warning",
@@ -50,17 +67,31 @@ export default function Kasir() {
         });
     };
 
+    const showModalBayar = (order) => {
+        setSelectedOrder(order);
+        setSelected("bayarNanti");
+        setShowBayarNantiModal(true);
+    };
+
     const handlePayment = () => {
         if (selected === "qris") {
             setShowQrisModal(true);
         } else if (selected === "cash") {
             setIsCashModalOpen(true);
+        } else if (selected === "bayarNanti") {
+            Swal.fire({
+            icon: "info",
+            title: "Perhatian",
+            text: "Transaksi ini akan dicatat sebagai 'Bayar Nanti'. Mohon pastikan untuk menagihnya di waktu yang sesuai.",
+            confirmButtonText: "Oke, Mengerti",
+            confirmButtonColor: "#ECA641",
+            });
         } else {
             Swal.fire({
-                icon: "info",
-                title: "Metode pembayaran belum tersedia",
-                confirmButtonText: "OK",
-                confirmButtonColor: "#ECA641",
+            icon: "info",
+            title: "Metode pembayaran belum tersedia",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#ECA641",
             });
         }
     };
@@ -74,11 +105,11 @@ export default function Kasir() {
     };
 
     const menuItems = [
-        { id: 1, name: "Sate Kambing", price: 15000, image: "/sate-kambing.png", category: "Makanan", favorite: true },
-        { id: 2, name: "Kopi Susu", price: 7000, image: "/kopi-susu.png", category: "Minuman", favorite: true },
-        { id: 3, name: "Nasi Goreng", price: 12000, image: "/sate-kambing.png", category: "Makanan", favorite: false },
-        { id: 4, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
-        { id: 5, name: "Teh Manis", price: 5000, image: "/kopi-susu.png", category: "Minuman", favorite: false },
+        { id: 1, name: "Sate Kambing", price: 15, image: "/sate-kambing.png", category: "Makanan", favorite: true },
+        { id: 2, name: "Kopi Susu", price: 7, image: "/kopi-susu.png", category: "Minuman", favorite: true },
+        { id: 3, name: "Nasi Goreng", price: 12, image: "/sate-kambing.png", category: "Makanan", favorite: false },
+        { id: 4, name: "Teh Manis", price: 5, image: "/kopi-susu.png", category: "Minuman", favorite: false },
+        { id: 5, name: "Teh Manis", price: 5, image: "/kopi-susu.png", category: "Minuman", favorite: false },
     ];
 
     const categories = ["Semua", "Makanan", "Minuman", "Favorit"];
@@ -125,12 +156,10 @@ export default function Kasir() {
 
     useEffect(() => {
         if (!isCashModalOpen) {
-            // Reset inputan saat modal ditutup
             setAmountPaid(0);
         }
     }, [isCashModalOpen]);
     
-
     // Menghitung subtotal, pajak, dan total
     const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
     const total = subtotal;
@@ -160,7 +189,6 @@ export default function Kasir() {
             return updated === "" ? 0 : parseInt(updated, 10);
         });
     };
-    
     return (
         <div className="h-screen flex flex-col bg-white overflow-hidden">
             {/* Header */}
@@ -199,6 +227,41 @@ export default function Kasir() {
                                         </p>
                                         <button onClick={showModal} className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer">
                                             Selesai
+                                        </button>
+                                        <p className="text-xs text-black mt-2">{order.minutesAgo} menit lalu</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Antrian Bayar Nanti*/}
+                    <div className="mb-6">
+                        <h2 className="text-lg md:text-xl font-semibold text-black mb-3">
+                            Antrian Pesanan Bayar Nanti
+                        </h2>
+
+                        {/* Tambahkan div pembungkus untuk scroll */}
+                        <div
+                            className={`relative overflow-x-auto py-3 no-scrollbar transition-all duration-300 
+                                ${isCollapsed ? "max-w-[90vw]" : "max-w-[90vw] md:max-w-[95vw] lg:max-w-[80vw]"}
+                            `}
+                        >
+                            <div className="flex space-x-3 md:space-x-4 w-max flex-nowrap">
+                                {sortedOrders.map((order, index) => (
+                                    <div
+                                        key={index}
+                                        style={{ backgroundColor: "rgba(246, 181, 67, 0.3)" }}
+                                        className="border-2 border-[#ECA641] p-3 md:p-4 rounded-lg shadow-md text-center min-w-[140px] md:min-w-[180px] flex-shrink-0"
+                                    >
+                                        <p className="font-semibold text-black text-sm md:text-base">
+                                            No Antrian #{order.queueNumber}
+                                        </p>
+                                        <p className="text-xs md:text-sm text-black">
+                                            Total Item {order.totalItem}x
+                                        </p>
+                                        <button onClick={() => showModalBayar(order)} className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer">
+                                            Detail
                                         </button>
                                         <p className="text-xs text-black mt-2">{order.minutesAgo} menit lalu</p>
                                     </div>
@@ -245,6 +308,7 @@ export default function Kasir() {
 
                     </div>
 
+                    {/* Qrish Payment Modal */}
                     {showQrisModal && (
                         <div className="fixed inset-0 backdrop-brightness-50 z-50 flex items-center justify-center">
                             <div className="bg-white p-6 rounded-lg shadow-lg text-center w-90">
@@ -253,7 +317,7 @@ export default function Kasir() {
                                 <p className="text-gray-600">Batas Pembayaran: 00.30</p>
                                 <hr className="my-2" />
                                 <p className="text-gray-600">Total Transaksi</p>
-                                <h3 className="text-xl font-bold text-black">Rp {total.toLocaleString("id-ID")}</h3>
+                                <h3 className="text-xl font-bold text-black">{total.toLocaleString("id-ID")}K</h3>
                                 <button
                                     className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
                                     onClick={() => setShowQrisModal(false)}
@@ -282,15 +346,15 @@ export default function Kasir() {
                             <div className="mt-2 mb-6 space-y-3 text-base">
                                 <div className="flex justify-between border-b pb-2 text-sm">
                                 <span className="font-semibold text-gray-700">Total Pembayaran</span>
-                                <span className="font-semibold text-gray-800">Rp {total.toLocaleString("id-ID")}</span>
+                                <span className="font-semibold text-gray-800">{total.toLocaleString("id-ID")} K</span>
                                 </div>
                                 <div className="flex justify-between border-b pb-2 text-sm">
                                 <span className="font-semibold text-gray-700">Jumlah Dibayar</span>
-                                <span className="text-gray-800">Rp {amountPaid.toLocaleString("id-ID")}</span>
+                                <span className="text-gray-800">{amountPaid.toLocaleString("id-ID")} K</span>
                                 </div>
                                 <div className="flex justify-between border-b pb-2 text-sm">
                                 <span className="font-semibold text-gray-700">Kembalian</span>
-                                <span className="text-gray-800">Rp {(amountPaid - total).toLocaleString("id-ID")}</span>
+                                <span className="text-gray-800">{(amountPaid - total).toLocaleString("id-ID")} K</span>
                                 </div>
                             </div>
 
@@ -331,6 +395,73 @@ export default function Kasir() {
                         </div>
                     )}
 
+                    {/* Bayar Nanti Payment Modal */}
+                    {showBayarNantiModal && selectedOrder && (
+                        <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 w-[90vw] max-w-md shadow-lg relative">
+                                <button
+                                    className="absolute top-2 right-3 text-gray-500 hover:text-black"
+                                    onClick={() => setShowBayarNantiModal(false)}
+                                >
+                                    <X size={24} />
+                                </button>
+
+                                <h2 className="text-black text-lg font-bold mb-2">Detail Pesanan</h2>
+                                <p className="text-sm text-gray-600 mb-1">
+                                    <strong>Nama Customer:</strong> {selectedOrder.customerName || "-"}
+                                </p>
+                                <p className="text-sm text-gray-600 mb-1">
+                                    <strong>Tanggal Pesanan:</strong> {selectedOrder.orderDate || "-"}
+                                </p>
+
+                                {/* List Pesanan */}
+                                <ul className="mb-4 text-sm text-gray-800 list-disc pl-5 space-y-1">
+                                    {selectedOrder.items?.map((item, i) => (
+                                        <li key={i}>
+                                            {item.name} x{item.qty} - Rp {item.price.toLocaleString("id-ID")}
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                {/* Total Harga */}
+                                <p className="font-semibold text-black text-sm mb-4">
+                                    Total Harga: Rp{" "}
+                                    {selectedOrder.items
+                                        ?.reduce((acc, curr) => acc + curr.price * curr.qty, 0)
+                                        .toLocaleString("id-ID")}
+                                </p>
+
+                                {/* Tombol Metode Pembayaran */}
+                                <div className="flex justify-between gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setSelected("cash");
+                                            setShowBayarNantiModal(false);
+                                            setTimeout(() => {
+                                            setIsCashModalOpen(true);
+                                            }, 150);
+                                        }}
+                                        className="cursor-pointer border border-[#F6B85D] hover:bg-[#F6B85D] text-[#F9870B] font-semibold px-4 py-2 rounded w-1/2"
+                                    >
+                                        Bayar Cash
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSelected("qris");
+                                            setShowBayarNantiModal(false);
+                                            setTimeout(() => {
+                                            setShowQrisModal(true);
+                                            }, 150);
+                                        }}
+                                        className="cursor-pointer border border-[#F6B85D] hover:bg-[#F6B85D] text-[#F9870B] font-semibold px-4 py-2 rounded w-1/2"
+                                    >
+                                        Qris
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Daftar Menu */}
                     <div className={`grid gap-4 transition-all duration-300 ${
                         isCartOpen
@@ -349,7 +480,7 @@ export default function Kasir() {
                                         </h3>
                                         <div className="flex justify-between items-end mt-2">
                                             {/* Mengatur harga di bawah nama dan di ujung kanan */}
-                                            <p className="text-[#ECA641] font-bold text-sm ml-auto">Rp {item.price.toLocaleString("id-ID")},00</p>
+                                            <p className="text-[#ECA641] font-bold text-sm ml-auto">{item.price.toLocaleString("id-ID")}K</p>
                                         </div>
                                     </div>
                                     <button onClick={() => addToCart(item)} className="mt-2 cursor-pointer bg-[#ECA641] text-white px-4 py-2 w-full rounded-lg flex items-center justify-center gap-2">
@@ -403,7 +534,7 @@ export default function Kasir() {
                                         <div className="flex-1 ml-3">
                                             <p className="text-black text-sm font-medium">{item.name}</p>
                                             <p className="text-gray-500 text-xs">{item.category}</p>
-                                            <p className="text-[#ECA641] font-bold text-sm">Rp {item.price.toLocaleString("id-ID")}</p>
+                                            <p className="text-[#ECA641] font-bold text-sm">{item.price.toLocaleString("id-ID")}K</p>
                                         </div>
                                         <div className="flex items-center">
                                             <button onClick={() => updateQuantity(item.id, "decrease")} className="cursor-pointer p-2 bg-white text-[#ECA641] border border-[CAC4D0] rounded-lg">
@@ -426,18 +557,18 @@ export default function Kasir() {
                                 </div>
                                 <div className="flex justify-between text-gray-600 mt-2">
                                     <span>Subtotal</span>
-                                    <span>Rp {subtotal.toLocaleString("id-ID")}</span>
+                                    <span>{subtotal.toLocaleString("id-ID")} K</span>
                                 </div>
                                 <div className="flex justify-between font-bold text-black mt-3 text-lg">
                                     <span>Total</span>
-                                    <span>Rp {total.toLocaleString("id-ID")}</span>
+                                    <span>{total.toLocaleString("id-ID")} K</span>
                                 </div>
                             </div>
 
                             {/* Metode Pembayaran */}
                             <h3 className="text-black font-semibold mt-6 mb-2">Metode Pembayaran</h3>
                             <div className="flex gap-4">
-                                {/* Button QRIS */}
+                                {/* Button Cash */}
                                 <button
                                     className={`cursor-pointer w-[80px] border border-[#ECA641] py-2 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${selected === "cash" ? "bg-[#F6B85D]/50 text-[#F9870B]" : "text-[#ECA641]"}`}
                                     onClick={() => setSelected("cash")}
@@ -447,11 +578,19 @@ export default function Kasir() {
                                 </button>
                                 {/* Button QRIS */}
                                 <button
-                                    className={`cursor-pointer w-[80px] border border-[#ECA641] py-2 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${selected === "qris" ? "bg-[#F6B85D]/50 text-[#F9870B]" : "text-[#ECA641]"}`}
+                                    className={`cursor-pointer w-[80px] border border-[#ECA641] rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${selected === "qris" ? "bg-[#F6B85D]/50 text-[#F9870B]" : "text-[#ECA641]"}`}
                                     onClick={() => setSelected("qris")}
                                 >
                                     <ScanQrCode size={24} />
                                     <span>Qris</span>
+                                </button>
+                                {/* Button Bayar Nanti */}
+                                <button
+                                    className={`cursor-pointer min-w-max px-3 py-2 border border-[#ECA641] rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${selected === "bayarNanti" ? "bg-[#F6B85D]/50 text-[#F9870B]" : "text-[#ECA641]"}`}
+                                    onClick={() => setSelected("bayarNanti")}
+                                >
+                                    <ScanQrCode size={24} />
+                                    <span className="whitespace-nowrap">Bayar Nanti</span>
                                 </button>
                             </div>
 

@@ -64,8 +64,10 @@ const Header = ({ toggleSidebar }) => {
     const pageTitles = {
       "/POS/Dashboard": "Dashboard",
       "/POS/Kasir": "Kasir",
-      "/POS/Produk": "Produk",
-      "/POS/Laporan": "Laporan Keuntungan",
+      "/POS/StokProduk": "Stok Produk",
+      "/POS/StokBasah": "Stok Basah",
+      "/POS/UangMasuk": "Laporan Uang Masuk",
+      "/POS/UangKeluar": "Laporan Uang Keluar",
       "/POS/Menu": "Menu",
       "/POS/Riwayat": "Riwayat Pesanan",
       "/Superadmin/Dashboard": "Dashboard",
