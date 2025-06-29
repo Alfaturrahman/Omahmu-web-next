@@ -68,6 +68,7 @@ const Header = ({ toggleSidebar }) => {
       "/POS/StokBasah": "Stok Basah",
       "/POS/UangMasuk": "Laporan Uang Masuk",
       "/POS/UangKeluar": "Laporan Uang Keluar",
+      "/POS/Pengeluaran": "Pengeluaran Lainnya",
       "/POS/Menu": "Menu",
       "/POS/Riwayat": "Riwayat Pesanan",
       "/Superadmin/Dashboard": "Dashboard",

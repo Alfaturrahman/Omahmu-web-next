@@ -16,20 +16,21 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, path: "/POS/Dashboard" },
     { name: "Kasir", icon: Monitor, path: "/POS/Kasir" },
-    {
-      name: "Produk",
-      icon: Package,
-      submenu: [
-        { name: "Stok Produk", path: "/POS/StokProduk", icon: Store },
-        { name: "Stok Basah", path: "/POS/StokBasah", icon: Store },
-      ],
-    },
+    { name: "Produk", icon: Package, path: "/POS/StokProduk" },
     {
       name: "Laporan",
       icon: BarChart,
       submenu: [
         { name: "Uang Masuk", path: "/POS/UangMasuk", icon: BarChart },
         { name: "Uang Keluar", path: "/POS/UangKeluar", icon: BarChart },
+      ],
+    },
+    {
+      name: "Pengeluaran",
+      icon: Package,
+      submenu: [
+        { name: "Stok Basah", path: "/POS/StokBasah", icon: Store },
+        { name: "Pengeluaran Lainnya", path: "/POS/Pengeluaran", icon: Store },
       ],
     },
     { name: "Daftar Menu", icon: Utensils, path: "/POS/Menu" },
