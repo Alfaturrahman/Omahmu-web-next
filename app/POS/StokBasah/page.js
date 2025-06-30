@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import ToastProvider from '@/components/Toast';
-import { Search, Filter, Eye, Plus, X, Upload} from 'lucide-react';
+import { Search, Filter, Edit, Trash2, Eye, Plus, X, Upload} from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 
@@ -20,6 +20,8 @@ const Produk = () => {
   const [isModalOpenAddItem, setIsModalOpenAddItem] = useState(false);
   const [selectedDetail, setSelectedDetail] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [paymentProof, setPaymentProof] = useState(null);
   const dropdownRef = useRef(null);
@@ -75,7 +77,56 @@ const Produk = () => {
     });
     setIsModalOpen(false);
   };
+
+  const handleEditStokBasah = (item) => {
+    setIsEditing(true);
+    setIsModalOpen(true);
+    setFormErrors({});
+
+    setFormData({
+      date: item.date || '',
+      location: item.location || '',
+      nameBuyer: item.nameBuyer || item.buyer || '',
+      image: item.image || null,
+    });
+
+    // Jika ada gambar sebelumnya, tampilkan namanya di input
+    if (item.image && typeof item.image === 'string') {
+      setPaymentProof({ name: item.image.split('/').pop() }); // hanya nama file
+    } else {
+      setPaymentProof(null);
+    }
+
+    // Set ulang item belanja
+    setItems(item.items || []);
+  };
   
+  const handleDeleteStokBasah = (id) => {
+    Swal.fire({
+      title: 'Yakin ingin menghapus data ini?',
+      text: 'Data yang sudah dihapus tidak bisa dikembalikan!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Lakukan penghapusan data di sini
+        setProducts((prevProducts) => prevProducts.filter((item) => item.id !== id));
+
+        Swal.fire({
+          title: 'Terhapus!',
+          text: 'Data berhasil dihapus.',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    });
+  };
+
   // Modal Form Ke 2 (Tambah Items)
   const [formDataAddItem, setFormDataAddItem] = useState({
     nama: "",
@@ -101,7 +152,7 @@ const Produk = () => {
   // Data Dummy Tabel Utama
   const [products, setProducts] = useState([
     { 
-      id: "1",  date: "2002-05-05",  location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
+      id: "1",  date: "2002-05-05",  location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse1.mm.bing.net/th/id/OIP.WOAlKi6OvCoYcewcp56hRwHaDt?pid=Api&P=0&h=180",
       amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
       items: [
         {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
@@ -111,7 +162,7 @@ const Produk = () => {
     },
     { 
       id: "2", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan", 
-      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
+      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse4.mm.bing.net/th/id/OIP.Bs76q5DqwL9mGleqoxfx4AHaE8?pid=Api&P=0&h=180",
       items: [
         {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
         {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
@@ -120,7 +171,7 @@ const Produk = () => {
     },
     { 
       id: "3", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku", 
-      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
+      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse4.mm.bing.net/th/id/OIP.oiD_1VjNfEXjtnUwll4j6AHaEw?pid=Api&P=0&h=180",
       items: [
         {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
         {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
@@ -181,30 +232,6 @@ const Produk = () => {
         { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
       ]
     },
-    { 
-      id: "10", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-    { 
-      id: "11", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-    { 
-      id: "12", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
   ]);
   
   // Data Dummy  Items (Di Modal Tambah Stok Basah)
@@ -228,8 +255,7 @@ const Produk = () => {
     const matchSearch =
       searchTerm === ""
         ? true
-        : item.buyer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.date?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        : item.nameBuyer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.totalPrice?.toLowerCase().includes(searchTerm.toLowerCase());
 
     return matchCategory && matchSearch;
@@ -297,7 +323,7 @@ const Produk = () => {
                 <Search className="text-gray-500" size={20} />
                 <input
                   type="text"
-                  placeholder="Cari berdasarkan harga belanja"
+                  placeholder="Cari berdasarkan nama pembeli belanja"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="ml-2 w-full focus:outline-none text-black"
@@ -366,7 +392,7 @@ const Produk = () => {
                       <table className="min-w-[900px] w-full shadow-lg">
                           <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
                               <tr>
-                                  {['NO', 'TANGGAL', 'JUMLAH ITEM', 'TOTAL BELANJA', 'KATEGORI', 'AKSI'].map((header, index) => (
+                                  {['NO', 'TANGGAL', 'JUMLAH ITEM', 'TOTAL BELANJA', 'NAMA PEMBELI', 'AKSI'].map((header, index) => (
                                       <th key={index} className="py-3 px-4 relative">
                                         {header}
                                         {index !== 5 && (
@@ -379,7 +405,7 @@ const Produk = () => {
                           <tbody>
                               {displayedData.map((item, index) => (
                                   <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                    {[index + 1 + (currentPage - 1) * itemsPerPage, item.date, item.amount, item.totalPrice, item.category].map((value, idx) => (
+                                    {[index + 1 + (currentPage - 1) * itemsPerPage, item.date, item.amount, item.totalPrice, item.nameBuyer].map((value, idx) => (
                                         <td key={idx} className="py-3 px-4 relative">
                                             {value}
                                             {idx !== 7 && (
@@ -389,8 +415,17 @@ const Produk = () => {
                                     ))}
 
                                     <td className="py-3 px-4 relative">
-                                      <button onClick={() => handleDetailClick(item)} className="text-black cursor-pointer">
-                                        <Eye/>
+                                      <button onClick={() => handleDetailClick(item)} className="text-black px-3 cursor-pointer">
+                                        <Eye />
+                                      </button>
+                                      <button onClick={() => handleEditStokBasah(item)} className="text-black cursor-pointer">
+                                        <Edit />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteStokBasah(item.id)}
+                                        className="text-black px-3 cursor-pointer"
+                                      >
+                                        <Trash2 />
                                       </button>
                                     </td>
                                 </tr>
@@ -438,7 +473,9 @@ const Produk = () => {
                 
                 {/* Header */}
                 <div className="bg-[#FFF5EB] px-6 py-4 rounded-t-xl flex justify-between items-center">
-                  <h2 className="text-lg font-bold text-black uppercase">Tambah Stok Basah</h2>
+                  <h2 className="text-black text-lg font-semibold">
+                    {isEditing ? 'EDIT STOK BASAH' : 'TAMBAH STOK BASAH'}
+                  </h2>
                   <button onClick={() => setIsModalOpen(false)} className="cursor-pointer text-black text-xl">
                     <X />
                   </button>
@@ -715,14 +752,15 @@ const Produk = () => {
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-black mb-1">Bukti Pembayaran</label>
-                      <a
-                        href={typeof selectedDetail.image === 'string' ? selectedDetail.image : '#'}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="block text-blue-500 underline"
-                      >
-                        Lihat Gambar
-                      </a>
+                      <img
+                        src={selectedDetail.image}
+                        alt="Bukti Transaksi"
+                        className="w-32 h-32 object-cover rounded-md border cursor-pointer hover:scale-105 transition"
+                        onClick={() => {
+                          setPreviewImage(selectedDetail.image);
+                          setIsImageModalOpen(true);
+                        }}
+                      />
                     </div>
                   </div>
 
@@ -769,6 +807,28 @@ const Produk = () => {
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Preview Image */}
+          {isImageModalOpen && previewImage && (
+            <div
+              className="fixed inset-0 backdrop-brightness-50 bg-opacity-70 z-50 flex justify-center items-center"
+              onClick={() => setIsImageModalOpen(false)}
+            >
+              <div className="relative" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => setIsImageModalOpen(false)}
+                  className="cursor-pointer absolute top-2 right-2 text-white text-2xl"
+                >
+                  <X />
+                </button>
+                <img
+                  src={previewImage} // ✅ gunakan previewImage di sini
+                  alt="Preview Bukti"
+                  className="max-w-[90vw] max-h-[90vh] rounded-lg shadow-lg"
+                />
               </div>
             </div>
           )}

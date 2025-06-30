@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Monitor, Package, BarChart, Utensils, History, X, Store,
-ReceiptText, ChevronDown, ChevronUp, } from "lucide-react";
+ReceiptText, ChevronDown, ChevronUp, Wallet, ShoppingBasket, Briefcase, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { useState } from "react";
 
 const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
@@ -21,16 +21,16 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
       name: "Laporan",
       icon: BarChart,
       submenu: [
-        { name: "Uang Masuk", path: "/POS/UangMasuk", icon: BarChart },
-        { name: "Uang Keluar", path: "/POS/UangKeluar", icon: BarChart },
+        { name: "Uang Masuk", path: "/POS/UangMasuk", icon: ArrowDownCircle },
+        { name: "Uang Keluar", path: "/POS/UangKeluar", icon: ArrowUpCircle },
       ],
     },
     {
       name: "Pengeluaran",
-      icon: Package,
+      icon: Wallet,
       submenu: [
-        { name: "Stok Basah", path: "/POS/StokBasah", icon: Store },
-        { name: "Pengeluaran Lainnya", path: "/POS/Pengeluaran", icon: Store },
+        { name: "Stok Basah", path: "/POS/StokBasah", icon: ShoppingBasket },
+        { name: "Pengeluaran Lainnya", path: "/POS/Pengeluaran", icon: Briefcase },
       ],
     },
     { name: "Daftar Menu", icon: Utensils, path: "/POS/Menu" },
