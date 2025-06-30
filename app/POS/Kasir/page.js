@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import Image from 'next/image';
@@ -21,6 +21,8 @@ function Kasir() {
     const [selected, setSelected] = useState(null);
     const [showQrisModal, setShowQrisModal] = useState(false);
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
+    const [showBayarNantiModal, setShowBayarNantiModal] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
     const [amountPaid, setAmountPaid] = useState(0);
     const [listAntrian, setListAntrian] = useState([]);
     const [listMenu, setListMenu] = useState([]);
@@ -212,17 +214,31 @@ function Kasir() {
         });
     };
 
+    const showModalBayar = (order) => {
+        setSelectedOrder(order);
+        setSelected("bayarNanti");
+        setShowBayarNantiModal(true);
+    };
+
     const handlePayment = () => {
         if (selected === "qris") {
             setShowQrisModal(true);
         } else if (selected === "cash") {
             setIsCashModalOpen(true);
+        } else if (selected === "bayarNanti") {
+            Swal.fire({
+            icon: "info",
+            title: "Perhatian",
+            text: "Transaksi ini akan dicatat sebagai 'Bayar Nanti'. Mohon pastikan untuk menagihnya di waktu yang sesuai.",
+            confirmButtonText: "Oke, Mengerti",
+            confirmButtonColor: "#ECA641",
+            });
         } else {
             Swal.fire({
-                icon: "info",
-                title: "Metode pembayaran belum tersedia",
-                confirmButtonText: "OK",
-                confirmButtonColor: "#ECA641",
+            icon: "info",
+            title: "Metode pembayaran belum tersedia",
+            confirmButtonText: "OK",
+            confirmButtonColor: "#ECA641",
             });
         }
     };
@@ -279,12 +295,10 @@ function Kasir() {
 
     useEffect(() => {
         if (!isCashModalOpen) {
-            // Reset inputan saat modal ditutup
             setAmountPaid(0);
         }
     }, [isCashModalOpen]);
     
-
     // Menghitung subtotal, pajak, dan total
     const subtotal = cart.reduce((acc, item) => acc + (item.selling_price || 0) * item.quantity, 0);
     const total = subtotal;
@@ -310,7 +324,6 @@ function Kasir() {
             return updated === "" ? 0 : parseInt(updated, 10);
         });
     };
-    
     return (
         <div className="h-screen flex flex-col bg-white overflow-hidden">
             {/* Header */}
@@ -404,6 +417,7 @@ function Kasir() {
 
                     </div>
 
+                    {/* Qrish Payment Modal */}
                     {showQrisModal && (
                         <div className="fixed inset-0 backdrop-brightness-50 z-50 flex items-center justify-center">
                             <div className="bg-white p-6 rounded-lg shadow-lg text-center w-90">
@@ -452,15 +466,15 @@ function Kasir() {
                             <div className="mt-2 mb-6 space-y-3 text-base">
                                 <div className="flex justify-between border-b pb-2 text-sm">
                                 <span className="font-semibold text-gray-700">Total Pembayaran</span>
-                                <span className="font-semibold text-gray-800">Rp {total.toLocaleString("id-ID")}</span>
+                                <span className="font-semibold text-gray-800">{total.toLocaleString("id-ID")} K</span>
                                 </div>
                                 <div className="flex justify-between border-b pb-2 text-sm">
                                 <span className="font-semibold text-gray-700">Jumlah Dibayar</span>
-                                <span className="text-gray-800">Rp {amountPaid.toLocaleString("id-ID")}</span>
+                                <span className="text-gray-800">{amountPaid.toLocaleString("id-ID")} K</span>
                                 </div>
                                 <div className="flex justify-between border-b pb-2 text-sm">
                                 <span className="font-semibold text-gray-700">Kembalian</span>
-                                <span className="text-gray-800">Rp {(amountPaid - total).toLocaleString("id-ID")}</span>
+                                <span className="text-gray-800">{(amountPaid - total).toLocaleString("id-ID")} K</span>
                                 </div>
                             </div>
 
@@ -497,6 +511,73 @@ function Kasir() {
                                 Bayar Sekarang
                                 </button>
                             </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Bayar Nanti Payment Modal */}
+                    {showBayarNantiModal && selectedOrder && (
+                        <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 w-[90vw] max-w-md shadow-lg relative">
+                                <button
+                                    className="absolute top-2 right-3 text-gray-500 hover:text-black"
+                                    onClick={() => setShowBayarNantiModal(false)}
+                                >
+                                    <X size={24} />
+                                </button>
+
+                                <h2 className="text-black text-lg font-bold mb-2">Detail Pesanan</h2>
+                                <p className="text-sm text-gray-600 mb-1">
+                                    <strong>Nama Customer:</strong> {selectedOrder.customerName || "-"}
+                                </p>
+                                <p className="text-sm text-gray-600 mb-1">
+                                    <strong>Tanggal Pesanan:</strong> {selectedOrder.orderDate || "-"}
+                                </p>
+
+                                {/* List Pesanan */}
+                                <ul className="mb-4 text-sm text-gray-800 list-disc pl-5 space-y-1">
+                                    {selectedOrder.items?.map((item, i) => (
+                                        <li key={i}>
+                                            {item.name} x{item.qty} - Rp {item.price.toLocaleString("id-ID")}
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                {/* Total Harga */}
+                                <p className="font-semibold text-black text-sm mb-4">
+                                    Total Harga: Rp{" "}
+                                    {selectedOrder.items
+                                        ?.reduce((acc, curr) => acc + curr.price * curr.qty, 0)
+                                        .toLocaleString("id-ID")}
+                                </p>
+
+                                {/* Tombol Metode Pembayaran */}
+                                <div className="flex justify-between gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setSelected("cash");
+                                            setShowBayarNantiModal(false);
+                                            setTimeout(() => {
+                                            setIsCashModalOpen(true);
+                                            }, 150);
+                                        }}
+                                        className="cursor-pointer border border-[#F6B85D] hover:bg-[#F6B85D] text-[#F9870B] font-semibold px-4 py-2 rounded w-1/2"
+                                    >
+                                        Bayar Cash
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSelected("qris");
+                                            setShowBayarNantiModal(false);
+                                            setTimeout(() => {
+                                            setShowQrisModal(true);
+                                            }, 150);
+                                        }}
+                                        className="cursor-pointer border border-[#F6B85D] hover:bg-[#F6B85D] text-[#F9870B] font-semibold px-4 py-2 rounded w-1/2"
+                                    >
+                                        Qris
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     )}

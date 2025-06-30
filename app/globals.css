@@ -20,6 +20,12 @@ h1, h2, h3, h4, p, label,td, th, placeholder, button {
   scrollbar-width: none;
 }
 
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 @theme {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);

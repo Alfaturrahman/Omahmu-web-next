@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
-import { Search, Filter, Plus, MoreVertical, Package, Utensils, Beer, X, UploadCloud } from 'lucide-react';
+import { Search, Filter, Minus, Plus, MoreVertical, Package, Utensils, Beer, X, UploadCloud } from 'lucide-react';
 import Swal from 'sweetalert2';
 import * as apiService from 'services/authService';
 import withAuth from 'hoc/withAuth';
@@ -35,6 +35,8 @@ const Produk = () => {
     stok: '',
     namaProduk: '',
     tipeProduk: '',
+    tipeJualan: '',
+    keterangan: '',
     hargaModal: '',
     hargaJual: '',
     deskripsi: '',
@@ -115,6 +117,28 @@ const Produk = () => {
     return matchSearch && matchCategory;
   });
   
+
+  const updateStock = (id, delta) => {
+    setProducts((prevProducts) =>
+      prevProducts.map((product) =>
+        product.id === id
+          ? { ...product, stock: Math.max(product.stock + delta, 0) }
+          : product
+      )
+    );
+  };
+
+  const handleStockChange = (id, newStock) => {
+    const parsedStock = parseInt(newStock, 10);
+      if (!isNaN(parsedStock) && parsedStock >= 0) {
+        setProducts((prevProducts) =>
+          prevProducts.map((product) =>
+            product.id === id ? { ...product, stock: parsedStock } : product
+          )
+      );
+    }
+  };
+
   const validateForm = () => {
     let formErrors = {};
     let isValid = true;
@@ -132,6 +156,14 @@ const Produk = () => {
       isValid = false;
     }
     
+    if (!formData.tipeJualan) {
+      formErrors.tipeJualan = 'Tipe Jualan harus dipilih';
+      isValid = false;
+    }
+    if (!formData.keterangan) {
+      formErrors.keterangan = 'Keterangan harus dipilih';
+      isValid = false;
+    }
     if (!formData.hargaModal) {
       formErrors.hargaModal = 'Harga Modal tidak boleh kosong';
       isValid = false;
@@ -329,7 +361,6 @@ const Produk = () => {
     };
   }, []);
   
-
   return (
     <div className="h-screen flex flex-col bg-white">
       <Header toggleSidebar={toggleSidebar} />
@@ -435,18 +466,21 @@ const Produk = () => {
               filteredProducts.map((product) => (
                 <div
                   key={product.id}
-                  className="w-full max-w-xs mx-auto rounded-lg border shadow-sm overflow-hidden bg-white flex flex-col"
+                  className="w-full max-w-xs mx-auto rounded-lg border shadow-sm overflow-hidden bg-white flex flex-col h-[290px]"
                 >
-                  <div className="flex justify-end pt-2">
-                    {product.stock === 0 && (
+                  {/* Label stok */}
+                  <div className="flex justify-end pt-2 h-7"> {/* ⬅️ Tetapkan tinggi tetap */}
+                    {product.stock === 0 ? (
                       <div className="bg-red-500 text-white text-[10px] font-bold px-3 py-[2px] pl-5 rounded-bl-xl relative">
                         STOK HABIS
                       </div>
-                    )}
-                    {product.stock > 0 && product.stock <= 10 && (
+                    ) : product.stock > 0 && product.stock <= 10 ? (
                       <div className="bg-yellow-500 text-white text-[10px] font-bold px-3 py-[2px] pl-5 rounded-bl-xl relative">
                         STOK TIPIS
                       </div>
+                    ) : (
+                      // Dummy label tak terlihat untuk menjaga tinggi tetap
+                      <div className="invisible text-[10px] font-bold px-3 py-[2px] pl-5">.</div>
                     )}
                   </div>
 
@@ -533,6 +567,48 @@ const Produk = () => {
                   <div className="px-3 pb-3 text-right text-sm font-semibold text-gray-800">
                     RP {product.selling_price.toLocaleString('id-ID')},00
                   </div>
+                  <div className="px-3 pt-2 text-xs text-gray-500">#{product.id}</div>
+                  <span className="px-3 pt-2 text-sm font-semibold text-gray-800">{product.name}</span>
+
+                  <div className="px-3 py-3 flex justify-between items-center text-sm font-semibold text-gray-800 whitespace-nowrap overflow-hidden">
+                      <div className="truncate">RP {product.price.toLocaleString('id-ID')}</div>
+
+                      <div className="flex items-center gap-x-2 flex-nowrap">
+                        {/* Tombol Minus */}
+                        <button
+                          onClick={() => updateStock(product.id, -1)}
+                          className={`cursor-pointer rounded-lg w-6 h-6 flex items-center justify-center text-xs transition
+                            ${product.stock > 0 
+                              ? "bg-[#ECA641] text-white" 
+                              : "bg-white text-[#ECA641] border border-[#CAC4D0]"}
+                          `}
+                          disabled={product.stock <= 0} // Optional: agar tidak bisa diklik saat stok 0
+                        >
+                          −
+                        </button>
+
+                        {/* Input Angka */}
+                        <div className="flex items-center flex-nowrap">
+                          <span className='text-xs text-gray-500 w-10 text-center'>Stok : </span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={product.stock}
+                            onChange={(e) => handleStockChange(product.id, e.target.value)}
+                            className="w-12 text-center text-xs text-gray-700 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-[#ECA641] no-spinner"
+                          />
+                        </div>
+
+                        {/* Tombol Plus */}
+                        <button
+                          onClick={() => updateStock(product.id, 1)}
+                          className="cursor-pointer bg-[#ECA641] text-white rounded-lg w-6 h-6 flex items-center justify-center text-xs"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+
                 </div>
               ))
             )}
@@ -592,20 +668,37 @@ const Produk = () => {
                       />
                       {errors.namaProduk && <p className="text-red-500 text-sm">{errors.namaProduk}</p>}
                     </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-black">Tipe Produk</label>
+                        <select
+                          className={`w-full border ${errors.tipeProduk ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                          value={formData.tipeProduk}
+                          onChange={(e) => setFormData({ ...formData, tipeProduk: e.target.value })}
+                        >
+                          <option>Pilih Salah Satu</option>
+                          <option>Makanan</option>
+                          <option>Minuman</option>
+                        </select>
+                        {errors.tipeProduk && <p className="text-red-500 text-sm">{errors.tipeProduk}</p>}
+                      </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-black">Tipe Produk</label>
-                      <select
-                        className={`w-full border ${errors.tipeProduk ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
-                        value={formData.tipeProduk}
-                        onChange={(e) => setFormData({ ...formData, tipeProduk: e.target.value })}
-                      >
-                        <option>Pilih Salah Satu</option>
-                        <option>Makanan</option>
-                        <option>Minuman</option>
-                      </select>
-                      {errors.tipeProduk && <p className="text-red-500 text-sm">{errors.tipeProduk}</p>}
+                      <div>
+                        <label className="block text-sm font-medium text-black">Tipe Jualan</label>
+                        <select
+                          className={`w-full border ${errors.tipeJualan ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                          value={formData.tipeJualan}
+                          onChange={(e) => setFormData({ ...formData, tipeJualan: e.target.value })}
+                        >
+                          <option>Pilih Salah Satu</option>
+                          <option>Harian</option>
+                          <option>Permanen</option>
+                        </select>
+                        {errors.tipeJualan && <p className="text-red-500 text-sm">{errors.tipeJualan}</p>}
+                      </div>
                     </div>
+                    
 
                     <div>
                       <label className="block text-sm font-medium text-black">Keterangan</label>
