@@ -5,6 +5,7 @@ import { Eye, X, Calendar  } from "lucide-react";
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import DatePicker from "react-datepicker";
+import Swal from 'sweetalert2';
 import "react-datepicker/dist/react-datepicker.css";
 
 export default function Riwayat() {
@@ -18,11 +19,9 @@ export default function Riwayat() {
     const [filterDate, setFilterDate] = useState(null);
     const [filterOrderStatus, setFilterOrderStatus] = useState('');
     const [filterTransactionStatus, setFilterTransactionStatus] = useState('');
+    const [selectedOrder, setSelectedOrder] = useState(null)
     const filterRef = useRef(null);
     const modalRef = useRef(null);
-    
-    const handleOpenModal = () => setShowModal(true);
-    const handleCloseModal = () => setShowModal(false);
 
     const toggleSidebar = () => {
         if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -36,7 +35,7 @@ export default function Riwayat() {
         {
         orderCode: '15032023',
         customerName: 'Alfaturriski',
-        orderDate: '10 MARET 2023',
+        orderDate: '05/05/2025',
         orderStatus: 'Selesai',
         transactionStatus: 'Cash',
         orderType: 'DINE IN',
@@ -44,46 +43,62 @@ export default function Riwayat() {
         {
         orderCode: '16022023',
         customerName: 'Eka Fitri Anisa',
-        orderDate: '18 JANUARI 2023',
+        orderDate: '18/05/2025',
         orderStatus: 'Selesai',
         transactionStatus: 'TF',
-        orderType: 'DINE IN',
+        orderType: 'ONLINE',
         },
         {
         orderCode: '18032023',
         customerName: 'Bustanul Ariffin',
-        orderDate: '11 MARET 2023',
+        orderDate: '18/05/2025',
         orderStatus: 'Proses',
         transactionStatus: 'Qris',
         orderType: 'DINE IN',
         },
-        ...Array.from({ length: 17 }, (_, i) => ({
-        orderCode: `OC${i + 4}`,
-        customerName: `Customer ${i + 4}`,
-        orderDate: '11 MARET 2023',
-        orderStatus: i % 2 === 0 ? 'Selesai' : 'Proses',
-        transactionStatus: ['Cash', 'Qris', 'TF'][i % 3],
-        orderType: ['DINE IN', 'ONLINE'][i % 2],
-        })),
+        {
+        orderCode: '18032023',
+        customerName: 'Hadian Nelvi',
+        orderDate: '18/05/2025',
+        orderStatus: 'Proses',
+        transactionStatus: 'Qris',
+        orderType: 'ONLINE',
+        },
     ];
 
     const onlineData = [
         {
         orderCode: '16022023',
         customerName: 'Eka Fitri Anisa',
-        orderDate: '18 JANUARI 2023',
+        orderDate: '18/05/2025',
         orderStatus: 'Selesai',
         transactionStatus: 'TF',
         orderType: 'ONLINE',
         },
-        ...Array.from({ length: 17 }, (_, i) => ({
-        orderCode: `OC${i + 4}`,
-        customerName: `Customer ${i + 4}`,
-        orderDate: '11 MARET 2023',
-        orderStatus: i % 2 === 0 ? 'Selesai' : 'Proses',
-        transactionStatus: ['Cash', 'Qris', 'TF'][i % 3],
-        orderType: ['DINE IN', 'ONLINE'][i % 2],
-        })),
+        {
+        orderCode: '14020032',
+        customerName: 'Bustanul Ariffin',
+        orderDate: '18/05/2025',
+        orderStatus: 'Selesai',
+        transactionStatus: 'TF',
+        orderType: 'ONLINE',
+        },
+        {
+        orderCode: '13947821',
+        customerName: 'Alfaturrahman',
+        orderDate: '18/05/2025',
+        orderStatus: 'Selesai',
+        transactionStatus: 'Cash',
+        orderType: 'ONLINE',
+        },
+        {
+        orderCode: '20309472',
+        customerName: 'Hadian Nelvi',
+        orderDate: '18/05/2025',
+        orderStatus: 'Pending',
+        transactionStatus: 'Cash',
+        orderType: 'ONLINE',
+        },
     ];
 
     const handleTabClick = (tab) => {
@@ -93,6 +108,73 @@ export default function Riwayat() {
 
     const getData = () => {
         return activeTab === 'dinein' ? dineInData : onlineData;
+    };
+
+    const handleTerimaOrder = () => {
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Pesanan akan diproses!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Terima!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+            setSelectedOrder((prev) => ({
+                ...prev,
+                orderStatus: 'Proses'
+            }));
+
+            Swal.fire(
+                'Diterima!',
+                'Pesanan sedang diproses.',
+                'success'
+            );
+            }
+        });
+    };
+
+    const handleTolakOrder = () => {
+        Swal.fire({
+            title: 'Tolak Pesanan',
+            input: 'textarea',
+            inputLabel: 'Alasan Penolakan',
+            inputPlaceholder: 'Tuliskan alasan penolakan di sini...',
+            inputAttributes: {
+            'aria-label': 'Alasan penolakan'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Tolak',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            preConfirm: (alasan) => {
+            if (!alasan) {
+                Swal.showValidationMessage('Alasan tidak boleh kosong');
+                return false;
+            }
+            return alasan;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+            const alasanPenolakan = result.value;
+
+            // Update orderStatus ke Ditolak dan simpan alasan jika dibutuhkan
+            setSelectedOrder((prev) => ({
+                ...prev,
+                orderStatus: 'Ditolak',
+                alasan: alasanPenolakan,
+            }));
+
+            Swal.fire(
+                'Pesanan Ditolak!',
+                'Pesanan telah ditolak dengan alasan: ' + alasanPenolakan,
+                'success'
+            );
+            }
+        });
     };
 
     const applyFilters = (data) => {
@@ -108,6 +190,16 @@ export default function Riwayat() {
         setFilterDate('');
         setFilterOrderStatus('');
         setFilterTransactionStatus('');
+    };
+
+    const handleOpenModal = (order) => {
+        setSelectedOrder(order);
+        setShowModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setSelectedOrder(null);
     };
 
     useEffect(() => {
@@ -138,12 +230,12 @@ export default function Riwayat() {
             <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
             <div className="flex-1 flex flex-col p-4 sm:p-3 overflow-auto">
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4 cursorp">
                     {/* Tombol Pesan di Tempat */}
                     <button
                         className={`px-4 py-2 font-medium ${
                         activeTab === 'dinein'
-                            ? 'border-b-2 border-yellow-500 text-yellow-600'
+                            ? 'border-b-2 border-yellow-500 text-yellow-600 cursor-pointer'
                             : 'text-gray-600'
                         }`}
                         onClick={() => handleTabClick('dinein')}
@@ -155,7 +247,7 @@ export default function Riwayat() {
                     <button
                         className={`px-4 py-2 font-medium ${
                         activeTab === 'online'
-                            ? 'border-b-2 border-yellow-500 text-yellow-600'
+                            ? 'border-b-2 border-yellow-500 text-yellow-600 cursor-pointer'
                             : 'text-gray-600'
                         }`}
                         onClick={() => handleTabClick('online')}
@@ -257,141 +349,144 @@ export default function Riwayat() {
                             </tr>
                         </thead>
                         <tbody>
-                        {currentData.length > 0 ? (
-                            currentData.map((item, index) => (
-                            <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                <td className="py-3 px-4 relative">{index + 1 + (currentPage - 1) * itemsPerPage}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
-                                <td className="py-3 px-4 relative">{item.orderCode}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
-                                <td className="py-3 px-4 relative">{item.customerName}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
-                                <td className="py-3 px-4 relative">{item.orderDate}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
-                                <td className="py-3 px-4 relative">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.orderStatus === 'Selesai' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>{item.orderStatus}</span>
-                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                            {currentData.length > 0 ? (
+                                currentData.map((item, index) => (
+                                <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
+                                    <td className="py-3 px-4 relative">{index + 1 + (currentPage - 1) * itemsPerPage}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
+                                    <td className="py-3 px-4 relative">{item.orderCode}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
+                                    <td className="py-3 px-4 relative">{item.customerName}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
+                                    <td className="py-3 px-4 relative">{item.orderDate}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
+                                    <td className="py-3 px-4 relative">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.orderStatus === 'Selesai' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'}`}>{item.orderStatus}</span>
+                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                    </td>
+                                    <td className="py-3 px-4 relative">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.transactionStatus === 'Cash' ? 'bg-green-200 text-green-700' : item.transactionStatus === 'Qris' ? 'bg-blue-200 text-blue-700' : 'bg-red-200 text-red-700'}`}>{item.transactionStatus}</span>
+                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                    </td>
+                                    <td className="py-3 px-4 relative flex items-center justify-center">
+                                        <Eye className="cursor-pointer" onClick={() => handleOpenModal(item)} />
+                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                    </td>
+                                    <td className="py-3 px-4 relative">{item.orderType}</td>
+                                </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                <td colSpan="8" className="py-6 text-center text-gray-400 text-sm">
+                                    Tidak Ada Data
                                 </td>
-                                <td className="py-3 px-4 relative">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.transactionStatus === 'Cash' ? 'bg-green-200 text-green-700' : item.transactionStatus === 'Qris' ? 'bg-blue-200 text-blue-700' : 'bg-red-200 text-red-700'}`}>{item.transactionStatus}</span>
-                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative flex items-center justify-center">
-                                <Eye className="cursor-pointer" onClick={handleOpenModal} />
-                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                </td>
-                                <td className="py-3 px-4 relative">{item.orderType}</td>
-                            </tr>
-                            ))
-                        ) : (
-                            <tr>
-                            <td colSpan="8" className="py-6 text-center text-gray-400 text-sm">
-                                Tidak Ada Data
-                            </td>
-                            </tr>
-                        )}
+                                </tr>
+                            )}
                         </tbody>
                         </table>
                     </div>
 
-                    {showModal && (
-                        <div ref={modalRef} className="fixed inset-0 z-50 flex items-center justify-center backdrop-brightness-50">
-                            <div className="bg-white text-black rounded-lg w-[90%] md:w-[500px] max-h-[90vh] overflow-y-auto p-4 sm:p-6 relative">
-                                {/* Header */}
-                                <div className="flex justify-between items-cente pb-4">
-                                    <h2 className="text-xl font-bold text-center w-full">Detail Pesanan</h2>
-                                    <button className="absolute right-6" onClick={handleCloseModal}>
-                                        <X className="w-5 h-5 cursor-pointer" />
+                    {showModal && selectedOrder && (
+                        <div
+                            className="fixed inset-0 z-50 flex items-center justify-center backdrop-brightness-50"
+                            onClick={(e) => {
+                            if (modalRef.current && !modalRef.current.contains(e.target)) {
+                                handleCloseModal();
+                            }
+                            }}
+                        >
+                            <div
+                            ref={modalRef}
+                            className="bg-white text-black rounded-lg w-[90%] md:w-[500px] max-h-[90vh] overflow-y-auto p-4 sm:p-6 relative"
+                            onClick={(e) => e.stopPropagation()}
+                            >
+                            {/* Header */}
+                            <div className="flex justify-between items-center pb-4">
+                                <h2 className="text-xl font-bold text-center w-full">Detail Pesanan</h2>
+                                <button className="absolute right-6" onClick={handleCloseModal}>
+                                <X className="w-5 h-5 cursor-pointer" />
+                                </button>
+                            </div>
+
+                            {/* Body */}
+                            <div className="mt-4 space-y-4 text-sm">
+                                <div className="flex flex-row justify-between gap-2">
+                                <div className='border-2 border-gray-300 p-2 rounded-md'>
+                                    <p className="text-xs text-gray-500">Nama Customer</p>
+                                    <p className="font-medium">{selectedOrder.customerName}</p>
+                                </div>
+                                <div className='border-2 border-gray-300 p-2 rounded-md text-right'>
+                                    <p className="text-xs text-gray-500">Tanggal Pemesanan</p>
+                                    <p className="font-medium">{selectedOrder.orderDate}</p>
+                                </div>
+                                </div>
+
+                                <div className="mt-4 pt-2">
+                                <div className="flex justify-between">
+                                    <p className="font-semibold text-black">Detail Pesanan</p>
+                                    <p className="font-semibold text-xs md:text-sm text-gray-500">Kode Pesanan : {selectedOrder.orderCode}</p>
+                                </div>
+
+                                {/* Simulasi daftar item pesanan (sementara hardcoded) */}
+                                <div className="flex gap-3 mt-4">
+                                    <img src="/sate-kambing.png" alt="Sate Kambing" className="w-20 h-16 rounded object-cover" />
+                                    <div className="flex justify-between w-full">
+                                    <div className="flex flex-col justify-start">
+                                        <p className="font-semibold">Sate kambing</p>
+                                        <p className="text-gray-500 text-xs">Makanan</p>
+                                    </div>
+                                    <div className="flex flex-row gap-2 justify-end items-end">
+                                        <p className="font-bold text-sm">1x</p>
+                                        <p className="font-bold text-sm">Rp 15.000,00</p>
+                                    </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 mt-4 pt-2 border-t">
+                                    <img src="/kopi-susu.png" alt="Kopi Susu" className="w-20 h-16 rounded object-cover" />
+                                    <div className="flex justify-between w-full">
+                                    <div className="flex flex-col justify-start">
+                                        <p className="font-semibold">Kopi Susu</p>
+                                        <p className="text-gray-500 text-xs">Minuman</p>
+                                    </div>
+                                    <div className="flex flex-row gap-2 justify-end items-end">
+                                        <p className="font-bold text-sm">1x</p>
+                                        <p className="font-bold text-sm">Rp 7.000,00</p>
+                                    </div>
+                                    </div>
+                                </div>
+
+                                {/* Total */}
+                                <div className="mt-5 border-t pt-2 text-sm">
+                                    <div className="flex justify-between">
+                                    <span>Item</span>
+                                    <span className='font-semibold text-black'>2 (items)</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                    <span>Subtotal</span>
+                                    <span className='font-semibold text-black'>Rp 22.000,00</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                    <span>Keterangan</span>
+                                    <span className='font-semibold text-black'>Dine In</span>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+
+                            {/* Footer Total */}
+                            <div className="flex flex-row justify-between border-t mt-5 py-3 text-right font-semibold">
+                                <p>Total</p>
+                                <p>Rp 22.000,00</p>
+                            </div>
+
+                            {/* Tombol Aksi */}
+                            {selectedOrder && selectedOrder.orderStatus === "Pending" && onlineData.some(item => item.orderCode === selectedOrder.orderCode) && (
+                                <div className="flex flex-row justify-end gap-2 border-t py-3 font-semibold">
+                                    <button onClick={handleTolakOrder} className="text-red-500 border border-red-500 rounded px-2 py-2 hover:bg-red-100 cursor-pointer">
+                                        Tolak
+                                    </button>
+                                    <button onClick={handleTerimaOrder} className="text-green-500 border border-green-500 rounded px-2 py-2 hover:bg-green-100 cursor-pointer">
+                                        Terima
                                     </button>
                                 </div>
-
-                                {/* Body */}
-                                <div className="mt-4 space-y-4 text-sm">
-                                    <div className="flex flex-row justify-between gap-2">
-                                        <div className='border-2 border-gray-300 p-2 rounded-md'>
-                                            <p className="text-xs text-gray-500">Nama Customer</p>
-                                            <p className="font-medium">Alfatturrizki</p>
-                                        </div>
-                                        <div className='border-2 border-gray-300 p-2 rounded-md text-right'>
-                                            <p className="text-xs text-gray-500">Tanggal Pemesanan</p>
-                                            <p className="font-medium">10 Maret 2023</p>
-                                        </div>
-                                    </div>
-
-
-                                    <div className="mt-4 pt-2">
-                                        <div className="flex justify-between">
-                                            <p className="font-semibold text-black">Detail Pesanan</p>
-                                            <p className="font-semibold text-xs md:text-sm text-gray-500">Kode Pesanan : 15032023</p>
-                                        </div>
-
-                                        {/* Item 1 */}
-                                        <div className="flex gap-3 mt-4">
-                                            <img
-                                                src="/sate-kambing.png"
-                                                alt="Kopi Susu"
-                                                className="w-20 h-16 rounded object-cover"
-                                            />
-
-                                            <div className="flex justify-between w-full">
-                                                {/* Nama dan Kategori */}
-                                                <div className="flex flex-col justify-start">
-                                                <p className="font-semibold ">Sate kambing</p>
-                                                <p className="text-gray-500 text-xs">Makanan</p>
-                                                </div>
-
-                                                {/* Harga di bawah kanan */}
-                                                <div className="flex flex-row gap-2 justify-end items-end">
-                                                    <p className="font-bold text-sm">1x</p>
-                                                    <p className="font-bold text-sm">Rp 15.000,00</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-
-                                        {/* Item 2 */}
-                                        <div className="flex gap-3 mt-4 pt-2 border-t">
-                                            <img
-                                                src="/kopi-susu.png"
-                                                alt="Kopi Susu"
-                                                className="w-20 h-16 rounded object-cover"
-                                            />
-
-                                            <div className="flex justify-between w-full">
-                                                {/* Nama dan Kategori */}
-                                                <div className="flex flex-col justify-start">
-                                                <p className="font-semibold">Kopi Susu</p>
-                                                <p className="text-gray-500 text-xs">Minuman</p>
-                                                </div>
-
-                                                {/* Harga di bawah kanan */}
-                                                <div className="flex flex-row gap-2 justify-end items-end">
-                                                    <p className="font-bold text-sm">1x</p>
-                                                    <p className="font-bold text-sm">Rp 7.000,00</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-
-                                        {/* Total Section */}
-                                        <div className="mt-5 border-t pt-2 text-sm">
-                                            <div className="flex justify-between">
-                                                <span>Item</span>
-                                                <span className='font-semibold  text-black'>2 (items)</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span>Subtotal</span>
-                                                <span className='font-semibold  text-black'>Rp 22.000,00</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span>Keterangan</span>
-                                                <span className='font-semibold text-black'>Dine In</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Footer */}
-                                <div className="flex flex-row justify-between border-t mt-5 py-3 text-right font-semibold">
-                                    <p>Total</p>
-                                    <p>Rp 22.0000,00</p>
-                                </div>
+                            )}
                             </div>
                         </div>
                     )}

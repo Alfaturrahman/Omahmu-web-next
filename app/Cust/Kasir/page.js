@@ -25,9 +25,15 @@ export default function Kasir() {
     const [selectedCountry, setSelectedCountry] = useState("ID");
     const [errors, setErrors] = useState({});
 
+    const getTodayDate = () => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    };
+
     const [formData, setFormData] = useState({
         phoneNumber: "",
         deliveryAddress: "",
+        orderDate: getTodayDate(),
     });
     
     const handleInputChange = (e) => {
@@ -278,6 +284,10 @@ export default function Kasir() {
                                 <input
                                     type="date"
                                     name="orderDate"
+                                    value={formData.orderDate}
+                                    onChange={(e) =>
+                                    setFormData({ ...formData, orderDate: e.target.value })
+                                    }
                                     className="bg-transparent border-none text-black font-semibold text-sm focus:outline-none text-right"
                                 />
                             </div>

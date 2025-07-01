@@ -392,7 +392,7 @@ const Produk = () => {
                       <table className="min-w-[900px] w-full shadow-lg">
                           <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
                               <tr>
-                                  {['NO', 'TANGGAL', 'JUMLAH ITEM', 'TOTAL BELANJA', 'NAMA PEMBELI', 'AKSI'].map((header, index) => (
+                                  {['NO', 'NAMA PEMBELI', 'TANGGAL', 'JUMLAH ITEM', 'TOTAL BELANJA', 'AKSI'].map((header, index) => (
                                       <th key={index} className="py-3 px-4 relative">
                                         {header}
                                         {index !== 5 && (
@@ -405,7 +405,7 @@ const Produk = () => {
                           <tbody>
                               {displayedData.map((item, index) => (
                                   <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                    {[index + 1 + (currentPage - 1) * itemsPerPage, item.date, item.amount, item.totalPrice, item.nameBuyer].map((value, idx) => (
+                                    {[index + 1 + (currentPage - 1) * itemsPerPage, item.nameBuyer, item.date, item.amount, item.totalPrice,].map((value, idx) => (
                                         <td key={idx} className="py-3 px-4 relative">
                                             {value}
                                             {idx !== 7 && (

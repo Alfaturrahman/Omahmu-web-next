@@ -14,7 +14,6 @@ export default function Home() {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [search, setSearch] = useState("");
     const [isFilterOpen, setIsFilterOpen] = useState(false);
-    const [selectedCategory, setSelectedCategory] = useState("All");
     const [filterDate, setFilterDate] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10;
@@ -28,8 +27,7 @@ export default function Home() {
             date: "20/06/2024",
             amount: "3 Item",
             expenses: "Rp 140.000",
-            category: "Bahan Baku",
-            detail: null, // akan diganti oleh ikon
+            detail: null,
             items: [
             { name: "Ayam", qty: "1 ekor", unit: "kg", price: "Rp 14.500", total: "Rp 14.500", category: "Bahan Baku" },
             { name: "Tomat", qty: "2 kg", unit: "kg", price: "Rp 10.000", total: "Rp 20.000", category: "Bahan Baku" },
@@ -40,7 +38,6 @@ export default function Home() {
             date: "21/06/2024",
             amount: "4 Item",
             expenses: "Rp 140.000",
-            category: "Peralatan",
             detail: null,
             items: [
             { name: "Wajan", qty: "1 pcs", unit: "pcs", price: "Rp 35.000", total: "Rp 35.000", category: "Peralatan" },
@@ -51,13 +48,11 @@ export default function Home() {
     ];
 
     const filteredData = data.filter(item => {
-        const matchCategory = selectedCategory === "All" || item.category === selectedCategory;
-
         const matchDate = filterDate
             ? item.date === format(filterDate, "dd/MM/yyyy")
             : true;
 
-        return matchCategory && matchDate;
+        return matchDate;
     });
 
     const handleResetFilter = () => {
@@ -140,21 +135,6 @@ export default function Home() {
 
                                 {isFilterOpen && (
                                     <div className="absolute left-0 z-10 mt-2 w-64 text-black bg-white border border-gray-200 rounded-lg shadow-md">
-                                        {/* Filter Kategori */}
-                                        <div className="mb-3 mt-2 px-2">
-                                            <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
-                                            <select
-                                                value={selectedCategory}
-                                                onChange={(e) => setSelectedCategory(e.target.value)}
-                                                className="w-full border rounded p-2 text-sm text-gray-500"
-                                            >
-                                                <option value="All">Semua Kategori</option>
-                                                <option value="Bahan Baku">Bahan Baku</option>
-                                                <option value="Peralatan">Peralatan</option>
-                                                <option value="Lainnya">Lainnya</option>
-                                            </select>
-                                        </div>
-
                                         {/* Filter Tanggal dengan DatePicker */}
                                         <div className="mb-3 px-2">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Pengeluran</label>
@@ -206,7 +186,7 @@ export default function Home() {
                                 <table className="min-w-[900px] w-full shadow-lg">
                                     <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
                                         <tr>
-                                            {['NO', 'TANGGAL', 'JUMLAH ITEM', 'TOTAL PENGELUARAN', 'KATEGORI', 'DETAIL TRANSAKSI'].map((header, index) => (
+                                            {['NO', 'TANGGAL', 'JUMLAH ITEM', 'TOTAL PENGELUARAN', 'DETAIL TRANSAKSI'].map((header, index) => (
                                                 <th key={index} className="py-3 px-4 relative">
                                                     {header}
                                                     {index !== 5 && (
@@ -219,7 +199,7 @@ export default function Home() {
                                     <tbody>
                                         {displayedData.map((item, index) => (
                                             <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                                {[index + 1 + (currentPage - 1) * itemsPerPage, item.date, item.amount, item.expenses, item.category].map((value, idx) => (
+                                                {[index + 1 + (currentPage - 1) * itemsPerPage, item.date, item.amount, item.expenses].map((value, idx) => (
                                                     <td key={idx} className="py-3 px-4 relative">
                                                         {value}
                                                         {idx !== 7 && (
@@ -295,7 +275,6 @@ export default function Home() {
                                                 <th className="px-4 py-2">Satuan</th>
                                                 <th className="px-4 py-2">Harga/Item</th>
                                                 <th className="px-4 py-2">Total</th>
-                                                <th className="px-4 py-2">Kategori</th>
                                             </tr>
                                             </thead>
                                             <tbody>
@@ -306,7 +285,6 @@ export default function Home() {
                                                 <td className="px-4 py-2">{item.unit}</td>
                                                 <td className="px-4 py-2">{item.price}</td>
                                                 <td className="px-4 py-2">{item.total}</td>
-                                                <td className="px-4 py-2">{item.category}</td>
                                                 </tr>
                                             ))}
                                             </tbody>

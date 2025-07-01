@@ -97,7 +97,7 @@ export default function Home() {
 
                     {/* Filter */}
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
-                        <h2 className="text-xl sm:text-2xl text-black font-bold">Laporan Keuntungan Produk</h2>
+                        <h2 className="text-xl sm:text-2xl text-black font-bold">Laporan Uang Masuk</h2>
                         <div className="flex items-center gap-2">
                             {/* Button Export */}
                             <button

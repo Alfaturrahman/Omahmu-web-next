@@ -3,53 +3,9 @@
 import { useState } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
-import '@/globals.css';
 import { X, Clock } from 'lucide-react';
-
-const sampleOrders = [
-  {
-    id: 1,
-    status: 'Sedang Dibuat',
-    name: 'AngkringanOmahmU - Batam Center',
-    method: 'Pre-Order',
-    time: '12.08pm',
-    total: 15000,
-    items: 2,
-    detail: {
-      date: '10/03/2025',
-      kode: 'D468',
-      customer: 'Alfaturrizki',
-      foods: [
-        { name: 'Sate Kambing', type: 'Makanan', qty: 1, price: 15000, image: '/sate-kambing.png' },
-        { name: 'Kopi susu', type: 'Minuman', qty: 1, price: 7000, image: '/kopi-susu.png' }
-      ],
-      catatan: 'Saya nak aer',
-      metode: 'Ambil sendiri',
-      wa: '082290000491'
-    }
-  },
-  {
-    id: 2,
-    status: 'Selesai',
-    name: 'AngkringanOmahmU - Batam Center',
-    method: 'Ambil sendiri',
-    time: '12.08pm',
-    total: 15000,
-    items: 2,
-    detail: {
-      date: '10/03/2025',
-      kode: 'D469',
-      customer: 'Alfaturrizki',
-      foods: [
-        { name: 'Sate Kambing', type: 'Makanan', qty: 1, price: 15000, image: '/sate-kambing.png' },
-        { name: 'Kopi susu', type: 'Minuman', qty: 1, price: 7000, image: '/kopi-susu.png' }
-      ],
-      catatan: 'Walid Nak Dewi Boleh?',
-      metode: 'Ambil sendiri',
-      wa: '082290000491'
-    }
-  }
-];
+import Swal from 'sweetalert2';
+import '@/globals.css';
 
 export default function Kasir() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -65,10 +21,100 @@ export default function Kasir() {
         }
     };
 
-    const filteredOrders =
-        filter === 'Semua'
-        ? sampleOrders
-        : sampleOrders.filter((order) => order.status === filter);
+    const sampleOrders = [
+      {
+        id: 1,
+        status: 'Sedang Dibuat',
+        name: 'AngkringanOmahmU - Batam Center',
+        method: 'Ambil Sendiri',
+        time: '12.08pm',
+        total: 15000,
+        items: 2,
+        detail: {
+          date: '10/03/2025',
+          kode: 'D468',
+          customer: 'Alfaturrizki',
+          foods: [
+            { name: 'Sate Kambing', type: 'Makanan', qty: 1, price: 15000, image: '/sate-kambing.png' },
+            { name: 'Kopi susu', type: 'Minuman', qty: 1, price: 7000, image: '/kopi-susu.png' }
+          ],
+          catatan: 'Saya nak aer',
+          metode: 'Ambil sendiri',
+          wa: '082290000491'
+        }
+      },
+      {
+        id: 2,
+        status: 'Selesai',
+        name: 'AngkringanOmahmU - Batam Center',
+        method: 'Ambil sendiri',
+        time: '12.08pm',
+        total: 15000,
+        items: 2,
+        detail: {
+          date: '10/03/2025',
+          kode: 'D469',
+          customer: 'Alfaturrizki',
+          foods: [
+            { name: 'Sate Kambing', type: 'Makanan', qty: 1, price: 15000, image: '/sate-kambing.png' },
+            { name: 'Kopi susu', type: 'Minuman', qty: 1, price: 7000, image: '/kopi-susu.png' }
+          ],
+          catatan: 'Walid Nak Dewi Boleh?',
+          metode: 'Ambil sendiri',
+          wa: '082290000491'
+        }
+      },
+      {
+        id: 3,
+        status: 'Pending',
+        name: 'AngkringanOmahmU - Batam Center',
+        method: 'Di Antar',
+        time: '12.08pm',
+        total: 15000,
+        items: 2,
+        detail: {
+          date: '10/03/2025',
+          kode: 'D469',
+          customer: 'Alfaturrizki',
+          foods: [
+            { name: 'Sate Kambing', type: 'Makanan', qty: 1, price: 15000, image: '/sate-kambing.png' },
+            { name: 'Kopi susu', type: 'Minuman', qty: 1, price: 7000, image: '/kopi-susu.png' }
+          ],
+          catatan: 'Walid Nak Dewi Boleh?',
+          metode: 'Ambil sendiri',
+          wa: '082290000491'
+        }
+      },
+    ];
+
+    const handleCancelOrder = (orderId) => {
+      Swal.fire({
+        title: 'Batalkan Pesanan?',
+        text: 'Apakah kamu yakin ingin membatalkan pesanan ini?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, batalkan',
+        cancelButtonText: 'Batal'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          console.log('Pesanan dibatalkan:', orderId);
+
+          setSelectedOrder(null);
+
+          Swal.fire(
+            'Dibatalkan!',
+            'Pesanan berhasil dibatalkan.',
+            'success'
+          );
+        }
+      });
+    };
+
+    const filteredOrders = filter === 'Semua'
+      ? sampleOrders
+      : sampleOrders.filter((order) => order.status === filter);
 
   return (
     <div className="h-screen flex flex-col bg-white overflow-hidden">
@@ -141,9 +187,15 @@ export default function Kasir() {
                 <div className="text-right flex flex-col gap-3">
                   <p
                     className={`text-sm font-semibold ${
-                      order.status === 'Selesai'
-                        ? 'text-[#8BED52]'
-                        : 'text-[#E8EB2A]'
+                      order.status === 'Pending'
+                        ? 'text-yellow-500'
+                        : order.status === 'Sedang Dibuat'
+                        ? 'text-blue-700'
+                        : order.status === 'Selesai'
+                        ? 'text-green-500'
+                        : order.status === 'Ditolak'
+                        ? 'text-red-500'
+                        : 'text-gray-500'
                     }`}
                   >
                     {order.status}
@@ -151,7 +203,7 @@ export default function Kasir() {
                   <p className="text-sm text-black">{order.items} Items</p>
                   <p className="text-sm text-black font-semibold">
                     Total Pembelian :{' '}
-                    <strong>Rp {order.total.toLocaleString('id-ID')},00</strong>
+                    <strong>Rp {order.total.toLocaleString('id-ID')}</strong>
                   </p>
                   <p className="text-sm text-gray-500">Lihat semua &gt;</p>
                 </div>
@@ -219,7 +271,7 @@ export default function Kasir() {
                             <div className="flex flex-row gap-2 justify-end items-end">
                               <p className="font-bold text-sm">{item.qty}x</p>
                               <p className="font-bold text-sm">
-                                Rp {item.price.toLocaleString('id-ID')},00
+                                Rp {item.price.toLocaleString('id-ID')}
                               </p>
                             </div>
                           </div>
@@ -251,7 +303,6 @@ export default function Kasir() {
                                 0
                               )
                               .toLocaleString('id-ID')}
-                            ,00
                           </span>
                         </div>
                         <div className="flex justify-between">
@@ -275,9 +326,19 @@ export default function Kasir() {
                           0
                         )
                         .toLocaleString('id-ID')}
-                      ,00
                     </p>
                   </div>
+
+                  {selectedOrder.status === 'Pending' && (
+                    <div className="flex justify-end">
+                      <button
+                        onClick={() => handleCancelOrder(selectedOrder.id)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm"
+                      >
+                        Batalkan Pesanan
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
