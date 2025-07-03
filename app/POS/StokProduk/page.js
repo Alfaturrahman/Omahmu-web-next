@@ -559,20 +559,12 @@ const Produk = () => {
                   </div>
 
                   <div className="px-3 pt-2 text-xs text-gray-500">#{product.product_code}</div>
-                  <div className="px-3 flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-800">{product.product_name}</span>
-                    <span className="text-xs text-gray-500">Stok: {product.stock}</span>
-                  </div>
-
-                  <div className="px-3 pb-3 text-right text-sm font-semibold text-gray-800">
-                    RP {product.selling_price.toLocaleString('id-ID')},00
-                  </div>
-                  <div className="px-3 pt-2 text-xs text-gray-500">#{product.id}</div>
-                  <span className="px-3 pt-2 text-sm font-semibold text-gray-800">{product.name}</span>
+                  <span className="px-3 pt-2 text-sm font-semibold text-gray-800">{product.product_name}</span>
 
                   <div className="px-3 py-3 flex justify-between items-center text-sm font-semibold text-gray-800 whitespace-nowrap overflow-hidden">
-                      <div className="truncate">RP {product.price.toLocaleString('id-ID')}</div>
-
+                      <div className="truncate">
+                        RP {(product.price ?? 0).toLocaleString('id-ID')}
+                      </div>
                       <div className="flex items-center gap-x-2 flex-nowrap">
                         {/* Tombol Minus */}
                         <button
