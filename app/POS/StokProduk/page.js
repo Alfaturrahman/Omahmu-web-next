@@ -15,6 +15,7 @@ const Produk = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedTipe, setSelectedTipe] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [errors, setErrors] = useState({});
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -37,7 +38,6 @@ const Produk = () => {
     tipeProduk: '',
     tipeJualan: '',
     keterangan: '',
-    hargaModal: '',
     hargaJual: '',
     deskripsi: '',
     image: null,
@@ -114,7 +114,8 @@ const Produk = () => {
   const filteredProducts = products.filter((product) => {
     const matchSearch = product.product_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchCategory = selectedCategory ? product.product_type === selectedCategory : true;
-    return matchSearch && matchCategory;
+    const matchTipe = selectedTipe ? product.tipeJualan === selectedTipe : true;
+    return matchSearch && matchCategory && matchTipe;
   });
   
 
@@ -415,18 +416,23 @@ const Produk = () => {
                 </button>
 
                 {isFilterOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-40 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+                  <div className="absolute top-full left-0 mt-2 w-44 bg-white border border-gray-300 rounded-xl shadow-xl z-10 overflow-hidden text-sm">
+                    {/* Kategori */}
+                    <div className="px-4 py-2 border-b text-gray-500 font-semibold text-xs tracking-wide">
+                      KATEGORI
+                    </div>
                     <button
-                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black"
                       onClick={() => {
                         setSelectedCategory(null);
+                        setSelectedTipe(null);
                         setIsFilterOpen(false);
                       }}
                     >
                       Semua
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black"
                       onClick={() => {
                         setSelectedCategory("Makanan");
                         setIsFilterOpen(false);
@@ -435,7 +441,7 @@ const Produk = () => {
                       Makanan
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black"
                       onClick={() => {
                         setSelectedCategory("Minuman");
                         setIsFilterOpen(false);
@@ -443,8 +449,32 @@ const Produk = () => {
                     >
                       Minuman
                     </button>
+
+                    {/* Divider */}
+                    <div className="px-4 py-2 border-b mt-1 text-gray-500 font-semibold text-xs tracking-wide">
+                      TIPE JUALAN
+                    </div>
+                    <button
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black"
+                      onClick={() => {
+                        setSelectedTipe("Permanen");
+                        setIsFilterOpen(false);
+                      }}
+                    >
+                      Permanen
+                    </button>
+                    <button
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black"
+                      onClick={() => {
+                        setSelectedTipe("Harian");
+                        setIsFilterOpen(false);
+                      }}
+                    >
+                      Harian
+                    </button>
                   </div>
                 )}
+
               </div>
 
             </div>

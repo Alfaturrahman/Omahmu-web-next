@@ -37,9 +37,15 @@ function Kasir() {
     const [orderDate, setOrderDate] = useState("");
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
 
+    const getTodayDate = () => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    };
+
     const [formData, setFormData] = useState({
         phoneNumber: "",
         deliveryAddress: "",
+        orderDate: getTodayDate(),
     });
     
 

@@ -7,6 +7,7 @@ import Header from '@/components/Navbar';
 import * as apiService from 'services/authService';
 import withAuth from 'hoc/withAuth';
 import DatePicker from "react-datepicker";
+import Swal from 'sweetalert2';
 import "react-datepicker/dist/react-datepicker.css";
 
 function Riwayat() {
@@ -20,6 +21,7 @@ function Riwayat() {
     const [filterDate, setFilterDate] = useState(null);
     const [filterOrderStatus, setFilterOrderStatus] = useState('');
     const [filterTransactionStatus, setFilterTransactionStatus] = useState('');
+    const [selectedOrder, setSelectedOrder] = useState(null)
     const filterRef = useRef(null);
     const modalRef = useRef(null);
     const [riwayatDineIn, setRiwayatDineIn] = useState([]);
@@ -45,40 +47,59 @@ function Riwayat() {
         }
     };
 
-    async function fetchData() {
-        try {
-            const result = await apiService.getData('/storeowner/riwayat_pesanan/');
-            setRiwayatDineIn(result.data.riwayat_pesanan_ditempat); // menyimpan data dine-in
-            setRiwayatOnline(result.data.riwayat_pesanan_online); // menyimpan data online
-        } catch (err) {
-            console.error(err.message);
-        }
-    }
-    
-    // Fungsi untuk mengambil data detail pesanan
-    async function fetchDetailData(pesananId) {
-        try {
-            const result = await apiService.getData(`/storeowner/riwayat_detail_pesanan/?order_id=${pesananId}`);
-            
-            const detail = result.data[0].get_order_json;
+    const dineInData = [
+        {
+        orderCode: '15032023',
+        customerName: 'Alfaturriski',
+        orderDate: '10 MARET 2023',
+        orderStatus: 'Selesai',
+        transactionStatus: 'Cash',
+        orderType: 'DINE IN',
+        },
+        {
+        orderCode: '16022023',
+        customerName: 'Eka Fitri Anisa',
+        orderDate: '18 JANUARI 2023',
+        orderStatus: 'Selesai',
+        transactionStatus: 'TF',
+        orderType: 'DINE IN',
+        },
+        {
+        orderCode: '18032023',
+        customerName: 'Bustanul Ariffin',
+        orderDate: '11 MARET 2023',
+        orderStatus: 'Proses',
+        transactionStatus: 'Qris',
+        orderType: 'DINE IN',
+        },
+        ...Array.from({ length: 17 }, (_, i) => ({
+        orderCode: `OC${i + 4}`,
+        customerName: `Customer ${i + 4}`,
+        orderDate: '11 MARET 2023',
+        orderStatus: i % 2 === 0 ? 'Selesai' : 'Proses',
+        transactionStatus: ['Cash', 'Qris', 'TF'][i % 3],
+        orderType: ['DINE IN', 'ONLINE'][i % 2],
+        })),
+    ];
 
-            // Jaga-jaga jika items null, fallback jadi array kosong
-            detail.items = detail.items || [];
-
-            setDetailPesanan(detail);
-            setShowModal(true);
-
-        } catch (err) {
-            console.error("Terjadi kesalahan:", err.message);
-        }
-    }
-
-    useEffect(() => {
-        fetchData();
-        if (selectedPesananId) {
-            fetchDetailData(selectedPesananId);  // Panggil fetchDetailData saat ID pesanan berubah
-        }
-      }, [selectedPesananId]);
+    const onlineData = [
+        {
+        orderCode: '16022023',
+        customerName: 'Eka Fitri Anisa',
+        orderDate: '18 JANUARI 2023',
+        orderStatus: 'Selesai',
+        transactionStatus: 'TF',
+        orderType: 'ONLINE',
+        },
+        ...Array.from({ length: 17 }, (_, i) => ({
+        orderCode: `OC${i + 4}`,
+        customerName: `Customer ${i + 4}`,
+        orderDate: '11 MARET 2023',
+        orderStatus: i % 2 === 0 ? 'Selesai' : 'Proses',
+        transactionStatus: ['Cash', 'Qris', 'TF'][i % 3],
+        orderType: ['DINE IN', 'ONLINE'][i % 2],
+        })),
+    ];
 
     const handleTabClick = (tab) => {
         setActiveTab(tab);
@@ -86,7 +107,74 @@ function Riwayat() {
     };
 
     const getData = () => {
-        return activeTab === 'dinein' ? riwayatDineIn : riwayatOnline;
+        return activeTab === 'dinein' ? dineInData : onlineData;
+    };
+
+    const handleTerimaOrder = () => {
+        Swal.fire({
+            title: 'Apakah Anda yakin?',
+            text: "Pesanan akan diproses!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Ya, Terima!',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+            setSelectedOrder((prev) => ({
+                ...prev,
+                orderStatus: 'Proses'
+            }));
+
+            Swal.fire(
+                'Diterima!',
+                'Pesanan sedang diproses.',
+                'success'
+            );
+            }
+        });
+    };
+
+    const handleTolakOrder = () => {
+        Swal.fire({
+            title: 'Tolak Pesanan',
+            input: 'textarea',
+            inputLabel: 'Alasan Penolakan',
+            inputPlaceholder: 'Tuliskan alasan penolakan di sini...',
+            inputAttributes: {
+            'aria-label': 'Alasan penolakan'
+            },
+            showCancelButton: true,
+            confirmButtonText: 'Tolak',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#dc2626',
+            cancelButtonColor: '#6b7280',
+            preConfirm: (alasan) => {
+            if (!alasan) {
+                Swal.showValidationMessage('Alasan tidak boleh kosong');
+                return false;
+            }
+            return alasan;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+            const alasanPenolakan = result.value;
+
+            // Update orderStatus ke Ditolak dan simpan alasan jika dibutuhkan
+            setSelectedOrder((prev) => ({
+                ...prev,
+                orderStatus: 'Ditolak',
+                alasan: alasanPenolakan,
+            }));
+
+            Swal.fire(
+                'Pesanan Ditolak!',
+                'Pesanan telah ditolak dengan alasan: ' + alasanPenolakan,
+                'success'
+            );
+            }
+        });
     };
 
     // Mengaplikasikan filter pada data
@@ -120,6 +208,16 @@ function Riwayat() {
         setFilterTransactionStatus('');
     };
 
+    const handleOpenModal = (order) => {
+        setSelectedOrder(order);
+        setShowModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowModal(false);
+        setSelectedOrder(null);
+    };
+
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (filterRef.current && !filterRef.current.contains(event.target)) {
@@ -148,12 +246,12 @@ function Riwayat() {
             <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
             <div className="flex-1 flex flex-col p-4 sm:p-3 overflow-auto">
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4 cursorp">
                     {/* Tombol Pesan di Tempat */}
                     <button
                         className={`px-4 py-2 font-medium ${
                         activeTab === 'dinein'
-                            ? 'border-b-2 border-yellow-500 text-yellow-600'
+                            ? 'border-b-2 border-yellow-500 text-yellow-600 cursor-pointer'
                             : 'text-gray-600'
                         }`}
                         onClick={() => handleTabClick('dinein')}
@@ -165,7 +263,7 @@ function Riwayat() {
                     <button
                         className={`px-4 py-2 font-medium ${
                         activeTab === 'online'
-                            ? 'border-b-2 border-yellow-500 text-yellow-600'
+                            ? 'border-b-2 border-yellow-500 text-yellow-600 cursor-pointer'
                             : 'text-gray-600'
                         }`}
                         onClick={() => handleTabClick('online')}
@@ -394,6 +492,7 @@ function Riwayat() {
                                     <p>Total</p>
                                     <p>Rp {Number(detailPesanan.total_amount).toLocaleString("id-ID")}</p>
                                 </div>
+                            )}
                             </div>
                         </div>
                     )}
