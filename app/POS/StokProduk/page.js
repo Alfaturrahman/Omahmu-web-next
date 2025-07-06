@@ -48,6 +48,8 @@ const Produk = () => {
     try {
       const storeId = localStorage.getItem('store_id');
       const response = await apiService.getData(`/storeowner/daftar_produk/?store_id=${storeId}`);
+      console.log("wew", response.data);
+      
       setProducts(response.data); // Sesuaikan dengan format API kamu
     } catch (error) {
       console.error("Gagal mengambil produk:", error);
@@ -68,9 +70,29 @@ const Produk = () => {
     }
   };
 
+  const disableProductsWithZeroStock = async (productList) => {
+    try {
+      for (const product of productList) {
+        if (product.stock === 0 && product.is_active) {
+          await apiService.putData(`/storeowner/update_status/?product_id=${product.product_id}&is_active=false`);
+        }
+      }
+      // Refresh data produk supaya UI up-to-date
+      fetchProducts();
+    } catch (error) {
+      console.error('Gagal nonaktifkan produk dengan stok habis:', error.message);
+    }
+  };
+
   useEffect(() => {
-    fetchProducts();
-    fetchDashboardProducts();
+    const loadData = async () => {
+      const storeId = localStorage.getItem('store_id');
+      const response = await apiService.getData(`/storeowner/daftar_produk/?store_id=${storeId}`);
+      setProducts(response.data);
+      await disableProductsWithZeroStock(response.data);
+      await fetchDashboardProducts();
+    };
+    loadData();
   }, []);
 
   const handleDelete = async (product) => {
@@ -119,15 +141,16 @@ const Produk = () => {
   });
   
 
-  const updateStock = (id, delta) => {
-    setProducts((prevProducts) =>
-      prevProducts.map((product) =>
-        product.id === id
-          ? { ...product, stock: Math.max(product.stock + delta, 0) }
-          : product
-      )
+  const updateStock = async (productId, newStock) => {
+  try {
+    await apiService.putData(`/storeowner/update_stock/?product_id=${productId}&new_stock=${newStock}`);
+    setProducts(prev =>
+      prev.map(p => p.product_id === productId ? { ...p, stock: newStock } : p)
     );
-  };
+  } catch (error) {
+    console.error("Gagal update stok:", error.message);
+  }
+};
 
   const handleStockChange = (id, newStock) => {
     const parsedStock = parseInt(newStock, 10);
@@ -201,6 +224,7 @@ const Produk = () => {
     formPayload.append('stock', formData.stok);
     formPayload.append('product_name', formData.namaProduk);
     formPayload.append('product_type', formData.tipeProduk);
+    formPayload.append('selling_type', formData.tipeJualan); 
     formPayload.append('description', formData.deskripsi);
     formPayload.append('capital_price', formData.hargaModal);
     formPayload.append('selling_price', formData.hargaJual);
@@ -312,20 +336,34 @@ const Produk = () => {
 
   const toggleActive = async (id) => {
     try {
-      const product = products.find(p => p.product_id === id); 
+      const product = products.find(p => p.product_id === id);
       if (!product) return;
-  
+
       const updatedStatus = !product.is_active; // false -> true, true -> false
-  
+
+      // Cek stok
+      if (updatedStatus && product.stock === 0) {
+        // Artinya user mau aktifkan produk, tapi stoknya 0
+        Swal.fire({
+          icon: "warning",
+          title: "Tidak bisa aktifkan produk",
+          text: "Stok produk ini habis. Silakan tambah stok terlebih dahulu.",
+          confirmButtonColor: "#ECA641"
+        });
+        return;
+      }
+
       const statusString = updatedStatus ? 'true' : 'false';
-  
+
       await apiService.putData(`/storeowner/update_status/?product_id=${id}&is_active=${statusString}`);
 
-      fetchDashboardProducts();
+      // Update state lokal
       setProducts(prev =>
         prev.map(p => (p.product_id === id ? { ...p, is_active: updatedStatus } : p))
       );
-  
+
+      // Refresh data dari server
+      fetchDashboardProducts();
       fetchProducts();
     } catch (error) {
       console.error('Gagal update status:', error.message);
@@ -549,6 +587,7 @@ const Produk = () => {
                                 stok: product.stock,
                                 namaProduk: product.product_name,
                                 tipeProduk: product.product_type,
+                                tipeJualan: product.selling_type,
                                 keterangan: product.is_active,
                                 hargaModal: product.capital_price,
                                 hargaJual: product.selling_price,
@@ -592,19 +631,32 @@ const Produk = () => {
                   <span className="px-3 pt-2 text-sm font-semibold text-gray-800">{product.product_name}</span>
 
                   <div className="px-3 py-3 flex justify-between items-center text-sm font-semibold text-gray-800 whitespace-nowrap overflow-hidden">
-                      <div className="truncate">
-                        RP {(product.price ?? 0).toLocaleString('id-ID')}
-                      </div>
-                      <div className="flex items-center gap-x-2 flex-nowrap">
+                  <div className="truncate">
+                    RP {(product.selling_price ?? 0).toLocaleString('id-ID')}
+                  </div>
+                  {product.selling_type === 'Harian' && (
+                      <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full">
+                        Harian
+                      </span>
+                    )}
+                    {product.selling_type === 'Permanen' && (
+                      <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded-full">
+                        Permanen
+                      </span>
+                    )}
+                    <div className="flex items-center gap-x-2 flex-nowrap">
                         {/* Tombol Minus */}
                         <button
-                          onClick={() => updateStock(product.id, -1)}
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            const newStock = Math.max(product.stock - 1, 0); // pastikan ga negatif
+                            updateStock(product.product_id, newStock);
+                          }}
+                          disabled={product.stock <= 0}
                           className={`cursor-pointer rounded-lg w-6 h-6 flex items-center justify-center text-xs transition
                             ${product.stock > 0 
                               ? "bg-[#ECA641] text-white" 
-                              : "bg-white text-[#ECA641] border border-[#CAC4D0]"}
-                          `}
-                          disabled={product.stock <= 0} // Optional: agar tidak bisa diklik saat stok 0
+                              : "bg-white text-[#ECA641] border border-[#CAC4D0]"}`}
                         >
                           −
                         </button>
@@ -616,21 +668,30 @@ const Produk = () => {
                             type="number"
                             min="0"
                             value={product.stock}
-                            onChange={(e) => handleStockChange(product.id, e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value, 10);
+                              if (!isNaN(value) && value >= 0) {
+                                updateStock(product.product_id, value);
+                              }
+                            }}
                             className="w-12 text-center text-xs text-gray-700 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-[#ECA641] no-spinner"
                           />
                         </div>
 
                         {/* Tombol Plus */}
                         <button
-                          onClick={() => updateStock(product.id, 1)}
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            const newStock = product.stock + 1;
+                            updateStock(product.product_id, newStock);
+                          }}
                           className="cursor-pointer bg-[#ECA641] text-white rounded-lg w-6 h-6 flex items-center justify-center text-xs"
                         >
                           +
                         </button>
-                      </div>
                     </div>
-
+                  </div>
                 </div>
               ))
             )}

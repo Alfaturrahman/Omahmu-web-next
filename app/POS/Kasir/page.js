@@ -49,6 +49,13 @@ function Kasir() {
     
       }
 
+
+    useEffect(() => {
+    const today = new Date();
+    const formatted = today.toISOString().split('T')[0]; // hasil: '2025-07-06'
+    setOrderDate(formatted);
+    }, []);
+
     async function fetchDataAntrian() {
             try {
                 const storeId = localStorage.getItem('store_id');
@@ -851,6 +858,7 @@ const handleSaveEdit = async () => {
                             : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 pr-0"  // Normal grid dengan ukuran kolom responsif
                     }`}>
                         {listMenu
+                            .filter(item => item.stock > 0) 
                             .filter((item) => activeCategory === "Semua" || item.product_type === activeCategory || (activeCategory === "Favorit" && item.favorite_status))
                             .map((item) => (
                                 <div key={item.product_id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
