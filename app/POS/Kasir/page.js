@@ -17,17 +17,20 @@ function Kasir() {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [activeCategory, setActiveCategory] = useState("Semua");
     const [cart, setCart] = useState([]);
-    const [selectedOrderForEdit, setSelectedOrderForEdit] = useState(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [selected, setSelected] = useState(null);
     const [showQrisModal, setShowQrisModal] = useState(false);
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
+    const [showBayarNantiModal, setShowBayarNantiModal] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [amountPaid, setAmountPaid] = useState(0);
     const [listAntrian, setListAntrian] = useState([]);
     const [listMenu, setListMenu] = useState([]);
     const [customerName, setCustomerName] = useState("");
     const [orderDate, setOrderDate] = useState("");
+    const [selectedOrderForEdit, setSelectedOrderForEdit] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+
     const [phoneNumber, setPhoneNumber] = useState("");
     const [deliveryAddress, setDeliveryAddress] = useState("");
     const [remarks, setRemarks] = useState("");
@@ -70,12 +73,16 @@ function Kasir() {
         try {
     
             const storeId = localStorage.getItem('store_id');
+            const paymentMethodForDb = paymentMethodMap[selected]; // <--
+            console.log(paymentMethodForDb);
+            
+
             const payload = {
                 customer_name: customerName,
                 date: orderDate,
                 total_amount: total, // total yang sudah termasuk pajak (kalau ada)
                 order_status: "in_progress", // asumsi order langsung completed
-                payment_method: selected, // "cash" atau "qris"
+                payment_method: paymentMethodForDb, // <--- pakai value mapped
                 is_pre_order: false, // default
                 is_delivered: false, // default
                 is_dine_in: true, // misal kamu asumsi dine in (makan di tempat)
@@ -104,6 +111,9 @@ function Kasir() {
                 });
                 return;
             }
+
+            console.log("CART:", cart);
+            console.log("PAYLOAD:", payload);
 
             const response = await apiService.postData(`/storeowner/insert_order/?store_id=${storeId}`, payload);
     
@@ -147,13 +157,140 @@ function Kasir() {
             });
             return;
         }
-        handlePayment();
+
+        if (isEditing) {
+            handleSaveEdit();
+        } else {
+            handlePayment();
+        }
     };
+
     
     const handleBayarQRIS = () => {
         insertOrder();
     };
-        
+
+   const handleDetail = async (order) => {
+    console.log("==== handleDetail ====");
+    console.log("WALAWE order:", order);
+
+    setSelectedOrderForEdit(order);
+    setIsCartOpen(true);
+    setIsEditing(true);
+
+    try {
+        // panggil API detail
+        const res = await apiService.getData(`/storeowner/riwayat_detail_pesanan/?order_id=${order.order_id}`);
+        const detail = res.data[0].get_order_json;
+
+        console.log(">> DETAIL API RESPONSE:", detail);
+        console.log(">> DETAIL ITEMS:", detail.items);
+        (detail.items || []).forEach((item, idx) => {
+            console.log(`Item[${idx}] from API:`, item);
+        });
+
+        // mapping cart
+        const mappedCart = (detail.items || [])
+            .filter(item => item.product_id) // filter hanya yang punya product_id
+            .map((item) => ({
+                product_id: item.product_id,
+                product_name: item.product_name,
+                selling_price: parseInt(item.price, 10),
+                quantity: item.quantity,
+                product_type: item.product_type,
+                product_picture: item.product_picture || "/placeholder.png"
+            }));
+
+        console.log(">> CART TO SET:", mappedCart);
+
+        setCart(mappedCart);
+
+        setCustomerName(detail.customer_name || "");
+        setOrderDate(detail.order_date || "");
+        setPhoneNumber(detail.no_hp || "");
+        setDeliveryAddress(detail.delivery_address || "");
+        setRemarks(detail.remarks || "");
+        setSelected(detail.payment_method?.toLowerCase().replace(" ", "") || "");
+
+    } catch (err) {
+        console.error("Error fetching order detail:", err.message);
+        setCart([]); // fallback kalau gagal
+    }
+};
+
+const handleSaveEdit = async () => {
+    if (!selectedOrderForEdit) return;
+
+    try {
+        const storeId = localStorage.getItem('store_id');
+
+        console.log("==== handleSaveEdit ====");
+        console.log(">> CART BEFORE SAVE:", cart);
+        cart.forEach((item, idx) => {
+            console.log(`Item[${idx}] in cart before save:`, item);
+        });
+
+        // validasi: pastikan semua ada product_id
+        const invalidItem = cart.find(item => !item.product_id);
+        if (invalidItem) {
+            console.error("INVALID ITEM FOUND:", invalidItem);
+            Swal.fire({
+                icon: "error",
+                title: "Data item tidak lengkap",
+                text: "Ada item dengan product_id kosong. Mohon cek ulang.",
+                confirmButtonColor: "#ECA641",
+            });
+            return;
+        }
+
+        const payload = {
+            customer_name: customerName,
+            date: orderDate,
+            total_amount: total,
+            payment_method: paymentMethodMap[selected],
+            order_status: "in_progress",
+            is_pre_order: false,
+            is_delivered: false,
+            is_dine_in: true,
+            remarks: remarks,
+            pickup_date: null,
+            pickup_time: null,
+            role_id: userRoleId,
+            reference_id: storeId,
+            no_hp: phoneNumber || null,
+            delivery_address: deliveryAddress,
+            order_items: cart.map(item => ({
+                product_id: item.product_id,
+                selling_price: item.selling_price,
+                product_type: item.product_type,
+                item: item.quantity,
+            })),
+        };
+
+        console.log(">> PAYLOAD TO SAVE:", payload);
+
+        await apiService.putData(`/storeowner/update_order/?store_id=${storeId}&order_id=${selectedOrderForEdit.order_id}`, payload);
+
+        Swal.fire({
+            icon: "success",
+            title: "Perubahan Disimpan",
+            confirmButtonColor: "#ECA641",
+        });
+
+        fetchDataAntrian();
+        closeCart();
+        setIsEditing(false);
+        setSelectedOrderForEdit(null);
+    } catch (err) {
+        console.error("Error saving edited order:", err.message);
+        Swal.fire({
+            icon: "error",
+            title: "Gagal menyimpan perubahan",
+            confirmButtonColor: "#ECA641",
+        });
+    }
+};
+
     useEffect(() => {
         fetchDataAntrian();
         fetchDataMenu();
@@ -214,79 +351,85 @@ function Kasir() {
         });
     };
 
-    const handlePayment = () => {
-        if (selected === "qris") {
-            setShowQrisModal(true);
-        } else if (selected === "cash") {
-            setIsCashModalOpen(true);
-        } else if (selected === "bayarNanti") {
+    const showModalBayar = (order) => {
+        setSelectedOrder(order);
+        setSelected("Bayar Nanti");
+        setShowBayarNantiModal(true);
+    };
+
+    const handlePayment = async () => {
+        console.log("handlePayment called. isEditing:", isEditing, "selectedOrderForEdit:", selectedOrderForEdit);
+
+        if (isEditing && selectedOrderForEdit) {
+            // update dulu
+            await handleSaveEdit();
+
             Swal.fire({
-                icon: "info",
-                title: "Perhatian",
-                text: "Transaksi ini akan dicatat sebagai 'Bayar Nanti'. Mohon pastikan untuk menagihnya di waktu yang sesuai.",
-                confirmButtonText: "Oke, Mengerti",
+                icon: "success",
+                title: "Perubahan disimpan, siap bayar!",
                 confirmButtonColor: "#ECA641",
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    addOrderToState("Bayar Nanti");
+            }).then(() => {
+                if (selected === "qris") {
+                    setShowQrisModal(true);
+                } else if (selected === "cash") {
+                    setIsCashModalOpen(true);
+                } else if (selected === "bayarNanti") {
+                    Swal.fire({
+                        icon: "info",
+                        title: "Perhatian",
+                        text: "Transaksi ini akan dicatat sebagai 'Bayar Nanti'. Mohon pastikan untuk menagihnya di waktu yang sesuai.",
+                        confirmButtonText: "Oke, Mengerti",
+                        confirmButtonColor: "#ECA641",
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            await handleSaveEdit(); // Pastikan update terakhir (opsional)
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: "info",
+                        title: "Metode pembayaran belum tersedia",
+                        confirmButtonText: "OK",
+                        confirmButtonColor: "#ECA641",
+                    });
                 }
             });
+        } else {
+            // Order baru
+            if (selected === "qris") {
+                setShowQrisModal(true);
+            } else if (selected === "cash") {
+                setIsCashModalOpen(true);
+            } else if (selected === "bayarNanti") {
+                Swal.fire({
+                    icon: "info",
+                    title: "Perhatian",
+                    text: "Transaksi ini akan dicatat sebagai 'Bayar Nanti'. Mohon pastikan untuk menagihnya di waktu yang sesuai.",
+                    confirmButtonText: "Oke, Mengerti",
+                    confirmButtonColor: "#ECA641",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        insertOrder("Bayar Nanti");
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: "info",
+                    title: "Metode pembayaran belum tersedia",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+            }
         }
-        else {
-            Swal.fire({
-            icon: "info",
-            title: "Metode pembayaran belum tersedia",
-            confirmButtonText: "OK",
-            confirmButtonColor: "#ECA641",
-            });
-        }
     };
 
-    const handleDetail = (order) => {
-        setSelectedOrderForEdit(order);
-        setCart(
-            order.items.map((item, index) => ({
-                id: index,
-                name: item.name,
-                price: item.price,
-                quantity: item.qty,
-                image: item.image || "/placeholder.png",
-                category: item.category || "",
-            }))
-        );
-        setSelected(order.paymentMethod.toLowerCase().replace(" ", "")),
-        setIsCartOpen(true);
-        setIsEditing(true);
+
+    const paymentMethodMap = {
+        qris: "qris",
+        cash: "cash",
+        bayarNanti: "Bayar Nanti",
     };
 
-    const handleSaveEditOnly = () => {
-        if (!selectedOrderForEdit) return;
-
-        const updatedOrder = {
-            ...selectedOrderForEdit,
-            items: cart.map((item) => ({
-            name: item.name,
-            qty: item.quantity,
-            price: item.price,
-            image: item.image,
-            })),
-            totalItem: cart.reduce((acc, item) => acc + item.quantity, 0),
-        };
-
-        const updatedOrders = orders.map(order =>
-            order === selectedOrderForEdit ? updatedOrder : order
-        );
-
-        setOrders(updatedOrders);
-        Swal.fire({
-            icon: "success",
-            title: "Perubahan Disimpan",
-            confirmButtonColor: "#ECA641",
-        });
-
-        // Reset
-        closeCart();
-    };
 
     const toggleSidebar = () => {
         if (window.innerWidth < 1024) {
@@ -297,20 +440,38 @@ function Kasir() {
     };
 
     const categories = ["Semua", "Makanan", "Minuman", "Favorit"];
+    const filteredMenu = useMemo(() => {
+        if (activeCategory === "Semua") return listMenu;
+        if (activeCategory === "Favorit") return listMenu.filter(item => item.favorite);
+        return listMenu.filter(item => item.product_type === activeCategory);
+    }, [activeCategory, listMenu]);
+
 
     const addToCart = (item) => {
+        const mappedItem = {
+            product_id: item.product_id || item.id,   // ambil product_id kalau sudah ada, kalau tidak pakai id
+            product_name: item.product_name || item.name,
+            selling_price: item.selling_price || item.price,
+            product_type: item.product_type,
+            product_picture: item.product_picture || item.picture || "/placeholder.png",
+            quantity: 1,
+        };
+
         setCart((prevCart) => {
-            const existingItem = prevCart.find((cartItem) => cartItem.product_id === item.product_id);
+            const existingItem = prevCart.find((cartItem) => cartItem.product_id === mappedItem.product_id);
             if (existingItem) {
                 return prevCart.map((cartItem) =>
-                    cartItem.product_id === item.product_id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
+                    cartItem.product_id === mappedItem.product_id
+                        ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                        : cartItem
                 );
             }
-            return [...prevCart, { ...item, quantity: 1 }];
+            return [...prevCart, mappedItem];
         });
-    
+
         setIsCartOpen(true);
     };
+
     
     const updateQuantity = (product_id, type) => {
         setCart((prevCart) => {
@@ -319,7 +480,6 @@ function Kasir() {
                     if (item.product_id === product_id) {
                         if (type === "decrease") {
                             if (item.quantity === 1) {
-                                return null;
                                 return null;
                             }
                             return { ...item, quantity: item.quantity - 1 };
@@ -345,6 +505,7 @@ function Kasir() {
         }
     }, [isCashModalOpen]);
     
+    // Menghitung subtotal, pajak, dan total
     const subtotal = cart.reduce((acc, item) => acc + (item.selling_price || 0) * item.quantity, 0);
     const total = subtotal;
 
@@ -355,12 +516,11 @@ function Kasir() {
     const clearAmount = () => {
         setAmountPaid(0);
     };
-
     // Menambahkan penjumlahan pada kalkulator kasir
     const handlePayCash = () => {
+        // Logic for cash payment
         insertOrder();
 
-        addOrderToState("Cash");
         setIsCashModalOpen(false); // Close modal after payment
     };
 
@@ -370,7 +530,6 @@ function Kasir() {
             return updated === "" ? 0 : parseInt(updated, 10);
         });
     };
-
     return (
         <div className="h-screen flex flex-col bg-white overflow-hidden">
             {/* Header */}
@@ -389,42 +548,98 @@ function Kasir() {
                         Antrian Pesanan
                     </h2>
 
-                    {/* Scrollable area */}
                     <div
                         className={`relative overflow-x-auto py-3 no-scrollbar transition-all duration-300 
-                        ${isCollapsed ? "max-w-[90vw]" : "max-w-[90vw] md:max-w-[95vw] lg:max-w-[80vw]"}
-                        `}
+                        ${isCollapsed ? "max-w-[90vw]" : "max-w-[90vw] md:max-w-[95vw] lg:max-w-[80vw]"}`}
                     >
                         <div className="flex space-x-3 md:space-x-4 w-max flex-nowrap">
                         {listAntrian.length > 0 ? (
-                            listAntrian.map((order, index) => (
-                            <div
-                                key={index}
-                                className="bg-white border border-gray-300 p-3 md:p-4 rounded-lg shadow-md text-center min-w-[140px] md:min-w-[180px] flex-shrink-0"
-                            >
+                            listAntrian.map((order) => {
+                            const isBayarNanti = (order.payment_method ?? "").toLowerCase() === "bayar nanti";
+
+                            return (
+                                <div
+                                key={order.order_id}
+                                className={`p-3 md:p-4 rounded-lg shadow-md text-center min-w-[140px] md:min-w-[180px] flex-shrink-0 bg-white ${
+                                    isBayarNanti ? "border-2 border-[#ECA641]" : "border border-gray-300"
+                                }`}
+                                style={isBayarNanti ? { backgroundColor: "rgba(246, 181, 67, 0.3)" } : {}}
+                                >
                                 <p className="font-semibold text-black text-sm md:text-base">
-                                No Antrian #{order.no_antrian}
+                                    No Antrian #{order.no_antrian ?? "-"}
                                 </p>
                                 <p className="text-xs md:text-sm text-black">
-                                Total Item {order.total_item_belanja}x
+                                    Total Item {order.total_item_belanja ?? 0}x
                                 </p>
-                                <button
-                                onClick={() => showModal(order.order_id)}  // Menambahkan order_id ke dalam fungsi
-                                className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer"
-                                >
-                                Selesai
-                                </button>
-                                <p className="text-xs text-black mt-2">{order.waktu_lalu}</p>
-                            </div>
-                            ))
+
+                                {isBayarNanti ? (
+                                    <button
+                                    onClick={() => handleDetail(order)}
+                                    className="border border-[#ECA641] text-white bg-[#ECA641] px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer"
+                                    >
+                                    Detail
+                                    </button>
+                                ) : (
+                                    <button
+                                    onClick={() => showModal(order.order_id)}
+                                    className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer"
+                                    >
+                                    Selesai
+                                    </button>
+                                )}
+
+                                <p className="text-xs text-black mt-2">{order.waktu_lalu ?? ""}</p>
+                                </div>
+                            );
+                            })
                         ) : (
-                            <div className="text-gray-500 text-center w-full">
-                            Belum ada antrian.
-                            </div>
+                            <div className="text-gray-500 text-center w-full">Belum ada antrian.</div>
                         )}
                         </div>
                     </div>
                     </div>
+
+                    {/* Antrian Pesanan Online */}
+                    <div className="mb-6">
+                    <h2 className="text-lg md:text-xl font-semibold text-black mb-3">
+                        Antrian Pesanan Online
+                    </h2>
+
+                    <div
+                        className={`relative overflow-x-auto py-3 no-scrollbar transition-all duration-300 
+                        ${isCollapsed ? "max-w-[90vw]" : "max-w-[90vw] md:max-w-[95vw] lg:max-w-[80vw]"}`}
+                    >
+                        <div className="flex space-x-3 md:space-x-4 w-max flex-nowrap">
+                        {listAntrian.filter(order => order.is_online_order).length > 0 ? (
+                            listAntrian
+                            .filter(order => order.is_online_order)
+                            .map((order) => (
+                                <div
+                                key={order.order_id}
+                                className="border border-gray-300 bg-white p-3 md:p-4 rounded-lg shadow-md text-center min-w-[140px] md:min-w-[180px] flex-shrink-0"
+                                >
+                                <p className="font-semibold text-black text-sm md:text-base">
+                                    No Antrian #{order.no_antrian ?? "-"}
+                                </p>
+                                <p className="text-xs md:text-sm text-black">
+                                    Total Item {order.total_item_belanja ?? 0}x
+                                </p>
+                                <button
+                                    onClick={() => showModal(order.order_id)}
+                                    className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer"
+                                >
+                                    Selesai
+                                </button>
+                                <p className="text-xs text-black mt-2">{order.waktu_lalu ?? ""}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-gray-500 text-center w-full">Belum ada antrian online.</div>
+                        )}
+                        </div>
+                    </div>
+                    </div>
+
                     
                     {/* Kategori Menu */}
                     <div className="mb-6">
@@ -461,177 +676,6 @@ function Kasir() {
                             />
                             </div>
                         </div>
-
-                    </div>
-
-                    {/* Daftar Menu */}
-                    <div className={`grid gap-4 transition-all duration-300 ${
-                        isCartOpen
-                            ? "grid-cols-3 pr-[370px]"  // Cart terbuka, hanya 2 kolom dan beri ruang untuk cart
-                            : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 pr-0"  // Normal grid dengan ukuran kolom responsif
-                    }`}>
-                        {menuItems
-                            .filter((item) => activeCategory === "Semua" || item.category === activeCategory || (activeCategory === "Favorit" && item.favorite))
-                            .map((item) => (
-                                <div key={item.id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
-                                    <Image src={item.image} width={300} height={200} alt={item.name} className="rounded-lg w-full h-40 object-cover" />
-                                    <div className="mt-2">
-                                        <h3 className="font-semibold text-sm text-black flex items-center">
-                                            {item.favorite && <span className="text-yellow-400 mr-1">⭐</span>}
-                                            {item.name}
-                                        </h3>
-                                        <div className="flex justify-between items-end mt-2">
-                                            {/* Mengatur harga di bawah nama dan di ujung kanan */}
-                                            <p className="text-[#ECA641] font-bold text-sm ml-auto">{item.price.toLocaleString("id-ID")}K</p>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => addToCart(item)} className="mt-2 cursor-pointer bg-[#ECA641] text-white px-4 py-2 w-full rounded-lg flex items-center justify-center gap-2">
-                                        Tambah Ke Keranjang <ShoppingCart size={16} />
-                                    </button>
-                                </div>
-                            ))
-                        }
-                    </div>
-
-                    {/* Modal Keranjang */}
-                    <div className={`fixed right-0 top-0 h-full w-96 bg-white shadow-lg p-6 overflow-y-auto transition-transform transform ${isCartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-                        <div className="flex justify-end mb-4">
-                            <button onClick={closeCart} className="text-gray-600 hover:text-gray-800 cursor-pointer">
-                                <X size={20} />
-                            </button>
-                            </div>
-
-                            <div className="flex justify-between mb-4">
-                                {/* Nama Customer */}
-                                <div className="flex flex-col border border-gray-300 px-4 py-2 rounded-lg text-sm w-40">
-                                    <label className="text-gray-500 mb-1">Nama Customer</label>
-                                    <input
-                                    type="text"
-                                    name="customerName"
-                                    placeholder='Masukkan nama'
-                                    value={isEditing ? selectedOrderForEdit?.customerName || '' : formData.customerName}
-                                    onChange={(e) =>
-                                        !isEditing &&
-                                        setFormData({ ...formData, customerName: e.target.value })
-                                    }
-                                    readOnly={isEditing}
-                                    className="bg-transparent border-none text-black font-semibold text-sm focus:outline-none"
-                                    />
-                                </div>
-
-                                {/* Tanggal Pemesanan */}
-                                <div className="flex flex-col border border-gray-300 px-4 py-2 rounded-lg text-sm w-fit text-right">
-                                    <label className="text-gray-500 mb-1">Tanggal Pemesanan</label>
-                                    <input
-                                        type="date"
-                                        name="orderDate"
-                                        value={(isEditing ? selectedOrderForEdit?.orderDate : formData.orderDate) || ''}
-                                        onChange={(e) =>
-                                            !isEditing &&
-                                            setFormData({ ...formData, orderDate: e.target.value })
-                                        }
-                                        readOnly={isEditing}
-                                        className="bg-transparent border-none text-black font-semibold text-sm focus:outline-none text-right"
-                                    />
-                                </div>
-                            </div>
-
-                            <h2 className="text-lg font-semibold text-black pb-4">Detail Pesanan</h2>
-
-                            {/* Daftar Item di Keranjang */}
-                            {cart.length === 0 ? (
-                                <p className="text-sm text-gray-500">Keranjang masih kosong</p>
-                            ) : (
-                                cart.map((item) => (
-                                    <div key={item.id} className="flex items-center border-b pb-3 mb-3">
-                                        <Image src={item.image || "/placeholder.png"} width={70} height={70} alt={item.name} className="rounded-lg"/>
-                                        <div className="flex-1 ml-3">
-                                            <p className="text-black text-sm font-medium">{item.name}</p>
-                                            <p className="text-gray-500 text-xs">{item.category}</p>
-                                            <p className="text-[#ECA641] font-bold text-sm">{item.price.toLocaleString("id-ID")}K</p>
-                                        </div>
-                                        <div className="flex items-center">
-                                            <button onClick={() => updateQuantity(item.id, "decrease")} className="cursor-pointer p-2 bg-white text-[#ECA641] border border-[CAC4D0] rounded-lg">
-                                                <Minus size={14} />
-                                            </button>
-                                            <span className="mx-2 text-sm font-semibold text-black">{item.quantity}</span>
-                                            <button onClick={() => updateQuantity(item.id, "increase")} className="cursor-pointer p-2 bg-[#ECA641] text-white rounded-lg">
-                                                <Plus size={14} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-
-                            {/* Ringkasan Pesanan */}
-                            <div className="mt-4 text-sm">
-                                <div className="flex justify-between text-gray-600">
-                                    <span>Item</span>
-                                    <span>{cart.length} {cart.length > 1 ? "Items" : "Item"}</span>
-                                </div>
-                                <div className="flex justify-between text-gray-600 mt-2">
-                                    <span>Subtotal</span>
-                                    <span>{subtotal.toLocaleString("id-ID")} K</span>
-                                </div>
-                                <div className="flex justify-between font-bold text-black mt-3 text-lg">
-                                    <span>Total</span>
-                                    <span>{total.toLocaleString("id-ID")} K</span>
-                                </div>
-                            </div>
-
-                            {/* Metode Pembayaran */}
-                            <h3 className="text-black font-semibold mt-6 mb-2">Metode Pembayaran</h3>
-                            <div className="flex gap-4">
-                                {/* Button Cash */}
-                                <button
-                                    className={`cursor-pointer w-[80px] border border-[#ECA641] py-2 rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${selected === "cash" ? "bg-[#F6B85D]/50 text-[#F9870B]" : "text-[#ECA641]"}`}
-                                    onClick={() => setSelected("cash")}
-                                >
-                                    <Banknote size={24} />
-                                    <span>Cash</span>
-                                </button>
-                                {/* Button QRIS */}
-                                <button
-                                    className={`cursor-pointer w-[80px] border border-[#ECA641] rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${selected === "qris" ? "bg-[#F6B85D]/50 text-[#F9870B]" : "text-[#ECA641]"}`}
-                                    onClick={() => setSelected("qris")}
-                                >
-                                    <ScanQrCode size={24} />
-                                    <span>Qris</span>
-                                </button>
-                                {/* Button Bayar Nanti */}
-                                <button
-                                    className={`cursor-pointer min-w-max px-3 py-2 border border-[#ECA641] rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${selected === "bayarNanti" ? "bg-[#F6B85D]/50 text-[#F9870B]" : "text-[#ECA641]"}`}
-                                    onClick={() => setSelected("bayarNanti")}
-                                >
-                                    <ScanQrCode size={24} />
-                                    <span className="whitespace-nowrap">Bayar Nanti</span>
-                                </button>
-                            </div>
-
-                            {/* Tombol Bayar */}
-                            {selectedOrderForEdit ? (
-                                <div className="flex gap-3 mt-6">
-                                    <button
-                                    onClick={handleSaveEditOnly}
-                                    className="w-1/2 bg-gray-300 text-black py-3 rounded-lg font-semibold"
-                                    >
-                                    Simpan
-                                    </button>
-                                    <button
-                                    onClick={handlePayment}
-                                    className="w-1/2 bg-[#ECA641] text-white py-3 rounded-lg font-semibold"
-                                    >
-                                    Bayar Sekarang
-                                    </button>
-                                </div>
-                                ) : (
-                                <button
-                                    onClick={handlePayment}
-                                    className="cursor-pointer mt-6 w-full bg-[#ECA641] text-white py-3 rounded-lg font-semibold"
-                                >
-                                    Bayar Sekarang
-                                </button>
-                            )}
 
                     </div>
 
@@ -950,15 +994,41 @@ function Kasir() {
                                 <ScanQrCode size={24} />
                                 <span>Qris</span>
                             </button>
+
+                            {/* Button Bayar Nanti */}
+                                <button
+                                    className={`cursor-pointer min-w-max px-3 py-2 border border-[#ECA641] rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${selected === "bayarNanti" ? "bg-[#F6B85D]/50 text-[#F9870B]" : "text-[#ECA641]"}`}
+                                    onClick={() => setSelected("bayarNanti")}
+                                >
+                                    <ScanQrCode size={24} />
+                                    <span className="whitespace-nowrap">Bayar Nanti</span>
+                                </button>
                         </div>
 
                         {/* Tombol Bayar */}
-                        <button
-                            onClick={handleBayarSekarang}
-                            className="mt-6 w-full bg-[#ECA641] text-white py-3 rounded-lg font-semibold"
-                        >
-                            Bayar Sekarang
-                        </button>
+                            {selectedOrderForEdit ? (
+                                <div className="flex gap-3 mt-6">
+                                    <button
+                                    onClick={handleSaveEdit}
+                                    className="w-1/2 bg-gray-300 text-black py-3 rounded-lg font-semibold"
+                                    >
+                                    Simpan
+                                    </button>
+                                    <button
+                                    onClick={handlePayment}
+                                    className="w-1/2 bg-[#ECA641] text-white py-3 rounded-lg font-semibold"
+                                    >
+                                    Bayar Sekarang
+                                    </button>
+                                </div>
+                                ) : (
+                                <button
+                                    onClick={handlePayment}
+                                    className="cursor-pointer mt-6 w-full bg-[#ECA641] text-white py-3 rounded-lg font-semibold"
+                                >
+                                    Bayar Sekarang
+                                </button>
+                            )}
                     </div>
                 </div>
             </div>
