@@ -7,8 +7,12 @@ import ToastProvider from '@/components/Toast';
 import { Search, Filter, Edit, Trash2, Eye, Plus, X, Upload} from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
+import withAuth from 'hoc/withAuth';
+import * as apiService from 'services/authService';
+import { jwtDecode } from "jwt-decode";
 
-const Produk = () => {
+function StokBasah() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,6 +28,8 @@ const Produk = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [formErrors, setFormErrors] = useState({});
   const [paymentProof, setPaymentProof] = useState(null);
+  const [StokBasah, setListStokBasah] = useState([]);
+  const [dtlStokBasah, setDetailStokBasah] = useState([]);
   const dropdownRef = useRef(null);
   const itemsPerPage = 10;
 
@@ -34,6 +40,61 @@ const Produk = () => {
     nameBuyer: "",
     image: null,
   });
+
+  async function listStokBasah() {
+    try {
+      const storeId = localStorage.getItem('store_id');
+      const result = await apiService.getData(`/storeowner/list_stok_basah/?store_id=${storeId}`);
+      console.log("WALAWE", result.data);
+
+      // Group per stock_entry_id
+      const grouped = {};
+      result.data.forEach(item => {
+        if (!grouped[item.stock_entry_id]) {
+          grouped[item.stock_entry_id] = {
+            stock_entry_id: item.stock_entry_id,
+            date: item.date,
+            place: item.place,
+            officer: item.officer,
+            proof_of_payment: item.proof_of_payment,
+            total_items: item.total_items,
+            total_amount: item.total_amount,
+          };
+        }
+      });
+
+      // Buat array yang siap untuk tabel
+      const finalData = Object.values(grouped).map(entry => ({
+        stock_entry_id: entry.stock_entry_id,
+        nameBuyer: entry.officer,
+        date: entry.date,
+        amount: entry.total_items,
+        totalPrice: entry.total_amount
+      }));
+
+      console.log("Data untuk tabel:", finalData);
+
+      setListStokBasah(finalData);  
+    } catch (err) {
+      console.error(err.message);
+    }
+  }
+  async function detailStokBasah() {
+      try {
+          const stockEntryId = 4;
+          const result = await apiService.getData(`/storeowner/detail_stok_basah/?stock_entry_id=${stockEntryId}`);
+          console.log("CIBAI",result.data);
+          
+          setDetailStokBasah(result.data);  
+      } catch (err) {
+          console.error(err.message);
+      }
+  }
+
+  useEffect(() => {
+        listStokBasah();
+        detailStokBasah();
+    }, []);
 
   const handleAddStokBasah = () => {
     const errors = {};
@@ -149,90 +210,90 @@ const Produk = () => {
     return Object.keys(errors).length === 0;
   };
 
-  // Data Dummy Tabel Utama
-  const [products, setProducts] = useState([
-    { 
-      id: "1",  date: "2002-05-05",  location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse1.mm.bing.net/th/id/OIP.WOAlKi6OvCoYcewcp56hRwHaDt?pid=Api&P=0&h=180",
-      amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-    { 
-      id: "2", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan", 
-      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse4.mm.bing.net/th/id/OIP.Bs76q5DqwL9mGleqoxfx4AHaE8?pid=Api&P=0&h=180",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-    { 
-      id: "3", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku", 
-      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse4.mm.bing.net/th/id/OIP.oiD_1VjNfEXjtnUwll4j6AHaEw?pid=Api&P=0&h=180",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-    { 
-      id: "4", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan",
-      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-    { 
-      id: "5", date: "05/05/2002", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-    { 
-      id: "6", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-    { 
-      id: "7", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan",
-      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-    { 
-      id: "8", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-    { 
-      id: "9", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-      location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-      items: [
-        {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-        {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-        { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-      ]
-    },
-  ]);
+  // // Data Dummy Tabel Utama
+  // const [products, setProducts] = useState([
+  //   { 
+  //     id: "1",  date: "2002-05-05",  location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse1.mm.bing.net/th/id/OIP.WOAlKi6OvCoYcewcp56hRwHaDt?pid=Api&P=0&h=180",
+  //     amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
+  //     items: [
+  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
+  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
+  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
+  //     ]
+  //   },
+  //   { 
+  //     id: "2", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan", 
+  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse4.mm.bing.net/th/id/OIP.Bs76q5DqwL9mGleqoxfx4AHaE8?pid=Api&P=0&h=180",
+  //     items: [
+  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
+  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
+  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
+  //     ]
+  //   },
+  //   { 
+  //     id: "3", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku", 
+  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse4.mm.bing.net/th/id/OIP.oiD_1VjNfEXjtnUwll4j6AHaEw?pid=Api&P=0&h=180",
+  //     items: [
+  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
+  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
+  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
+  //     ]
+  //   },
+  //   { 
+  //     id: "4", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan",
+  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
+  //     items: [
+  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
+  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
+  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
+  //     ]
+  //   },
+  //   { 
+  //     id: "5", date: "05/05/2002", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
+  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
+  //     items: [
+  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
+  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
+  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
+  //     ]
+  //   },
+  //   { 
+  //     id: "6", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
+  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
+  //     items: [
+  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
+  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
+  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
+  //     ]
+  //   },
+  //   { 
+  //     id: "7", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan",
+  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
+  //     items: [
+  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
+  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
+  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
+  //     ]
+  //   },
+  //   { 
+  //     id: "8", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
+  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
+  //     items: [
+  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
+  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
+  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
+  //     ]
+  //   },
+  //   { 
+  //     id: "9", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
+  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
+  //     items: [
+  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
+  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
+  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
+  //     ]
+  //   },
+  // ]);
   
   // Data Dummy  Items (Di Modal Tambah Stok Basah)
   const [items, setItems] = useState([
@@ -241,12 +302,19 @@ const Produk = () => {
     { nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU' },
   ]);
   
-  const handleDetailClick = (item) => {
-    setSelectedDetail(item);
-    setIsDetailModalOpen(true);
+  const handleDetailClick = async (item) => {
+      try {
+          const result = await apiService.getData(`/storeowner/detail_stok_basah/?stock_entry_id=${item.stock_entry_id}`);
+          console.log('Detail stok:', result.data);
+          
+          setSelectedDetail(result.data);      // simpan data detail (yang berisi items)
+          setIsDetailModalOpen(true);          // buka modal
+      } catch (err) {
+          console.error('Gagal ambil detail:', err);
+      }
   };
   
-  const filteredProducts = products.filter(item => {
+  const filteredProducts = StokBasah.filter(item => {
     const matchCategory =
       selectedCategory === "All" || !selectedCategory
         ? true
@@ -404,30 +472,32 @@ const Produk = () => {
                           </thead>
                           <tbody>
                               {displayedData.map((item, index) => (
-                                  <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                    {[index + 1 + (currentPage - 1) * itemsPerPage, item.nameBuyer, item.date, item.amount, item.totalPrice,].map((value, idx) => (
-                                        <td key={idx} className="py-3 px-4 relative">
-                                            {value}
-                                            {idx !== 7 && (
-                                                <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
-                                            )}
-                                        </td>
-                                    ))}
-
-                                    <td className="py-3 px-4 relative">
-                                      <button onClick={() => handleDetailClick(item)} className="text-black px-3 cursor-pointer">
-                                        <Eye />
-                                      </button>
-                                      <button onClick={() => handleEditStokBasah(item)} className="text-black cursor-pointer">
-                                        <Edit />
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteStokBasah(item.id)}
-                                        className="text-black px-3 cursor-pointer"
-                                      >
-                                        <Trash2 />
-                                      </button>
+                                <tr key={index} className="...">
+                                  {[
+                                    index + 1 + (currentPage - 1) * itemsPerPage,
+                                    item.nameBuyer,
+                                    item.date,
+                                    item.amount,
+                                    item.totalPrice
+                                  ].map((value, idx) => (
+                                    <td key={idx} className="py-3 px-4 relative">
+                                      {value}
+                                      {idx !== 4 && ( // hanya tambahkan garis kalau bukan kolom terakhir
+                                        <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
+                                      )}
                                     </td>
+                                  ))}
+                                  <td className="py-3 px-4 relative">
+                                    <button onClick={() => handleDetailClick(item)} className="text-black px-3 cursor-pointer">
+                                      <Eye />
+                                    </button>
+                                    <button onClick={() => handleEditStokBasah(item)} className="text-black cursor-pointer">
+                                      <Edit />
+                                    </button>
+                                    <button onClick={() => handleDeleteStokBasah(item.stock_entry_id)} className="text-black px-3 cursor-pointer">
+                                      <Trash2 />
+                                    </button>
+                                  </td>
                                 </tr>
                               ))}
                           </tbody>
@@ -726,7 +796,6 @@ const Produk = () => {
           {isDetailModalOpen && selectedDetail && (
             <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
               <div className="bg-white rounded-xl w-[95%] md:w-[900px] max-h-[90vh] overflow-y-auto shadow-lg">
-                
                 {/* Header */}
                 <div className="bg-[#FFF5EB] px-6 py-4 rounded-t-xl flex justify-between items-center">
                   <h2 className="text-lg font-bold text-black uppercase">Detail Pembelian</h2>
@@ -740,24 +809,24 @@ const Produk = () => {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-black mb-1">Tanggal Belanja</label>
-                      <input type="date" className="border border-gray-300 rounded-md px-4 py-2 text-black w-full bg-gray-100" value={selectedDetail.date} readOnly />
+                      <input type="date" className="border border-gray-300 rounded-md px-4 py-2 text-black w-full bg-gray-100" value={selectedDetail.stock_entry.date} readOnly />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-black mb-1">Tempat Pembelian</label>
-                      <input type="text" className="border border-gray-300 rounded-md px-4 py-2 text-black w-full bg-gray-100" value={selectedDetail.location} readOnly />
+                      <input type="text" className="border border-gray-300 rounded-md px-4 py-2 text-black w-full bg-gray-100" value={selectedDetail.stock_entry.place} readOnly />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-black mb-1">Nama Pembelian</label>
-                      <input type="text" className="border border-gray-300 rounded-md px-4 py-2 text-black w-full bg-gray-100" value={selectedDetail.nameBuyer} readOnly />
+                      <input type="text" className="border border-gray-300 rounded-md px-4 py-2 text-black w-full bg-gray-100" value={selectedDetail.stock_entry.officer} readOnly />
                     </div>
                     <div>
                       <label className="block text-sm font-semibold text-black mb-1">Bukti Pembayaran</label>
                       <img
-                        src={selectedDetail.image}
+                        src={selectedDetail.stock_entry.proof_of_payment}
                         alt="Bukti Transaksi"
                         className="w-32 h-32 object-cover rounded-md border cursor-pointer hover:scale-105 transition"
                         onClick={() => {
-                          setPreviewImage(selectedDetail.image);
+                          setPreviewImage(selectedDetail.stock_entry.proof_of_payment);
                           setIsImageModalOpen(true);
                         }}
                       />
@@ -781,15 +850,15 @@ const Produk = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {selectedDetail.items.map((item, idx) => (
+                          {selectedDetail.stock_entry.items?.map((item, idx) => (
                             <tr key={idx} className="border-t border-gray-200">
                               <td className="px-4 py-2">{idx + 1}</td>
-                              <td className="px-4 py-2">{item.nama}</td>
-                              <td className="px-4 py-2">{item.amount}</td>
+                              <td className="px-4 py-2">{item.item_name}</td>
+                              <td className="px-4 py-2">{item.quantity}</td>
                               <td className="px-4 py-2">{item.unit}</td>
-                              <td className="px-4 py-2">Rp {item.price}</td>
-                              <td className="px-4 py-2">Rp {item.total}</td>
-                              <td className="px-4 py-2">{item.category}</td>
+                              <td className="px-4 py-2">Rp {item.unit_price}</td>
+                              <td className="px-4 py-2">Rp {item.sub_total}</td>
+                              <td className="px-4 py-2"> {item.kategori} </td>
                             </tr>
                           ))}
                         </tbody>
@@ -810,6 +879,7 @@ const Produk = () => {
               </div>
             </div>
           )}
+
 
           {/* Preview Image */}
           {isImageModalOpen && previewImage && (
@@ -837,4 +907,4 @@ const Produk = () => {
     </div>
 )};
 
-export default Produk;
+export default withAuth(StokBasah,['2']);
