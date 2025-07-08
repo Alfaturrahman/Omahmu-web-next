@@ -8,9 +8,13 @@ import { Search, Filter, Plus, X, Upload, Edit, Trash2 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import toast from 'react-hot-toast';
+import Image from 'next/image';
+import withAuth from 'hoc/withAuth';
+import * as apiService from 'services/authService';
+import { jwtDecode } from "jwt-decode";
 
-
-const Pengeluaran = () => {
+function Pengeluaran() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,6 +32,21 @@ const Pengeluaran = () => {
   const dropdownRef = useRef(null);
   const itemsPerPage = 10;
 
+  const listPengeluaran = async () => {
+    try {
+      const storeId = localStorage.getItem('store_id');
+      const result = await apiService.getData(`/storeowner/list_pengeluaran/?store_id=${storeId}`);
+      console.log('List pengeluaran:', result.data);
+      setPengeluarans(result.data); // atau format sesuai tabel kamu
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  useEffect(() => {
+          listPengeluaran();
+      }, []);
+      
   // Modal Form Pengeluaran
   const [formData, setFormData] = useState({
     date: "",
@@ -92,12 +111,50 @@ const Pengeluaran = () => {
     setIsModalOpen(false);
   };
 
+  const handleAddPengeluaran = async () => {
+    const storeId = localStorage.getItem('store_id');
+    const errors = {};
+
+    if (!formData.date) errors.date = "Tanggal wajib diisi";
+    if (!formData.type) errors.type = "Jenis pengeluaran wajib diisi";
+    if (!formData.total) errors.total = "Total wajib diisi";
+    if (!formData.desc) errors.desc = "Deskripsi wajib diisi";
+    if (!formData.image) errors.image = "Bukti pembayaran wajib diupload";
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('store_id', storeId);
+      formDataToSend.append('date', formData.date);
+      formDataToSend.append('description', formData.desc);
+      formDataToSend.append('spending', formData.total);
+      formDataToSend.append('type_expenses', formData.type.toLowerCase());
+      formDataToSend.append('proof_of_expenses', formData.image);
+
+      const response = await apiService.postData('/storeowner/insert_pengeluaran/', formDataToSend);
+
+      if (response.messagetype === "S") {
+        Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Pengeluaran berhasil ditambahkan', timer: 2000, showConfirmButton: false });
+        listPengeluaran(); // refresh data
+        setIsModalOpen(false);
+        setFormData({ date: "", type: "", total: "", desc: "", image: null });
+      } else {
+        Swal.fire('Error', response.message || 'Gagal menambahkan pengeluaran', 'error');
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Error', 'Terjadi kesalahan saat menambahkan pengeluaran', 'error');
+    }
+  };
+
   // Data Dummy Tabel Utama
-  const [Pengeluarans, setPengeluran] = useState([
-    {  id: "1",  date: "2025-05-05",  type: "Gaji", total: "Rp 400.000", desc: "Bayar Gaji Karyawan Bulan Juni", image: "https://kledo.com/blog/wp-content/uploads/2021/11/bukti-kas-keluar.jpg"},
-    {  id: "2",  date: "2025-05-05",  type: "Air", total: "Rp 400.000", desc: "Bayar Air Bulan Juni", image: "/transaksi.png"},
-    {  id: "3",  date: "2025-05-05",  type: "Listrik", total: "Rp 400.000", desc: "Bayar Listrik Bulan Juni", image: "https://mediakonsumen.com/files/2023/09/Bukti-Transaksi-di-MBanking.jpeg"},
-    {  id: "4",  date: "2025-05-05",  type: "Sewa", total: "Rp 400.000", desc: "Bayar Tempat Sewa Bulan Juni", image: "https://4.bp.blogspot.com/-lp73DzGVCBo/WQ2XFYgU77I/AAAAAAAAB3k/ODySRAtEjmgfpiqw8AZuneE_GC94q5AXQCLcB/s1600/Bukti%2BKas%2BKeluar.jpg"},
+  const [Pengeluarans, setPengeluarans] = useState([
+    // {  id: "1",  date: "2025-05-05",  type: "Gaji", total: "Rp 400.000", desc: "Bayar Gaji Karyawan Bulan Juni", image: "https://kledo.com/blog/wp-content/uploads/2021/11/bukti-kas-keluar.jpg"},
+    // {  id: "2",  date: "2025-05-05",  type: "Air", total: "Rp 400.000", desc: "Bayar Air Bulan Juni", image: "/transaksi.png"},
+    // {  id: "3",  date: "2025-05-05",  type: "Listrik", total: "Rp 400.000", desc: "Bayar Listrik Bulan Juni", image: "https://mediakonsumen.com/files/2023/09/Bukti-Transaksi-di-MBanking.jpeg"},
+    // {  id: "4",  date: "2025-05-05",  type: "Sewa", total: "Rp 400.000", desc: "Bayar Tempat Sewa Bulan Juni", image: "https://4.bp.blogspot.com/-lp73DzGVCBo/WQ2XFYgU77I/AAAAAAAAB3k/ODySRAtEjmgfpiqw8AZuneE_GC94q5AXQCLcB/s1600/Bukti%2BKas%2BKeluar.jpg"},
   ]);
   
   const handleEditPengeluaran = (item) => {
@@ -117,32 +174,6 @@ const Pengeluaran = () => {
     setSelectedEditId(item.id);
   };
 
-  const handleDeletePengeluaran = (itemId) => {
-    Swal.fire({
-      title: "Yakin ingin menghapus?",
-      text: "Data yang sudah dihapus tidak bisa dikembalikan!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Ya, hapus!",
-      cancelButtonText: "Batal"
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const updatedPengeluarans = Pengeluarans.filter(item => item.id !== itemId);
-        setPengeluran(updatedPengeluarans);
-
-        Swal.fire({
-          icon: "success",
-          title: "Berhasil!",
-          text: "Data pengeluaran berhasil dihapus.",
-          timer: 2000,
-          showConfirmButton: false
-        });
-      }
-    });
-  };
-  
   const formatDate = (date) => {
     return new Date(date).toLocaleDateString("id-ID");
   };
@@ -287,15 +318,15 @@ const Pengeluaran = () => {
                                 {[
                                   index + 1 + (currentPage - 1) * itemsPerPage,
                                   item.date,
-                                  item.type,
-                                  item.total,
-                                  item.desc,
+                                  item.type_expenses,
+                                  item.spending,
+                                  item.description,
                                   <img
-                                    src={item.image}
+                                    src={`http://localhost:8000${item.proof_of_expenses}`}
                                     alt="Bukti Transaksi"
                                     className="w-32 h-32 object-cover rounded-md border cursor-pointer hover:scale-105 transition"
                                     onClick={() => {
-                                      setPreviewImage(item.image);
+                                      setPreviewImage(`http://localhost:8000${item.proof_of_expenses}`);
                                       setIsImageModalOpen(true);
                                     }}
                                   />
@@ -487,7 +518,13 @@ const Pengeluaran = () => {
                         >
                           Batal
                         </button>
-                        <button type="submit" className="cursor-pointer bg-white border border-green-500 text-green-500 px-5 py-1.5 rounded-md hover:bg-green-100">Simpan</button>
+                        <button
+                          type="button"
+                          onClick={isEditing ? handleUpdatePengeluaran : handleAddPengeluaran}
+                          className="cursor-pointer bg-white border border-green-500 text-green-500 px-5 py-1.5 rounded-md hover:bg-green-100"
+                        >
+                          Simpan
+                        </button>
                     </div>
                     </form>
                 </div>
@@ -499,4 +536,4 @@ const Pengeluaran = () => {
     </div>
 )};
 
-export default Pengeluaran;
+export default withAuth(Pengeluaran,['2']);
