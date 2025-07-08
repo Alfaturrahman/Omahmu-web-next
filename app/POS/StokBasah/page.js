@@ -158,29 +158,77 @@ function StokBasah() {
     }
   };
 
-  const handleEditStokBasah = (item) => {
-    setIsEditing(true);
-    setIsModalOpen(true);
-    setFormErrors({});
+  const handleUpdateStokBasah = async () => {
+    const errors = {};
+    const storeId = localStorage.getItem('store_id');
 
-    setFormData({
-      date: item.date || '',
-      location: item.location || '',
-      nameBuyer: item.nameBuyer || item.buyer || '',
-      image: item.image || null,
-    });
+    if (!formData.date) errors.date = "Tanggal wajib diisi";
+    if (!formData.location) errors.location = "Tempat pembelian wajib diisi";
+    if (!formData.nameBuyer) errors.nameBuyer = "Nama pembeli wajib diisi";
+    if (items.length === 0) errors.items = "Minimal 1 item harus ditambahkan";
 
-    // Jika ada gambar sebelumnya, tampilkan namanya di input
-    if (item.image && typeof item.image === 'string') {
-      setPaymentProof({ name: item.image.split('/').pop() }); // hanya nama file
-    } else {
-      setPaymentProof(null);
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('stock_entry_id', selectedDetail.stock_entry.stock_entry_id);
+      formDataToSend.append('date', formData.date);
+      formDataToSend.append('place', formData.location);
+      formDataToSend.append('officer', formData.nameBuyer);
+      formDataToSend.append('store_id', storeId);
+
+      // items di-stringify jadi JSON
+      formDataToSend.append('items', JSON.stringify(
+        items.map(item => ({
+          item_name: item.nama,
+          unit: item.unit,
+          unit_price: item.price,
+          quantity: item.amount,
+          sub_total: item.total
+        }))
+      ));
+
+      // cek apakah user upload gambar baru
+      if (formData.image && typeof formData.image !== 'string') {
+        // file baru
+        formDataToSend.append('proof_of_payment', formData.image);
+      } else if (formData.image && typeof formData.image === 'string') {
+        // URL lama
+        formDataToSend.append('proof_of_payment_url', formData.image);
+      }
+
+      console.log("formDataToSend", formDataToSend);
+
+      const response = await apiService.postData('/storeowner/update_stok_basah/', formDataToSend);
+
+      if (response.messagetype === "S") {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: 'Stok basah berhasil diupdate!',
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        setIsModalOpen(false);
+        setIsEditing(false);
+        setItems([]);
+        setFormData({
+          date: "",
+          location: "",
+          nameBuyer: "",
+          image: null,
+        });
+      } else {
+        Swal.fire('Error', response.message || 'Gagal update stok basah', 'error');
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Error', 'Terjadi kesalahan saat update stok basah', 'error');
     }
-
-    // Set ulang item belanja
-    setItems(item.items || []);
   };
-  
+
   const handleDeleteStokBasah = (id) => {
     Swal.fire({
       title: 'Yakin ingin menghapus data ini?',
@@ -250,6 +298,59 @@ function StokBasah() {
           console.error('Gagal ambil detail:', err);
       }
   };
+
+  const handleEditClick = async (item) => {
+    try {
+      const result = await apiService.getData(`/storeowner/detail_stok_basah/?stock_entry_id=${item.stock_entry_id}`);
+      const data = result.data?.stock_entry;
+      console.log('Detail stok (edit):', data);
+
+      if (data) {
+        // simpan ke selectedDetail agar handleUpdateStokBasah bisa ambil id
+        setSelectedDetail({ stock_entry: data });
+
+        // panggil handleEditStokBasah buat isi form & buka modal
+        handleEditStokBasah(data);
+      }
+    } catch (err) {
+      console.error('Gagal ambil detail untuk edit:', err);
+      Swal.fire('Error', 'Gagal mengambil detail stok', 'error');
+    }
+  };
+
+
+  const handleEditStokBasah = (item) => {
+    setIsEditing(true);
+    setIsModalOpen(true);
+    setFormErrors({});
+
+    setFormData({
+      date: item.date || '',
+      location: item.place || '',
+      nameBuyer: item.officer || '',
+      image: item.proof_of_payment || null,     // URL lama
+    });
+
+    // Tampilkan nama file lama kalau ada
+    if (item.proof_of_payment) {
+      setPaymentProof({ name: item.proof_of_payment.split('/').pop() });
+    } else {
+      setPaymentProof(null);
+    }
+
+    // Isi ulang items
+    setItems(
+      (item.items || []).map(i => ({
+        id: i.stock_item_id,
+        nama: i.item_name,
+        unit: i.unit,
+        price: i.unit_price,
+        amount: i.quantity,
+        total: i.sub_total
+      }))
+    );
+  };
+
   
   const filteredProducts = StokBasah.filter(item => {
     const matchCategory =
@@ -428,7 +529,7 @@ function StokBasah() {
                                     <button onClick={() => handleDetailClick(item)} className="text-black px-3 cursor-pointer">
                                       <Eye />
                                     </button>
-                                    <button onClick={() => handleEditStokBasah(item)} className="text-black cursor-pointer">
+                                    <button onClick={() => handleEditClick(item)} className="text-black cursor-pointer">
                                       <Edit />
                                     </button>
                                     <button onClick={() => handleDeleteStokBasah(item.stock_entry_id)} className="text-black px-3 cursor-pointer">
@@ -705,12 +806,12 @@ function StokBasah() {
                     >
                       Tutup
                     </button>
-                    <button
-                      onClick={handleAddStokBasah}
-                      className="border border-green-500 text-green-500 px-5 py-2 rounded-md font-medium hover:bg-green-100 hover:text-green-500 cursor-pointer"
-                    >
-                      Simpan
-                    </button>
+                   <button
+                    onClick={isEditing ? handleUpdateStokBasah : handleAddStokBasah}
+                    className="bg-green-500 text-white px-4 py-2 rounded-md"
+                  >
+                    Simpan
+                  </button>
                   </div>
                 </div>
               </div>
