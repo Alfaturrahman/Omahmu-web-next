@@ -204,13 +204,14 @@ function Pengeluaran() {
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'Ya, Hapus',
       cancelButtonText: 'Batal',
+      reverseButtons: true, // 👉 tukar posisi
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await apiService.deleteData(`/storeowner/delete_pengeluaran/?other_expenses_id=${other_expenses_id}`);
+          const response = await apiService.deleteData(`/storeowner/delete_pengeluaran/${other_expenses_id}/`);
 
           if (response.messagetype === "S") {
-            Swal.fire({ icon: 'success', title: 'Terhapus!', text: 'Pengeluaran berhasil dihapus', timer: 1500, showConfirmButton: false });
+            Swal.fire({ icon: 'success', title: 'Terhapus!', text: 'Pengeluaran berhasil dihapus', timer: 1500, showConfirmButton: true });
             listPengeluaran(); // refresh data
           } else {
             Swal.fire('Error', response.message || 'Gagal menghapus pengeluaran', 'error');
@@ -222,7 +223,6 @@ function Pengeluaran() {
       }
     });
   };
-
 
   // Data Dummy Tabel Utama
   const [Pengeluarans, setPengeluarans] = useState([
@@ -433,7 +433,7 @@ function Pengeluaran() {
                                     <Edit />
                                   </button>
                                   <button
-                                    onClick={() => handleDeletePengeluaran(item.id)}
+                                    onClick={() => handleDeletePengeluaran(item.other_expenses_id)}
                                     className="text-black cursor-pointer"
                                   >
                                     <Trash2 />
