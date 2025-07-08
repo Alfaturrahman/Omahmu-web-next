@@ -149,7 +149,7 @@ function StokBasah() {
           image: null,
         });
          // 🔄 refresh data
-          gotlistStokBasah();
+          listStokBasah();
         setIsModalOpen(false);
       } else {
         Swal.fire('Error', response.message || 'Gagal menambahkan stok basah', 'error');
@@ -335,7 +335,6 @@ function StokBasah() {
     }
   };
 
-
   const handleEditStokBasah = (item) => {
     setIsEditing(true);
     setIsModalOpen(true);
@@ -367,7 +366,6 @@ function StokBasah() {
       }))
     );
   };
-
   
   const filteredProducts = StokBasah.filter(item => {
     const matchCategory =

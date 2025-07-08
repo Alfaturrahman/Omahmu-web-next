@@ -149,6 +149,81 @@ function Pengeluaran() {
     }
   };
 
+  const handleUpdatePengeluaran = async () => {
+    const storeId = localStorage.getItem('store_id');
+    const errors = {};
+
+    if (!formData.date) errors.date = "Tanggal wajib diisi";
+    if (!formData.type) errors.type = "Jenis pengeluaran wajib diisi";
+    if (!formData.total) errors.total = "Total wajib diisi";
+    if (!formData.desc) errors.desc = "Deskripsi wajib diisi";
+
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('other_expenses_id', selectedEditId);
+      formDataToSend.append('store_id', storeId);
+      formDataToSend.append('date', formData.date);
+      formDataToSend.append('description', formData.desc);
+      formDataToSend.append('spending', formData.total);
+      formDataToSend.append('type_expenses', formData.type.toLowerCase());
+
+      if (formData.image && typeof formData.image !== 'string') {
+        formDataToSend.append('proof_of_expenses', formData.image); // file baru
+      } else if (formData.image && typeof formData.image === 'string') {
+        formDataToSend.append('proof_of_expenses_url', formData.image); // URL lama
+      }
+
+      const response = await apiService.postData('/storeowner/update_pengeluaran/', formDataToSend);
+
+      if (response.messagetype === "S") {
+        Swal.fire({ icon: 'success', title: 'Berhasil!', text: 'Pengeluaran berhasil diupdate', timer: 2000, showConfirmButton: false });
+        listPengeluaran(); // refresh data
+        setIsModalOpen(false);
+        setIsEditing(false);
+        setSelectedEditId(null);
+        setFormData({ date: "", type: "", total: "", desc: "", image: null });
+      } else {
+        Swal.fire('Error', response.message || 'Gagal update pengeluaran', 'error');
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Error', 'Terjadi kesalahan saat update pengeluaran', 'error');
+    }
+  };
+
+  const handleDeletePengeluaran = async (other_expenses_id) => {
+    Swal.fire({
+      title: 'Yakin ingin menghapus data ini?',
+      text: 'Data yang sudah dihapus tidak bisa dikembalikan!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Ya, Hapus',
+      cancelButtonText: 'Batal',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const response = await apiService.deleteData(`/storeowner/delete_pengeluaran/?other_expenses_id=${other_expenses_id}`);
+
+          if (response.messagetype === "S") {
+            Swal.fire({ icon: 'success', title: 'Terhapus!', text: 'Pengeluaran berhasil dihapus', timer: 1500, showConfirmButton: false });
+            listPengeluaran(); // refresh data
+          } else {
+            Swal.fire('Error', response.message || 'Gagal menghapus pengeluaran', 'error');
+          }
+        } catch (error) {
+          console.error(error);
+          Swal.fire('Error', 'Terjadi kesalahan saat menghapus pengeluaran', 'error');
+        }
+      }
+    });
+  };
+
+
   // Data Dummy Tabel Utama
   const [Pengeluarans, setPengeluarans] = useState([
     // {  id: "1",  date: "2025-05-05",  type: "Gaji", total: "Rp 400.000", desc: "Bayar Gaji Karyawan Bulan Juni", image: "https://kledo.com/blog/wp-content/uploads/2021/11/bukti-kas-keluar.jpg"},
@@ -157,21 +232,32 @@ function Pengeluaran() {
     // {  id: "4",  date: "2025-05-05",  type: "Sewa", total: "Rp 400.000", desc: "Bayar Tempat Sewa Bulan Juni", image: "https://4.bp.blogspot.com/-lp73DzGVCBo/WQ2XFYgU77I/AAAAAAAAB3k/ODySRAtEjmgfpiqw8AZuneE_GC94q5AXQCLcB/s1600/Bukti%2BKas%2BKeluar.jpg"},
   ]);
   
-  const handleEditPengeluaran = (item) => {
-    setIsEditing(true);
-    setIsModalOpen(true);
-    setFormErrors({});
-    setPaymentProof(null);
-    
-    setFormData({
-      date: item.date,
-      type: item.type,
-      total: item.total.replace(/[^\d]/g, ''),
-      desc: item.desc,
-      image: item.image,
-    });
+  const handleEditPengeluaran = async (id) => {
+    try {
 
-    setSelectedEditId(item.id);
+      const response = await apiService.getData(`/storeowner/data_edit_pengeluaran/?other_expenses_id=${id}`);
+
+      if (response.messagetype === "S") {
+        const data = response.data;
+        setFormData({
+          date: data.date,
+          type: data.type_expenses,
+          total: data.spending,
+          desc: data.description,
+          image: data.proof_of_expenses,  // ini url string
+        });
+        setSelectedEditId(data.other_expenses_id);
+        setIsEditing(true);
+        setIsModalOpen(true);
+        setFormErrors({});
+        setPaymentProof(null);
+      } else {
+        Swal.fire('Error', response.message || 'Gagal mengambil data pengeluaran', 'error');
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Error', 'Terjadi kesalahan saat mengambil data pengeluaran', 'error');
+    }
   };
 
   const formatDate = (date) => {
@@ -341,7 +427,7 @@ function Pengeluaran() {
 
                                 <td className="py-3 px-4 relative">
                                   <button
-                                    onClick={() => handleEditPengeluaran(item)}
+                                    onClick={() => handleEditPengeluaran(item.other_expenses_id)}
                                     className="text-black px-4 cursor-pointer"
                                   >
                                     <Edit />
@@ -447,11 +533,11 @@ function Pengeluaran() {
                             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                         >
                             <option value="">Pilih Jenis</option>
-                            <option value="Sewa Tempat">Sewa Tempat</option>
-                            <option value="Gaji">Gaji</option>
-                            <option value="Air">Air</option>
-                            <option value="Listrik">Listrik</option>
-                            <option value="Pengeluaran Lain">Pengeluaran Lain</option>
+                            <option value="sewa_tempat">Sewa Tempat</option>
+                            <option value="gaji">Gaji</option>
+                            <option value="air">Air</option>
+                            <option value="listrik">Listrik</option>
+                            <option value="pengeluaran_lain">Pengeluaran Lain</option>
                         </select>
                         {formErrors.type && <p className="text-red-500 text-xs mt-1">{formErrors.type}</p>}
 
@@ -491,7 +577,11 @@ function Pengeluaran() {
                         </label>
                         <label className="cursor-pointer text-gray-500 flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 w-full">
                         <span className="truncate max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl">
-                            {paymentProof ? paymentProof.name : "Upload File"}
+                          {paymentProof 
+                            ? paymentProof.name                   
+                            : (typeof formData.image === 'string' 
+                                ? formData.image.split('/').pop() 
+                                : "Upload File")}
                         </span>
                         <Upload className="w-5 h-5 text-gray-500 shrink-0" />
                         <input
