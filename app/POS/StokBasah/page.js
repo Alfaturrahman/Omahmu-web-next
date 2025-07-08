@@ -148,6 +148,8 @@ function StokBasah() {
           nameBuyer: "",
           image: null,
         });
+         // 🔄 refresh data
+          gotlistStokBasah();
         setIsModalOpen(false);
       } else {
         Swal.fire('Error', response.message || 'Gagal menambahkan stok basah', 'error');
@@ -220,6 +222,8 @@ function StokBasah() {
           nameBuyer: "",
           image: null,
         });
+         // 🔄 refresh data
+          listStokBasah();
       } else {
         Swal.fire('Error', response.message || 'Gagal update stok basah', 'error');
       }
@@ -229,7 +233,7 @@ function StokBasah() {
     }
   };
 
-  const handleDeleteStokBasah = (id) => {
+  const handleDeleteStokBasah = async (stock_entry_id) => {
     Swal.fire({
       title: 'Yakin ingin menghapus data ini?',
       text: 'Data yang sudah dihapus tidak bisa dikembalikan!',
@@ -239,21 +243,34 @@ function StokBasah() {
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'Ya, Hapus',
       cancelButtonText: 'Batal',
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        // Lakukan penghapusan data di sini
-        setProducts((prevProducts) => prevProducts.filter((item) => item.id !== id));
+        try {
+          const response = await apiService.deleteData(`/storeowner/delete_stok_basah/${stock_entry_id}/`);
 
-        Swal.fire({
-          title: 'Terhapus!',
-          text: 'Data berhasil dihapus.',
-          icon: 'success',
-          timer: 1500,
-          showConfirmButton: false,
-        });
+          if (response.messagetype === "S") {
+
+            Swal.fire({
+              title: 'Terhapus!',
+              text: 'Data berhasil dihapus.',
+              icon: 'success',
+              timer: 1500,
+              showConfirmButton: false,
+            });
+
+             // 🔄 refresh data
+          listStokBasah();
+          } else {
+            Swal.fire('Error', response.message || 'Gagal menghapus data', 'error');
+          }
+        } catch (error) {
+          console.error(error);
+          Swal.fire('Error', 'Terjadi kesalahan saat menghapus data', 'error');
+        }
       }
     });
   };
+
 
   // Modal Form Ke 2 (Tambah Items)
   const [formDataAddItem, setFormDataAddItem] = useState({
