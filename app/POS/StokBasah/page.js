@@ -96,8 +96,9 @@ function StokBasah() {
         detailStokBasah();
     }, []);
 
-  const handleAddStokBasah = () => {
+  const handleAddStokBasah = async () => {
     const errors = {};
+    const storeId = localStorage.getItem('store_id');
 
     if (!formData.date) errors.date = "Tanggal wajib diisi";
     if (!formData.location) errors.location = "Tempat pembelian wajib diisi";
@@ -108,35 +109,53 @@ function StokBasah() {
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
-    // Simulasi menambahkan ke list produk (bisa sesuaikan ke API kalau perlu)
-    const newProduct = {
-      id: Date.now().toString(),
-      date: formData.date,
-      location: formData.location,
-      buyer: formData.nameBuyer,
-      amount: items.length,
-      totalPrice: `Rp ${items.reduce((sum, item) => sum + parseInt(item.total || 0), 0).toLocaleString()}`,
-      image: formData.image,
-      items,
-    };
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("date", formData.date);
+      formDataToSend.append("place", formData.location);
+      formDataToSend.append("officer", formData.nameBuyer);
+      formDataToSend.append("store_id", storeId);
+      formDataToSend.append("proof_of_payment", formData.image); // file
 
-    setProducts([newProduct, ...products]);
-    setItems([]);
-    setFormData({
-      date: "",
-      location: "",
-      nameBuyer: "",
-      image: null,
-    });
+      // items harus dikirim sebagai JSON string karena form-data nggak support nested array
+      formDataToSend.append("items", JSON.stringify(
+        items.map(item => ({
+          item_name: item.nama,
+          unit: item.unit,
+          unit_price: item.price,
+          quantity: item.amount,
+          sub_total: item.total
+        }))
+      ));
 
-    Swal.fire({
-      icon: 'success',
-      title: 'Berhasil!',
-      text: 'Stok basah berhasil ditambahkan!',
-      timer: 2000,
-      showConfirmButton: false
-    });
-    setIsModalOpen(false);
+      console.log("Payload FormData:", formDataToSend);
+
+      const response = await apiService.postData(`/storeowner/insert_stok_basah/`, formDataToSend);
+
+      if (response.messagetype === "S") {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil!',
+          text: 'Stok basah berhasil ditambahkan!',
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        setItems([]);
+        setFormData({
+          date: "",
+          location: "",
+          nameBuyer: "",
+          image: null,
+        });
+        setIsModalOpen(false);
+      } else {
+        Swal.fire('Error', response.message || 'Gagal menambahkan stok basah', 'error');
+      }
+    } catch (error) {
+      console.error(error);
+      Swal.fire('Error', 'Terjadi kesalahan saat menambahkan stok basah', 'error');
+    }
   };
 
   const handleEditStokBasah = (item) => {
@@ -195,112 +214,30 @@ function StokBasah() {
     price: "",
     unit: "",
     total: "",
-    category: "",
   });
 
   const validateAddItemForm = () => {
     const errors = {};
     if (!formDataAddItem.nama) errors.nama = "Nama item wajib diisi";
-    if (!formDataAddItem.amount) errors.amount = "Jumlah wajib diisi";
-    if (!formDataAddItem.price) errors.price = "Harga wajib diisi";
+    if (!formDataAddItem.amount) {
+        errors.amount = "Jumlah wajib diisi";
+      } else if (isNaN(formDataAddItem.amount)) {
+        errors.amount = "Jumlah harus berupa angka";
+      }
+
+      if (!formDataAddItem.price) {
+        errors.price = "Harga wajib diisi";
+      } else if (isNaN(formDataAddItem.price)) {
+        errors.price = "Harga harus berupa angka";
+      }
     if (!formDataAddItem.unit) errors.unit = "Satuan wajib dipilih";
-    if (!formDataAddItem.category) errors.category = "Kategori wajib dipilih";
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  // // Data Dummy Tabel Utama
-  // const [products, setProducts] = useState([
-  //   { 
-  //     id: "1",  date: "2002-05-05",  location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse1.mm.bing.net/th/id/OIP.WOAlKi6OvCoYcewcp56hRwHaDt?pid=Api&P=0&h=180",
-  //     amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-  //     items: [
-  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-  //     ]
-  //   },
-  //   { 
-  //     id: "2", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan", 
-  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse4.mm.bing.net/th/id/OIP.Bs76q5DqwL9mGleqoxfx4AHaE8?pid=Api&P=0&h=180",
-  //     items: [
-  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-  //     ]
-  //   },
-  //   { 
-  //     id: "3", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku", 
-  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://tse4.mm.bing.net/th/id/OIP.oiD_1VjNfEXjtnUwll4j6AHaEw?pid=Api&P=0&h=180",
-  //     items: [
-  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-  //     ]
-  //   },
-  //   { 
-  //     id: "4", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan",
-  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-  //     items: [
-  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-  //     ]
-  //   },
-  //   { 
-  //     id: "5", date: "05/05/2002", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-  //     items: [
-  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-  //     ]
-  //   },
-  //   { 
-  //     id: "6", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-  //     items: [
-  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-  //     ]
-  //   },
-  //   { 
-  //     id: "7", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Peralatan",
-  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-  //     items: [
-  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-  //     ]
-  //   },
-  //   { 
-  //     id: "8", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-  //     items: [
-  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-  //     ]
-  //   },
-  //   { 
-  //     id: "9", date: "05/05/2005", amount: "2", totalPrice: "Rp 200.000", category: "Bahan Baku",
-  //     location: "Pasar Tradisional", nameBuyer: "Budi", image: "https://cdn.shopify.com/s/files/1/0696/4006/1208/files/struk_kasir_600x600.jpg?v=1692982209",
-  //     items: [
-  //       {nama: 'GAS LPG', amount: 1, unit: 'TABUNG', price: '20.000', total: '20.000', category: 'BAHAN BAKU' },
-  //       {nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU'},
-  //       { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-  //     ]
-  //   },
-  // ]);
-  
   // Data Dummy  Items (Di Modal Tambah Stok Basah)
-  const [items, setItems] = useState([
-    { nama: 'AYAM', amount: 2, unit: 'KG', price: '12.000', total: '24.000', category: 'BAHAN BAKU' },
-    { nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU' },
-    { nama: 'TELUR PUYUH', amount: 1, unit: 'PAPAN', price: '12.000', total: '12.000', category: 'BAHAN BAKU' },
-  ]);
+  const [items, setItems] = useState([]);
   
   const handleDetailClick = async (item) => {
       try {
@@ -628,7 +565,6 @@ function StokBasah() {
                             <th className="px-4 py-2 font-medium">SATUAN</th>
                             <th className="px-4 py-2 font-medium">HARGA/ITEM</th>
                             <th className="px-4 py-2 font-medium">TOTAL BELANJA</th>
-                            <th className="px-4 py-2 font-medium">KATEGORI</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -640,7 +576,6 @@ function StokBasah() {
                               <td className="px-4 py-2">{item.unit}</td>
                               <td className="px-4 py-2">RP {item.price}</td>
                               <td className="px-4 py-2">RP {item.total}</td>
-                              <td className="px-4 py-2">{item.category}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -720,20 +655,6 @@ function StokBasah() {
                               />
                               {formErrors.total && <p className="text-red-500 text-sm mt-1">{formErrors.total}</p>}
                             </div>
-                            <div>
-                              <label className="text-black text-sm font-medium">KATEGORI</label>
-                              <select
-                                className="w-full border text-gray-500 border-gray-500 px-3 py-2 rounded-md"
-                                value={formDataAddItem.category}
-                                onChange={(e) => setFormDataAddItem({ ...formDataAddItem, category: e.target.value })}
-                              >
-                                <option value="">Pilih Salah Satu</option>
-                                <option value="sayur">Sayur</option>
-                                <option value="daging">Daging</option>
-                                <option value="ikan">Ikan</option>
-                              </select>
-                              {formErrors.category && <p className="text-red-500 text-sm mt-1">{formErrors.category}</p>}
-                            </div>
                             <div className="flex justify-between pt-4">
                               <button
                                 onClick={() => {
@@ -749,14 +670,18 @@ function StokBasah() {
                                   if (validateAddItemForm()) {
                                     console.log(formDataAddItem);
                                     toast.success('Item berhasil ditambahkan');
+                                    setItems(prev => [...prev, {
+                                      ...formDataAddItem,
+                                      total: Number(formDataAddItem.amount) * Number(formDataAddItem.price)
+                                    }]);
                                     setIsModalOpenAddItem(false);
                                     setFormDataAddItem({
-                                      name: "",
-                                      qty: "",
+                                      nama: "",
+                                      amount: "",
                                       price: "",
                                       unit: "",
-                                      total: "",
                                       category: "",
+                                      total: "",
                                     });
                                     setFormErrors({});
                                   }
@@ -822,11 +747,11 @@ function StokBasah() {
                     <div>
                       <label className="block text-sm font-semibold text-black mb-1">Bukti Pembayaran</label>
                       <img
-                        src={selectedDetail.stock_entry.proof_of_payment}
+                        src={`http://localhost:8000${selectedDetail.stock_entry.proof_of_payment}`}
                         alt="Bukti Transaksi"
                         className="w-32 h-32 object-cover rounded-md border cursor-pointer hover:scale-105 transition"
                         onClick={() => {
-                          setPreviewImage(selectedDetail.stock_entry.proof_of_payment);
+                          setPreviewImage(`http://localhost:8000${selectedDetail.stock_entry.proof_of_payment}`);
                           setIsImageModalOpen(true);
                         }}
                       />
