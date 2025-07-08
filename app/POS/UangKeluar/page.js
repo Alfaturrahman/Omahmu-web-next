@@ -6,10 +6,14 @@ import { format } from 'date-fns';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import '@/globals.css';
+import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
+import Image from 'next/image';
+import withAuth from 'hoc/withAuth';
+import * as apiService from 'services/authService';
+// import { jwtDecode } from "jwt-decode";
 
-export default function Home() {
+function Home() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [search, setSearch] = useState("");
@@ -25,37 +29,35 @@ export default function Home() {
     const [selectedCategory, setSelectedCategory] = useState("");
     const [selectedSubCategory, setSelectedSubCategory] = useState("");
     
-    const data = [
-        {
-            date: "20/06/2024",
-            type: "Stok Basah",
-            expenses: "Rp 140.000",
-            nameBuyer: "Budi",
-            location: "Pasar Botania 2",
-            image: "/transaksi.png",
-            items: [
-            { name: "Ayam", qty: "1 ekor", unit: "kg", price: "Rp 14.500", total: "Rp 14.500", category: "Bahan Baku" },
-            { name: "Tomat", qty: "2 kg", unit: "kg", price: "Rp 10.000", total: "Rp 20.000", category: "Bahan Baku" },
-            { name: "Wajan", qty: "1 pcs", unit: "pcs", price: "Rp 50.000", total: "Rp 50.000", category: "Peralatan" },
-            ],
-        },
-        {
-            date: "2024-06-21",
-            type: "Gaji",
-            desc: "Main Main Saja ooo...",
-            expenses: "Rp 200.000",
-            image: "https://kledo.com/blog/wp-content/uploads/2021/11/bukti-kas-keluar.jpg",
-        },
-        {
-            date: "2024-06-21",
-            type: "Air",
-            desc: "Main Main ooo...",
-            expenses: "Rp 200.000",
-            image: "https://kledo.com/blog/wp-content/uploads/2021/11/bukti-kas-keluar.jpg",
-        },
-    ];
+    const [data, setData] = useState([]);
 
-    const filteredData = data.filter(item => {
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const storeId = localStorage.getItem('store_id');
+                const res = await apiService.getData(`/storeowner/laporan_uang_keluar/?store_id=${storeId}`);
+                if (res.messagetype === "S") {
+                    setData(res.data);
+                } else {
+                    console.error(res.message);
+                }
+            } catch (err) {
+                console.error("Error fetching data", err);
+            }
+        };
+
+        fetchData();
+    }, []);
+
+    const transformedData = data.map(item => ({
+        date: item.date,
+        type: item.kategori,
+        expenses: `Rp ${item.total_pengeluaran.toLocaleString()}`,
+        source: item.source,
+        id: item.id
+    }));
+
+    const filteredData = transformedData.filter(item => {
         const matchDate = filterDate
             ? item.date === format(filterDate, "dd/MM/yyyy")
             : true;
@@ -80,9 +82,52 @@ export default function Home() {
         setCurrentPage(1);
     };
 
-    const openModal = (transaction) => {
-        setSelectedTransaction(transaction);
+   const openModal = async (transaction) => {
+    try {
+        let detail = null;
+
+        if (transaction.source === 'stock_entry') {
+        const res = await apiService.getData(`/storeowner/detail_pengeluaran/?source=stock_entry&id=${transaction.id}`);
+        if (res.messagetype === "S") {
+            const header = res.data.header;
+            const items = res.data.items || [];
+
+            detail = {
+            type: 'Stok Basah', // <<== tambahkan
+            date: header.date,
+            location: header.place,
+            nameBuyer: header.officer,
+            image: header.proof_of_payment,
+            items: items.map(item => ({
+                name: item.item_name,
+                qty: item.quantity,
+                unit: item.unit,
+                price: "Rp " + parseInt(item.unit_price).toLocaleString("id-ID"),
+                total: "Rp " + parseInt(item.sub_total).toLocaleString("id-ID"),
+            }))
+            };
+        }
+        } else if (transaction.source === 'other_expenses') {
+        const res = await apiService.getData(`/storeowner/detail_pengeluaran/?source=other_expenses&id=${transaction.id}`);
+        if (res.messagetype === "S") {
+            detail = {
+            type: res.data.type_expenses || 'Pengeluaran Lainnya',  // <<== simpan type_expenses asli
+            date: res.data.date,
+            desc: res.data.description,
+            expenses: "Rp " + parseInt(res.data.spending).toLocaleString("id-ID"),
+            image: res.data.proof_of_expenses
+            };
+        }
+        }
+
+        setSelectedTransaction({
+        ...transaction,
+        ...detail
+        });
         setIsModalOpen(true);
+    } catch (err) {
+        console.error("Error fetching detail", err);
+    }
     };
 
     const closeModal = () => {
@@ -305,11 +350,12 @@ export default function Home() {
                                         <div className="flex flex-col justify-center items-start">
                                             <span className="text-sm text-gray-500 font-medium mb-2">Bukti Nota Belanja</span>
                                             <img
-                                            src={selectedTransaction.image}
+                                            src={`http://localhost:8000${selectedTransaction.image}`}
+
                                             alt="Bukti Transaksi"
                                             className="w-32 h-32 object-cover rounded-md border cursor-pointer hover:scale-105 transition"
                                             onClick={() => {
-                                                setPreviewImage(selectedTransaction.image);
+                                                setPreviewImage(`http://localhost:8000${selectedTransaction.image}`);
                                                 setIsImageModalOpen(true);
                                             }}
                                             />
@@ -411,11 +457,11 @@ export default function Home() {
                                             <div>
                                                 <label className="block text-sm font-semibold text-black mb-1">Upload Bukti Pengeluaran</label>
                                                 <img
-                                                    src={selectedTransaction.image || '/transaksi.png'}
+                                                    src={`http://localhost:8000${selectedTransaction.image}`}
                                                     alt="Bukti Transaksi"
                                                     className="w-32 h-32 object-cover rounded-md border cursor-pointer hover:scale-105 transition"
                                                     onClick={() => {
-                                                        setPreviewImage(selectedTransaction.image);
+                                                        setPreviewImage(`http://localhost:8000${selectedTransaction.image}`);
                                                         setIsImageModalOpen(true);
                                                     }}
                                                 />
@@ -500,3 +546,5 @@ function StatCard({ title, value }) {
         </div>
     );
 }
+
+export default withAuth(Home,['2']);

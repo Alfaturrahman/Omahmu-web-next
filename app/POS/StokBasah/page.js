@@ -45,7 +45,6 @@ function StokBasah() {
     try {
       const storeId = localStorage.getItem('store_id');
       const result = await apiService.getData(`/storeowner/list_stok_basah/?store_id=${storeId}`);
-      console.log("WALAWE", result.data);
 
       // Group per stock_entry_id
       const grouped = {};
