@@ -3,25 +3,10 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
+import '@/globals.css';
 import { X, Clock } from 'lucide-react';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
-import Swal from 'sweetalert2';
-import '@/globals.css';
-
-export default function Kasir() {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null);
-    const [filter, setFilter] = useState('Semua');
-
-    const toggleSidebar = () => {
-        if (window.innerWidth < 1024) {
-        setIsSidebarOpen(!isSidebarOpen);
-        } else {
-        setIsCollapsed(!isCollapsed);
-        }
-    };
 
 const sampleOrders = [
   {
@@ -207,15 +192,9 @@ function Log() {
                 <div className="text-right flex flex-col gap-3">
                   <p
                     className={`text-sm font-semibold ${
-                      order.status === 'Pending'
-                        ? 'text-yellow-500'
-                        : order.status === 'Sedang Dibuat'
-                        ? 'text-blue-700'
-                        : order.status === 'Selesai'
-                        ? 'text-green-500'
-                        : order.status === 'Ditolak'
-                        ? 'text-red-500'
-                        : 'text-gray-500'
+                      order.status === 'Selesai'
+                        ? 'text-[#8BED52]'
+                        : 'text-[#E8EB2A]'
                     }`}
                   >
                     {order.status}
@@ -223,7 +202,7 @@ function Log() {
                   <p className="text-sm text-black">{order.items} Items</p>
                   <p className="text-sm text-black font-semibold">
                     Total Pembelian :{' '}
-                    <strong>Rp {order.total.toLocaleString('id-ID')}</strong>
+                    <strong>Rp {order.total.toLocaleString('id-ID')},00</strong>
                   </p>
                   <p className="text-sm text-gray-500">Lihat semua &gt;</p>
                 </div>
@@ -345,17 +324,6 @@ function Log() {
                       ,00
                     </p>
                   </div>
-
-                  {selectedOrder.status === 'Pending' && (
-                    <div className="flex justify-end">
-                      <button
-                        onClick={() => handleCancelOrder(selectedOrder.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm"
-                      >
-                        Batalkan Pesanan
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

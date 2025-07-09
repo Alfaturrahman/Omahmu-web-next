@@ -48,6 +48,11 @@ function Kasir() {
         orderDate: getTodayDate(),
     });
     
+    useEffect(() => {
+    const today = new Date();
+    const formatted = today.toISOString().split('T')[0]; // hasil: '2025-07-06'
+    setOrderDate(formatted);
+    }, []);
 
      const token = localStorage.getItem("token");
       const store_id = localStorage.getItem("store_id");
@@ -460,7 +465,7 @@ function Kasir() {
                                     min={new Date().toISOString().split('T')[0]} // hanya bisa pilih dari hari ini ke depan
                                     onChange={(e) => setOrderDate(e.target.value)}
                                     className="bg-transparent border-none text-black font-semibold text-sm focus:outline-none text-right"
-                                    />
+                                />
                             </div>
                         </div>
 
