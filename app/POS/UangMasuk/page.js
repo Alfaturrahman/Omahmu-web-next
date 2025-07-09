@@ -37,6 +37,7 @@ function Laporan() {
                 const result = await apiService.getData(`/storeowner/laporan_keutungan/?store_id=${storeId}`);
                 setLaporan(result.data.map(item => ({
                     name: item.product_name,
+                    date: item.order_date,
                     category: item.product_type,
                     price: `RP ${parseInt(item.capital_price).toLocaleString('id-ID')},00`,
                     sellingPrice: `RP ${parseInt(item.selling_price).toLocaleString('id-ID')},00`,

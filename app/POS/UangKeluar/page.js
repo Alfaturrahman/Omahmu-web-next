@@ -49,9 +49,14 @@ function Home() {
         fetchData();
     }, []);
 
+    function capitalize(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
     const transformedData = data.map(item => ({
         date: item.date,
-        type: item.kategori,
+        type: capitalize(item.kategori),
         expenses: `Rp ${item.total_pengeluaran.toLocaleString()}`,
         source: item.source,
         id: item.id
