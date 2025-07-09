@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import Image from 'next/image';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
-// import { jwtDecode } from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 function Home() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);

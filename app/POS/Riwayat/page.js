@@ -47,59 +47,40 @@ function Riwayat() {
         }
     };
 
-    const dineInData = [
-        {
-        orderCode: '15032023',
-        customerName: 'Alfaturriski',
-        orderDate: '10 MARET 2023',
-        orderStatus: 'Selesai',
-        transactionStatus: 'Cash',
-        orderType: 'DINE IN',
-        },
-        {
-        orderCode: '16022023',
-        customerName: 'Eka Fitri Anisa',
-        orderDate: '18 JANUARI 2023',
-        orderStatus: 'Selesai',
-        transactionStatus: 'TF',
-        orderType: 'DINE IN',
-        },
-        {
-        orderCode: '18032023',
-        customerName: 'Bustanul Ariffin',
-        orderDate: '11 MARET 2023',
-        orderStatus: 'Proses',
-        transactionStatus: 'Qris',
-        orderType: 'DINE IN',
-        },
-        ...Array.from({ length: 17 }, (_, i) => ({
-        orderCode: `OC${i + 4}`,
-        customerName: `Customer ${i + 4}`,
-        orderDate: '11 MARET 2023',
-        orderStatus: i % 2 === 0 ? 'Selesai' : 'Proses',
-        transactionStatus: ['Cash', 'Qris', 'TF'][i % 3],
-        orderType: ['DINE IN', 'ONLINE'][i % 2],
-        })),
-    ];
+    async function fetchData() {
+        try {
+            const result = await apiService.getData('/storeowner/riwayat_pesanan/');
+            setRiwayatDineIn(result.data.riwayat_pesanan_ditempat); // menyimpan data dine-in
+            setRiwayatOnline(result.data.riwayat_pesanan_online); // menyimpan data online
+        } catch (err) {
+            console.error(err.message);
+        }
+    }
+    
+    // Fungsi untuk mengambil data detail pesanan
+    async function fetchDetailData(pesananId) {
+        try {
+            const result = await apiService.getData(`/storeowner/riwayat_detail_pesanan/?order_id=${pesananId}`);
+            
+            const detail = result.data[0].get_order_json;
 
-    const onlineData = [
-        {
-        orderCode: '16022023',
-        customerName: 'Eka Fitri Anisa',
-        orderDate: '18 JANUARI 2023',
-        orderStatus: 'Selesai',
-        transactionStatus: 'TF',
-        orderType: 'ONLINE',
-        },
-        ...Array.from({ length: 17 }, (_, i) => ({
-        orderCode: `OC${i + 4}`,
-        customerName: `Customer ${i + 4}`,
-        orderDate: '11 MARET 2023',
-        orderStatus: i % 2 === 0 ? 'Selesai' : 'Proses',
-        transactionStatus: ['Cash', 'Qris', 'TF'][i % 3],
-        orderType: ['DINE IN', 'ONLINE'][i % 2],
-        })),
-    ];
+            // Jaga-jaga jika items null, fallback jadi array kosong
+            detail.items = detail.items || [];
+
+            setDetailPesanan(detail);
+            setShowModal(true);
+
+        } catch (err) {
+            console.error("Terjadi kesalahan:", err.message);
+        }
+    }
+
+    useEffect(() => {
+        fetchData();
+        if (selectedPesananId) {
+            fetchDetailData(selectedPesananId);  // Panggil fetchDetailData saat ID pesanan berubah
+        }
+      }, [selectedPesananId]);
 
     const handleTabClick = (tab) => {
         setActiveTab(tab);
@@ -107,7 +88,7 @@ function Riwayat() {
     };
 
     const getData = () => {
-        return activeTab === 'dinein' ? dineInData : onlineData;
+        return activeTab === 'dinein' ? riwayatDineIn : riwayatOnline;
     };
 
     const handleTerimaOrder = () => {
@@ -206,16 +187,6 @@ function Riwayat() {
         setFilterDate('');
         setFilterOrderStatus('');
         setFilterTransactionStatus('');
-    };
-
-    const handleOpenModal = (order) => {
-        setSelectedOrder(order);
-        setShowModal(true);
-    };
-
-    const handleCloseModal = () => {
-        setShowModal(false);
-        setSelectedOrder(null);
     };
 
     useEffect(() => {
@@ -492,7 +463,6 @@ function Riwayat() {
                                     <p>Total</p>
                                     <p>Rp {Number(detailPesanan.total_amount).toLocaleString("id-ID")}</p>
                                 </div>
-                            )}
                             </div>
                         </div>
                     )}
