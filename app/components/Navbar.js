@@ -1,24 +1,25 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { Menu, Bell, User, LogOut, Lock, Moon, Sun, PackageCheck, AlertTriangle  } from "lucide-react";
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, Bell, User, LogOut, Lock, Moon, Sun, PackageCheck, AlertTriangle } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import * as apiService from 'services/authService';
+// import { toast } from 'your-toast-lib'; // kalau pakai toast
 
 const Header = ({ toggleSidebar }) => {
-  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter()
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role_id');
-    router.push('/Login');
-  };
-  const token = localStorage.getItem("token");
-  const store_id = localStorage.getItem("store_id");
+  const router = useRouter();
+  
+  const [isOpen, setIsOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [toggle, setToggle] = useState(false);  // store open/close
+  const [activeTab, setActiveTab] = useState("order");
+  const [notifications, setNotifications] = useState([]);
+  const [filteredNotifications, setFilteredNotifications] = useState([]);
 
+  const token = localStorage.getItem("token");
+  const storeId = localStorage.getItem("store_id");
 
   let userEmail = "";
   let userRole = "";
@@ -26,70 +27,69 @@ const Header = ({ toggleSidebar }) => {
 
   if (token) {
     const decoded = jwtDecode(token);
-
     userEmail = decoded.email;
     userRole = decoded.role_name;
     userRoleId = decoded.role_id;
-
   }
-  const [toggle, setToggle] = useState(false);
-  const storeId = store_id; 
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("order");
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
   const notifRef = useRef(null);
+  const dropdownRef = useRef(null);
 
-  const notifications = {
-    order: [
-      {
-        type: "order",
-        code: "ORD123456",
-        items: 3,
-        date: "03 Mei 2025",
-        status: "Baru",
-      },
-      {
-        type: "order",
-        code: "ORD654321",
-        items: 1,
-        date: "02 Mei 2025",
-        status: "Diproses",
-      },
-    ],
-    stock: [
-      {
-        type: "stock",
-        product: "Tinta Printer Canon",
-        remaining: 2,
-      },
-      {
-        type: "stock",
-        product: "Kertas A4 70gr",
-        remaining: 0,
-      },
-    ],
-  };
-  
-  const filteredNotifications = notifications[activeTab] || [];
+  // 🔔 Fetch Notifications
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const result = await apiService.getData('/superadmin/get_notifications/');
+        if (result.status_code === 200) {
+          setNotifications(result.data);
+          const filtered = result.data.filter(n => n.type === activeTab);
+          setFilteredNotifications(filtered);
+        } else if (result.status_code === 401) {
+          handleLogout(); // token invalid
+        }
+      } catch (error) {
+        console.error("Gagal fetch notifikasi:", error);
+      }
+    };
 
-  const handleToggleStore = async () => {
+    if (isNotifOpen) {
+      fetchNotifications();
+    }
+  }, [activeTab, isNotifOpen]);
+
+  // ✅ Mark notification as read
+  const handleMarkAsRead = async (notifId) => {
     try {
-      const newStatus = !toggle;
-      await apiService.putData(
-        `/storeowner/update_open_status/?store_id=${storeId}&is_open=${newStatus}`
+      await apiService.patchData(`/superadmin/mark_notification_read/${notifId}`);
+      setNotifications(prev =>
+        prev.map(n => (n.id === notifId ? { ...n, is_read: true } : n))
       );
-      setToggle(newStatus);
-      toast.success(`Toko berhasil ${newStatus ? 'dibuka' : 'ditutup'}`);
     } catch (error) {
-      toast.error("Gagal memperbarui status toko");
-      console.error(error);
+      console.error("Gagal menandai notif:", error);
     }
   };
 
+  // 🏪 Toggle store open/close
+  const handleToggleStore = async () => {
+    try {
+      const newStatus = !toggle;
+      await apiService.putData(`/storeowner/update_open_status/?store_id=${storeId}&is_open=${newStatus}`);
+      setToggle(newStatus);
+      // toast.success(`Toko berhasil ${newStatus ? 'dibuka' : 'ditutup'}`);
+    } catch (error) {
+      console.error("Gagal memperbarui status toko:", error);
+      // toast.error("Gagal memperbarui status toko");
+    }
+  };
+
+  // 🏪 Fetch store status saat load
   useEffect(() => {
     const fetchStoreStatus = async () => {
       try {
         const result = await apiService.getData(`/storeowner/profile/${storeId}/`);
-        setToggle(result.data.is_open);
+        setToggle(result?.data?.is_open);
       } catch (error) {
         console.error("Gagal ambil status toko:", error);
       }
@@ -97,19 +97,35 @@ const Header = ({ toggleSidebar }) => {
     fetchStoreStatus();
   }, [storeId]);
 
+  // 📌 Tutup dropdown saat klik luar
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
         setIsNotifOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // 🚪 Logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role_id');
+    router.push('/Login');
+  };
+
+  // 📄 Dynamic page title
   const getPageTitle = (path) => {
     const pageTitles = {
       "/POS/Dashboard": "Dashboard",
@@ -133,21 +149,6 @@ const Header = ({ toggleSidebar }) => {
     return pageTitles[path] || "Halaman Tidak Diketahui";
   };
 
-  const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   return (
     <header className="flex justify-between items-center px-6 py-3 bg-[#fdf6ed] shadow-md">
       <div className="flex items-center space-x-2 cursor-pointer" onClick={toggleSidebar}>
@@ -164,9 +165,11 @@ const Header = ({ toggleSidebar }) => {
           <div className="relative" ref={notifRef}>
             <button onClick={() => setIsNotifOpen(!isNotifOpen)} className="relative">
               <Bell className="text-black cursor-pointer w-6 h-6" />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold min-w-[13px] min-h-[13px] flex items-center justify-center rounded-full">
-                {notifications.length}
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold min-w-[13px] min-h-[13px] flex items-center justify-center rounded-full">
+                  {unreadCount}
+                </span>
+              )}
             </button>
 
             {isNotifOpen && (
@@ -198,40 +201,34 @@ const Header = ({ toggleSidebar }) => {
                 {/* Tab Content */}
                 <ul className="max-h-64 overflow-y-auto divide-y divide-gray-100">
                   {filteredNotifications.length > 0 ? (
-                    filteredNotifications.map((notif, idx) => (
+                    filteredNotifications.map((notif) => (
                       <li
-                        key={idx}
-                        className="px-4 py-3 text-sm text-gray-800 hover:bg-gray-50 transition"
+                        key={notif.id}
+                        onClick={() => handleMarkAsRead(notif.id)}
+                        className={`px-4 py-3 text-sm hover:bg-gray-50 transition cursor-pointer ${
+                          !notif.is_read ? "font-semibold" : "text-gray-800"
+                        }`}
                       >
                         {notif.type === "order" ? (
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 text-orange-600">
                               <PackageCheck className="w-4 h-4" />
-                              <span className="font-medium">Pesanan Baru</span>
+                              <span className="font-medium">{notif.title}</span>
                             </div>
-                            <div className="text-xs text-gray-600">Kode: {notif.code}</div>
-                            <div className="text-xs text-gray-600">
-                              {notif.items} item • {notif.date}
-                            </div>
-                            <div className="text-xs text-green-600 font-medium">
-                              Status: {notif.status}
+                            <div className="text-xs text-gray-600">{notif.message}</div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(notif.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
                             </div>
                           </div>
                         ) : (
                           <div className="space-y-1">
                             <div className="flex items-center gap-2 text-red-600">
                               <AlertTriangle className="w-4 h-4" />
-                              <span className="font-medium">
-                                {notif.remaining === 0 ? "Stok Habis" : "Stok Menipis"}
-                              </span>
+                              <span className="font-medium">{notif.title}</span>
                             </div>
-                            <div className="text-xs text-gray-600">{notif.product}</div>
-                            <div
-                              className={`text-xs font-semibold ${
-                                notif.remaining === 0 ? "text-red-500" : "text-yellow-500"
-                              }`}
-                            >
-                              Sisa: {notif.remaining} unit
+                            <div className="text-xs text-gray-600">{notif.message}</div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(notif.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
                             </div>
                           </div>
                         )}
@@ -244,7 +241,6 @@ const Header = ({ toggleSidebar }) => {
               </div>
             )}
           </div>
-
           {/* Toggle Switch */}
           {(userRoleId === 2) && (
             <label className="relative inline-flex items-center cursor-pointer">
