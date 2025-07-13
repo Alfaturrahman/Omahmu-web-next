@@ -185,7 +185,7 @@ function Kasir() {
                 return;
             }
     
-            const response = await apiService.postData(`/storeowner/insert_order/?store_id=${storeId}`, payload);
+            const response = await apiService.postData(`/customer/insert_order/?store_id=${storeId}`, payload);
     
             Swal.fire({
                 icon: "success",
