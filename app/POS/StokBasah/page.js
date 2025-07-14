@@ -515,7 +515,7 @@ function StokBasah() {
                                   {['NO', 'NAMA PEMBELI', 'TANGGAL', 'JUMLAH ITEM', 'TOTAL BELANJA', 'AKSI'].map((header, index) => (
                                       <th key={index} className="py-3 px-4 relative">
                                         {header}
-                                        {index !== 5 && (
+                                        {index !== 6 && (
                                             <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                         )}
                                     </th>
@@ -524,7 +524,7 @@ function StokBasah() {
                           </thead>
                           <tbody>
                               {displayedData.map((item, index) => (
-                                <tr key={index} className="...">
+                                <tr key={index} className="text-black text-center justify-center ">
                                   {[
                                     index + 1 + (currentPage - 1) * itemsPerPage,
                                     item.nameBuyer,
@@ -534,7 +534,7 @@ function StokBasah() {
                                   ].map((value, idx) => (
                                     <td key={idx} className="py-3 px-4 relative">
                                       {value}
-                                      {idx !== 4 && ( // hanya tambahkan garis kalau bukan kolom terakhir
+                                      {idx !== 6 && ( // hanya tambahkan garis kalau bukan kolom terakhir
                                         <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                       )}
                                     </td>

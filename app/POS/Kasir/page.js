@@ -10,7 +10,7 @@ import '@/globals.css';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
 import { jwtDecode } from "jwt-decode";
-
+import axios from 'axios';
 
 function Kasir() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -20,6 +20,8 @@ function Kasir() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [selected, setSelected] = useState(null);
     const [showQrisModal, setShowQrisModal] = useState(false);
+    const [qrPaymentUrl, setQrPaymentUrl] = useState("");
+    const [paymentExpiredAt, setPaymentExpiredAt] = useState(null);
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
     const [showBayarNantiModal, setShowBayarNantiModal] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -34,6 +36,30 @@ function Kasir() {
     const [phoneNumber, setPhoneNumber] = useState("");
     const [deliveryAddress, setDeliveryAddress] = useState("");
     const [remarks, setRemarks] = useState("");
+    const [countdown, setCountdown] = useState(60); // timer mundur 60 detik
+    const [orderId, setOrderId] = useState(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+     useEffect(() => {
+        let timerInterval;
+        if (showQrisModal) {
+        setCountdown(300); // reset timer ke 60 detik setiap buka modal
+
+        timerInterval = setInterval(() => {
+            setCountdown((prev) => {
+            if (prev <= 1) {
+                clearInterval(timerInterval); // berhenti kalau sudah 0
+                setShowQrisModal(false);     // auto tutup modal
+                return 0;
+            }
+            return prev - 1;
+            });
+        }, 1000); // setiap 1 detik
+        }
+
+        // Cleanup kalau modal ditutup manual
+        return () => clearInterval(timerInterval);
+    }, [showQrisModal]);
 
     const token = localStorage.getItem("token");
     let userEmail = "";
@@ -172,9 +198,159 @@ function Kasir() {
         }
     };
 
-    
-    const handleBayarQRIS = () => {
-        insertOrder();
+    useEffect(() => {
+        let interval;
+
+        if (showQrisModal && orderId) {
+            interval = setInterval(async () => {
+                try {
+                    const token = localStorage.getItem('token');
+                    const res = await axios.get(
+                        `http://127.0.0.1:8000/api/storeowner/check_payment_status/?order_id=${orderId}`,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+
+                    const status = res?.data?.data?.status;
+                    console.log('Cek status pembayaran:', status);
+
+                    if (res?.data?.data?.status === 'in_progress') {
+                        clearInterval(interval);
+                        setShowQrisModal(false);
+                        closeCart();
+
+                        // Tampilkan modal cantik pakai Swal
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Pembayaran Berhasil!',
+                            text: 'Pesanan kamu sudah dibuat dan pembayaran berhasil.',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#ECA641'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Gagal cek status pembayaran', error);
+                }
+            }, 5000); // cek tiap 5 detik
+        }
+
+        return () => clearInterval(interval);
+    }, [showQrisModal, orderId]);
+
+
+    const handleBayarQRIS = async () => {
+        try {
+            const storeId = localStorage.getItem('store_id');
+            const paymentMethodForDb = paymentMethodMap[selected];
+
+            if (!storeId) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Store ID tidak ditemukan",
+                    text: "Silakan login ulang.",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+                return;
+            }
+
+            // 1️⃣ Insert order ke backend pakai helper
+            const payload = {
+                customer_name: customerName,
+                date: orderDate,
+                total_amount: total,
+                order_status: "in_progress",
+                payment_method: paymentMethodForDb,
+                is_pre_order: false,
+                is_delivered: false,
+                is_dine_in: true,
+                remarks,
+                pickup_date: null,
+                pickup_time: null,
+                role_id: userRoleId,
+                reference_id: storeId,
+                no_hp: phoneNumber || null,
+                delivery_address: deliveryAddress,
+                order_items: cart.map(item => ({
+                    product_id: item.product_id,
+                    selling_price: item.selling_price,
+                    product_type: item.product_type,
+                    item: item.quantity,
+                })),
+            };
+
+            console.log("Payload insert_order:", payload);
+
+            const orderResponse = await apiService.postData(`/storeowner/insert_order/?store_id=${storeId}`, payload);
+            console.log('orderResponse:', orderResponse);
+
+            const orderData = orderResponse?.data;
+            const orderId = orderData?.order_id;
+
+            if (!orderId) {
+                throw new Error("order_id tidak diterima dari backend");
+            }
+
+            setOrderId(orderId);  // ✅ simpan ke state supaya useEffect bisa pakai
+
+            console.log('Order berhasil dibuat, order_id:', orderId);
+
+            // 2️⃣ Create transaksi di Tripay pakai axios langsung
+            const getToken = () => localStorage.getItem('token');
+
+            const token = getToken(); // ambil token untuk header Authorization
+
+            const tripayRes = await axios.post(
+                'https://5dbb88ef35ab.ngrok-free.app/api/storeowner/create_tripay_transaction/',
+                {
+                    order_id: orderId,
+                    payment_method: "QRIS"
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    }
+                }
+            );
+
+            console.log('tripayRes:', tripayRes);
+
+            const tripayData = tripayRes.data;
+
+            if (tripayData?.data?.payment_url) {
+                setQrPaymentUrl(tripayData.data.qr_url);
+                setPaymentExpiredAt(tripayData.data.expired_at);
+                setShowQrisModal(true);
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal Membuat Transaksi Tripay",
+                    text: tripayData?.message || "Terjadi kesalahan",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+            }
+
+            // Reset form setelah sukses
+            setCustomerName("");
+            setOrderDate("");
+            setPhoneNumber("");
+            setDeliveryAddress("");
+            setRemarks("");
+            setSelected(null);
+            fetchDataAntrian();
+            fetchDataMenu();
+
+        } catch (err) {
+            console.error('Error:', err);
+            Swal.fire({
+                icon: "error",
+                title: "Gagal Membuat Pesanan / Transaksi",
+                text: err?.response?.data?.message || err.message || 'Terjadi kesalahan',
+                confirmButtonText: "OK",
+                confirmButtonColor: "#ECA641",
+            });
+        }
     };
 
    const handleDetail = async (order) => {
@@ -405,6 +581,7 @@ const handleSaveEdit = async () => {
             // Order baru
             if (selected === "qris") {
                 setShowQrisModal(true);
+                handleBayarQRIS();
             } else if (selected === "cash") {
                 setIsCashModalOpen(true);
             } else if (selected === "bayarNanti") {
@@ -686,36 +863,63 @@ const handleSaveEdit = async () => {
 
                     </div>
 
-                    {/* Qrish Payment Modal */}
                     {showQrisModal && (
-                        <div className="fixed inset-0 backdrop-brightness-50 z-50 flex items-center justify-center">
-                            <div className="bg-white p-6 rounded-lg shadow-lg text-center w-90">
-                                <h2 className="text-lg text-black font-semibold">Pembayaran</h2>
-                                <img src="/qr.png" alt="QRIS Code" className="mx-auto my-4 w-30 h-30" />
-                                <p className="text-gray-600">Batas Pembayaran: 00.30</p>
-                                <hr className="my-2" />
-                                <p className="text-gray-600">Total Transaksi</p>
-                                <h3 className="text-xl font-bold text-black">Rp {total.toLocaleString("id-ID")}</h3>
-                                {/* Tombol Konfirmasi Pembayaran */}
-                                <button
-                                    className="mt-4 bg-green-500 text-white py-2 px-4 rounded"
-                                    onClick={() => {
-                                        handleBayarQRIS()
-                                        // Menutup modal setelah konfirmasi pembayaran
-                                        setShowQrisModal(false);
-                                    }}
-                                >
-                                    Konfirmasi Pembayaran
-                                </button>
-                                <button
-                                    className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
-                                    onClick={() => setShowQrisModal(false)}
-                                >
-                                    Tutup
-                                </button>
+                    <div className="fixed inset-0 backdrop-brightness-50 z-50 flex items-center justify-center">
+                        <div className="bg-white p-6 rounded-lg shadow-lg text-center w-90">
+                        <h2 className="text-lg text-black font-semibold">Pembayaran</h2>
+
+                        {/* Ganti src jadi qrPaymentUrl */}
+                        {qrPaymentUrl ? (
+                            <iframe
+                            src={qrPaymentUrl}
+                            title="QRIS Payment"
+                            className="mx-auto my-4 w-100 h-96 rounded"
+                            allowFullScreen
+                            />
+                        ) : (
+                            <p className="text-gray-500">Loading QR...</p>
+                        )}
+                         <p className="text-gray-600 mb-2">
+                            Waktu tersisa: {countdown} detik
+                            </p>
+
+                        {/* Batas pembayaran */}
+                        {paymentExpiredAt && (
+                            <p className="text-gray-600 mb-2">
+                            Batas Pembayaran:{" "}
+                            {new Date(paymentExpiredAt * 1000).toLocaleTimeString("id-ID")}
+                            </p>
+                        )}
+
+                        <hr className="my-2" />
+                        <p className="text-gray-600">Total Transaksi</p>
+                        <h3 className="text-xl font-bold text-black">Rp {total.toLocaleString("id-ID")}</h3>
+
+                        {/* Tombol tutup */}
+                        <button
+                            className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
+                            onClick={() => setShowQrisModal(false)}
+                        >
+                            Tutup
+                        </button>
+                        </div>
+                    </div>
+                    )}
+
+                    {showSuccessModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                            <div className="bg-white p-6 rounded-xl shadow text-center">
+                            <h2 className="text-lg font-semibold text-green-600">Pembayaran Berhasil!</h2>
+                            <p className="text-gray-600 mt-2">Pesanan berhasil dibuat dan dibayar.</p>
+                            <button
+                                onClick={() => setShowSuccessModal(false)}
+                                className="mt-4 bg-green-500 text-white py-2 px-4 rounded"
+                            >
+                                Tutup
+                            </button>
                             </div>
                         </div>
-                    )}
+                        )}
 
                     {/* Cash Payment Modal */}
                     {isCashModalOpen && (
