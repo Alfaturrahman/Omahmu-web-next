@@ -98,41 +98,38 @@ export default function AdvancedCharts({ data }) {
       </div>
 
       {/* Grafik Pie (Produk Terlaris) */}
-      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[285px]">
-        <h2 className="text-center text-black font-bold mb-4">Produk Terlaris</h2>
-        <div className="w-full h-[200px]">
+      <div className="bg-[#FFF4E8] rounded-2xl p-4 shadow-lg flex flex-col items-center justify-center w-full max-w-full h-[285px]">
+        <h2 className="text-center text-black font-bold text-lg mb-4">Produk Terlaris</h2>
+        <div className="flex-1 w-full">
           <ResponsiveContainer width="100%" height="100%">
-          <PieChart width={400} height={400}>
-            <Pie
-              data={pieData}
-              cx="50%"
-              cy="50%"
-              outerRadius={70}
-              dataKey="value"
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(2)}%`} // Show label outside slice
-            >
-              {pieData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-
-            <Tooltip
-              formatter={(value, name, props) => [`${value}%`, name]}
-              labelFormatter={() => ''}
-            />
-          </PieChart>
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                outerRadius="70%"
+                dataKey="value"
+                label={({ name, percent }) => `${(percent * 100).toFixed(1)}%`}
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value, name) => [`${value}%`, name]}
+                labelFormatter={() => ''}
+              />
+            </PieChart>
           </ResponsiveContainer>
         </div>
-
-        {/* Custom Legend */}
-        <div className="flex justify-center gap-4 mt-2">
+        <div className="flex flex-wrap justify-center gap-2 mt-2">
           {pieData.map((entry, index) => (
             <div key={index} className="flex items-center">
               <span
-                className="w-4 h-4 inline-block rounded-full mr-2"
+                className="w-3 h-3 rounded-full mr-2"
                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
               ></span>
-              <span className="text-sm text-black">{entry.name}</span>
+              <span className="text-xs text-black">{entry.name}</span>
             </div>
           ))}
         </div>

@@ -20,6 +20,7 @@ const Header = ({ toggleSidebar }) => {
     userEmail = decoded.email;
     userRole = decoded.role_name;
     userRoleId = decoded.role_id;
+    
   }
 
   const pathname = usePathname();
@@ -28,7 +29,7 @@ const Header = ({ toggleSidebar }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [toggle, setToggle] = useState(false);  // store open/close
-  const [activeTab, setActiveTab] = useState(userRole === "SuperAdmin" ? "package" : "order");
+  const [activeTab, setActiveTab] = useState(userRole === "SuperAdmin" ? "submission" : "package");
   const [notifications, setNotifications] = useState([]);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({
@@ -56,10 +57,9 @@ const Header = ({ toggleSidebar }) => {
         console.error("Gagal fetch notifikasi:", error);
       }
     };
-    if (isNotifOpen) {
-      fetchNotifications();
-    }
-  }, [isNotifOpen]);
+
+    fetchNotifications();
+  }, []); // kosong: jalan sekali saat mount
 
   // 🔍 Filter notif sesuai activeTab
   useEffect(() => {
@@ -69,9 +69,7 @@ const Header = ({ toggleSidebar }) => {
       } else if (activeTab === "stock") {
         filtered = notifications.filter(n => n.type === "stock");
       } else if (activeTab === "package") {
-        filtered = notifications.filter(n =>
-          ["package_created", "package_updated", "package_deleted"].includes(n.type)
-        );
+        filtered = []; 
       } else if (activeTab === "submission") {
         filtered = notifications.filter(n => n.type === "store_submission");
       }
@@ -80,9 +78,6 @@ const Header = ({ toggleSidebar }) => {
 
     useEffect(() => {
     const counts = {
-      package: notifications.filter(n =>
-        ["package_created", "package_updated", "package_deleted"].includes(n.type) && !n.is_read
-      ).length,
       submission: notifications.filter(n => n.type === "store_submission" && !n.is_read).length,
       order: notifications.filter(n => n.type === "order" && !n.is_read).length,
       stock: notifications.filter(n => n.type === "stock" && !n.is_read).length
@@ -91,7 +86,7 @@ const Header = ({ toggleSidebar }) => {
 
     let total = 0;
     if (userRole === "SuperAdmin") {
-      total = counts.package + counts.submission;
+      total = counts.submission;
     } else {
       total = counts.order + counts.stock;
     }
@@ -223,22 +218,6 @@ const Header = ({ toggleSidebar }) => {
                   {userRole === "SuperAdmin" ? (
                     <>
                       <button
-                        onClick={() => setActiveTab("package")}
-                        className={`w-1/2 py-2 flex items-center justify-center gap-1 ${
-                          activeTab === "package"
-                            ? "border-b-2 border-[#F6B543] text-[#F6B543]"
-                            : "text-gray-500"
-                        }`}
-                      >
-                        <span>Paket</span>
-                        {unreadCounts.package > 0 && (
-                          <span className="bg-red-500 text-white text-[10px] px-1 rounded-full">
-                            {unreadCounts.package}
-                          </span>
-                        )}
-                      </button>
-
-                      <button
                         onClick={() => setActiveTab("submission")}
                         className={`w-1/2 py-2 flex items-center justify-center gap-1 ${
                           activeTab === "submission"
@@ -361,7 +340,7 @@ const Header = ({ toggleSidebar }) => {
         </div>
 
         <span className="text-[11px] md:text-[13px] lg:text-[15px] text-black font-semibold">
-          Angkringan OmahMu
+          {userRole}
         </span>
 
         {/* Avatar dan Dropdown */}

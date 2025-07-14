@@ -129,7 +129,7 @@ function Dashboard() {
               </div>
 
               {/* Konten Utama */}
-              <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex flex-col lg:flex-row gap-8">
                 {/* Kolom 1: Ringkasan & Grafik Penjualan */}
                 <div className="flex-1 space-y-6">
                 <SummaryCards data={dashboardData?.dashboard_monthly} />
