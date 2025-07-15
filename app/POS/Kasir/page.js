@@ -160,7 +160,6 @@ function Kasir() {
             // Reset form setelah sukses
             closeCart();
             setCustomerName("");
-            setOrderDate("");
             setPhoneNumber("");
             setDeliveryAddress("");
             setRemarks("");
@@ -217,6 +216,14 @@ function Kasir() {
                         clearInterval(interval);
                         setShowQrisModal(false);
                         closeCart();
+                        // Reset form setelah sukses
+                        setCustomerName("");
+                        setPhoneNumber("");
+                        setDeliveryAddress("");
+                        setRemarks("");
+                        setSelected(null);
+                        fetchDataAntrian();
+                        fetchDataMenu();
 
                         // Tampilkan modal cantik pakai Swal
                         Swal.fire({
@@ -330,16 +337,6 @@ function Kasir() {
                     confirmButtonColor: "#ECA641",
                 });
             }
-
-            // Reset form setelah sukses
-            setCustomerName("");
-            setOrderDate("");
-            setPhoneNumber("");
-            setDeliveryAddress("");
-            setRemarks("");
-            setSelected(null);
-            fetchDataAntrian();
-            fetchDataMenu();
 
         } catch (err) {
             console.error('Error:', err);

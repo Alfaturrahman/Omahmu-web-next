@@ -26,6 +26,9 @@ function Menu() {
         try {
             const storeId = localStorage.getItem('store_id');
             const result = await apiService.getData(`/storeowner/daftar_menu/?store_id=${storeId}`);
+
+            console.log("result", result);
+            
             setMenuItems(result.data);  
         } catch (err) {
             console.error(err.message);
@@ -76,7 +79,7 @@ function Menu() {
                         .filter((item) => 
                         activeCategory === "Semua" || 
                         item.product_type === activeCategory || 
-                        (activeCategory === "Favorit" && item.favorite_status)
+                        (activeCategory === "Favorit" && item.is_favorit)
                         )
                         .map((item) => (
                         <div key={item.product_id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">

@@ -47,10 +47,15 @@ const Produk = () => {
   const fetchProducts = async () => {
     try {
       const storeId = localStorage.getItem('store_id');
+      
+      // 1️⃣ Panggil API check_product_stock (biar backend update status & kirim notif)
+      await apiService.getData(`/storeowner/check_product_stock?store_id=${storeId}`);
+      
+      // 2️⃣ Baru fetch list produk terbaru
       const response = await apiService.getData(`/storeowner/daftar_produk/?store_id=${storeId}`);
       console.log("wew", response.data);
       
-      setProducts(response.data); // Sesuaikan dengan format API kamu
+      setProducts(response.data);
     } catch (error) {
       console.error("Gagal mengambil produk:", error);
     }
@@ -77,23 +82,50 @@ const Produk = () => {
           await apiService.putData(`/storeowner/update_status/?product_id=${product.product_id}&is_active=false`);
         }
       }
-      // Refresh data produk supaya UI up-to-date
-      fetchProducts();
     } catch (error) {
       console.error('Gagal nonaktifkan produk dengan stok habis:', error.message);
     }
   };
 
   useEffect(() => {
+    const storeId = localStorage.getItem('store_id');
+
     const loadData = async () => {
-      const storeId = localStorage.getItem('store_id');
-      const response = await apiService.getData(`/storeowner/daftar_produk/?store_id=${storeId}`);
-      setProducts(response.data);
-      await disableProductsWithZeroStock(response.data);
-      await fetchDashboardProducts();
+      try {
+        await apiService.getData(`/storeowner/check_product_stock/?store_id=${storeId}`);
+        const response = await apiService.getData(`/storeowner/daftar_produk/?store_id=${storeId}`);
+        console.log("wew", response.data);
+        setProducts(response.data);
+        await disableProductsWithZeroStock(response.data);
+        await fetchDashboardProducts();
+      } catch (error) {
+        console.error("Gagal load data:", error);
+      }
     };
+
+    // Jalankan pertama kali
     loadData();
+
+    // Jalankan ulang setiap 1 menit
+    const interval = setInterval(() => {
+      loadData();
+    }, 60000); // 60.000 ms = 60 detik
+
+    // Bersihkan interval saat komponen di-unmount
+    return () => clearInterval(interval);
   }, []);
+
+   const updateStock = async (productId, newStock) => {
+    try {
+      await apiService.putData(`/storeowner/update_stock/?product_id=${productId}&new_stock=${newStock}`);
+      setProducts(prev =>
+        prev.map(p => p.product_id === productId ? { ...p, stock: newStock } : p)
+      );
+    } catch (error) {
+      console.error("Gagal update stok:", error.message);
+    }
+  };
+
 
   const handleDelete = async (product) => {
     Swal.fire({
@@ -136,22 +168,10 @@ const Produk = () => {
   const filteredProducts = products.filter((product) => {
     const matchSearch = product.product_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchCategory = selectedCategory ? product.product_type === selectedCategory : true;
-    const matchTipe = selectedTipe ? product.tipeJualan === selectedTipe : true;
+    const matchTipe = selectedTipe ? product.selling_type === selectedTipe : true;
     return matchSearch && matchCategory && matchTipe;
   });
   
-
-  const updateStock = async (productId, newStock) => {
-  try {
-    await apiService.putData(`/storeowner/update_stock/?product_id=${productId}&new_stock=${newStock}`);
-    setProducts(prev =>
-      prev.map(p => p.product_id === productId ? { ...p, stock: newStock } : p)
-    );
-  } catch (error) {
-    console.error("Gagal update stok:", error.message);
-  }
-};
-
   const handleStockChange = (id, newStock) => {
     const parsedStock = parseInt(newStock, 10);
       if (!isNaN(parsedStock) && parsedStock >= 0) {

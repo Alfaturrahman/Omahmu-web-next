@@ -256,10 +256,10 @@ function Laporan() {
                                 <table className="min-w-[900px] w-full shadow-lg">
                                     <thead className="text-black text-xs md:text-[10px] lg:text-[15px] border-y border-gray-500">
                                         <tr>
-                                            {['NO', 'TANGGAL', 'MENU PESANAN', 'TIPE MENU', 'HARGA JUAL', 'JUMLAH TERJUAL', 'TOTAL PENJUALAN', 'NET PROFIT'].map((header, index) => (
+                                            {['NO', 'TANGGAL', 'MENU PESANAN', 'TIPE MENU', 'HARGA JUAL', 'JUMLAH TERJUAL', 'TOTAL PENJUALAN'].map((header, index) => (
                                                 <th key={index} className="py-3 px-4 relative">
                                                     {header}
-                                                    {index !== 7 && (
+                                                    {index !== 6 && (
                                                         <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                                     )}
                                                 </th>
@@ -269,10 +269,10 @@ function Laporan() {
                                     <tbody>
                                         {displayedData.map((item, index) => (
                                             <tr key={index} className="text-center text-black hover:bg-gray-100 text-xs md:text-sm lg:text-[15px] relative">
-                                                {[index + 1 + (currentPage - 1) * itemsPerPage, item.date, item.name, item.category, item.sellingPrice, item.quantity, item.totalSales, item.profit].map((value, idx) => (
+                                                {[index + 1 + (currentPage - 1) * itemsPerPage, item.date, item.name, item.category, item.sellingPrice, item.quantity, item.totalSales].map((value, idx) => (
                                                     <td key={idx} className="py-3 px-4 relative">
                                                         {value}
-                                                        {idx !== 7 && (
+                                                        {idx !== 6 && (
                                                             <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                                         )}
                                                     </td>

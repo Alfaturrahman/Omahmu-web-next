@@ -30,9 +30,20 @@ function Riwayat() {
     const [selectedPesananId, setSelectedPesananId] = useState(null);
     
     const handleOpenModal = (idPesanan) => {
-        setSelectedPesananId(idPesanan);  
-        setShowModal(true);  
+        // Cari di data
+        const allOrders = [...riwayatDineIn, ...riwayatOnline];
+        const order = allOrders.find(item => item.order_id === idPesanan);
+
+        if (order) {
+            setSelectedOrder(order);
+        } else {
+            console.warn('Order not found for idPesanan:', idPesanan);
+        }
+
+        setSelectedPesananId(idPesanan);
+        setShowModal(true);
     };
+
     
     const handleCloseModal = () => {
         setShowModal(false);  
@@ -66,7 +77,8 @@ function Riwayat() {
 
             // Jaga-jaga jika items null, fallback jadi array kosong
             detail.items = detail.items || [];
-
+            console.log("detail",detail);
+            
             setDetailPesanan(detail);
             setShowModal(true);
 
@@ -77,10 +89,14 @@ function Riwayat() {
 
     useEffect(() => {
         fetchData();
+        }, []); // hanya sekali saat mount
+
+        useEffect(() => {
         if (selectedPesananId) {
-            fetchDetailData(selectedPesananId);  // Panggil fetchDetailData saat ID pesanan berubah
+            fetchDetailData(selectedPesananId);
         }
-      }, [selectedPesananId]);
+        }, [selectedPesananId]);
+
 
     const handleTabClick = (tab) => {
         setActiveTab(tab);
@@ -91,72 +107,97 @@ function Riwayat() {
         return activeTab === 'dinein' ? riwayatDineIn : riwayatOnline;
     };
 
-    const handleTerimaOrder = () => {
-        Swal.fire({
-            title: 'Apakah Anda yakin?',
-            text: "Pesanan akan diproses!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#16a34a',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Ya, Terima!',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-            setSelectedOrder((prev) => ({
-                ...prev,
-                orderStatus: 'Proses'
-            }));
+   const handleTerimaOrder = async () => {
+        try {
+            const confirm = await Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: 'Pesanan akan diproses!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Terima!',
+                cancelButtonText: 'Batal'
+            });
 
-            Swal.fire(
-                'Diterima!',
-                'Pesanan sedang diproses.',
-                'success'
-            );
+            if (!confirm.isConfirmed) return;
+
+            // Pastikan order_code ada
+            if (!selectedOrder?.order_code) {
+                console.error('order_code tidak ada di selectedOrder');
+                Swal.fire('Gagal!', 'Data pesanan tidak valid.', 'error');
+                return;
             }
-        });
+
+            // Panggil API
+            await apiService.putData(
+                `/storeowner/update_order_status_online/?order_code=${selectedOrder.order_code}&new_status=in_progress`
+            );
+
+            // Update state lokal
+            setSelectedOrder(prev => ({ ...prev, order_status: 'in_progress' }));
+
+            // Refresh data
+            fetchData();
+
+            Swal.fire('Diterima!', 'Pesanan sedang diproses.', 'success');
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Gagal!', 'Terjadi kesalahan.', 'error');
+        }
     };
 
-    const handleTolakOrder = () => {
-        Swal.fire({
-            title: 'Tolak Pesanan',
-            input: 'textarea',
-            inputLabel: 'Alasan Penolakan',
-            inputPlaceholder: 'Tuliskan alasan penolakan di sini...',
-            inputAttributes: {
-            'aria-label': 'Alasan penolakan'
-            },
-            showCancelButton: true,
-            confirmButtonText: 'Tolak',
-            cancelButtonText: 'Batal',
-            confirmButtonColor: '#dc2626',
-            cancelButtonColor: '#6b7280',
-            preConfirm: (alasan) => {
-            if (!alasan) {
-                Swal.showValidationMessage('Alasan tidak boleh kosong');
-                return false;
-            }
-            return alasan;
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-            const alasanPenolakan = result.value;
 
-            // Update orderStatus ke Ditolak dan simpan alasan jika dibutuhkan
-            setSelectedOrder((prev) => ({
-                ...prev,
-                orderStatus: 'Ditolak',
-                alasan: alasanPenolakan,
-            }));
+    const handleTolakOrder = async () => {
+        try {
+            const result = await Swal.fire({
+                title: 'Tolak Pesanan',
+                input: 'textarea',
+                inputLabel: 'Alasan Penolakan',
+                inputPlaceholder: 'Tuliskan alasan penolakan di sini...',
+                showCancelButton: true,
+                confirmButtonText: 'Tolak',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                preConfirm: (alasan) => {
+                    if (!alasan) {
+                        Swal.showValidationMessage('Alasan tidak boleh kosong');
+                        return false;
+                    }
+                    return alasan;
+                }
+            });
 
-            Swal.fire(
-                'Pesanan Ditolak!',
-                'Pesanan telah ditolak dengan alasan: ' + alasanPenolakan,
-                'success'
+            if (!result.isConfirmed) return;
+
+            const alasan = result.value;
+
+            // Pastikan order_id ada
+            if (!selectedOrder?.order_id) {
+                console.error('order_id tidak ada di selectedOrder');
+                Swal.fire('Gagal!', 'Data pesanan tidak valid.', 'error');
+                return;
+            }
+
+            // Panggil API
+            await apiService.putData(
+            `/storeowner/update_order_status_online/?order_code=${selectedOrder.order_code}&new_status=canceled&reason=${encodeURIComponent(alasan)}`
             );
-            }
-        });
+
+            // Update state lokal
+            setSelectedOrder(prev => ({ ...prev, order_status: 'Ditolak', remarks: alasan }));
+
+            // Refresh data
+            fetchData();
+
+            Swal.fire('Pesanan Ditolak!', `Pesanan ditolak dengan alasan: ${alasan}`, 'success');
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Gagal!', 'Terjadi kesalahan.', 'error');
+        }
     };
+
 
     // Mengaplikasikan filter pada data
     const applyFilters = (data) => {
@@ -205,7 +246,7 @@ function Riwayat() {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showModal], [filterDate]);
+    }, [showModal, filterDate]);
 
     const currentData = applyFilters(getData()).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     const totalPages = Math.ceil(getData().length / itemsPerPage);
@@ -345,14 +386,28 @@ function Riwayat() {
                                     <td className="py-3 px-4 relative">{item.date}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
                                     <td className="py-3 px-4 relative">
                                     <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                            item.order_status === 'completed'
-                                            ? 'bg-green-100 text-green-600'
-                                            : 'bg-orange-100 text-orange-600'
-                                        }`}
-                                        >
-                                        {item.order_status === 'completed' ? 'Completesd' : 'In Progress'}
-                                        </span>
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        item.order_status === 'completed'
+                                        ? 'bg-green-100 text-green-600'
+                                        : item.order_status === 'pending'
+                                        ? 'bg-yellow-100 text-yellow-600'
+                                        : item.order_status === 'in_progress'
+                                        ? 'bg-orange-100 text-orange-600'
+                                        : item.order_status === 'canceled'
+                                        ? 'bg-red-100 text-red-600'
+                                        : ''
+                                    }`}
+                                    >
+                                    {item.order_status === 'completed'
+                                        ? 'Completed'
+                                        : item.order_status === 'pending'
+                                        ? 'Pending'
+                                        : item.order_status === 'in_progress'
+                                        ? 'In Progress'
+                                        : item.order_status === 'canceled'
+                                        ? 'Canceled'
+                                        : ''}
+                                    </span>
                                         <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                     </td>
                                     <td className="py-3 px-4 relative">
@@ -463,6 +518,22 @@ function Riwayat() {
                                     <p>Total</p>
                                     <p>Rp {Number(detailPesanan.total_amount).toLocaleString("id-ID")}</p>
                                 </div>
+                                {detailPesanan 
+                                    && detailPesanan.order_status === "pending"
+                                    && riwayatOnline.some(item => item.order_code === detailPesanan.order_code) && (
+                                        <div className="flex flex-row justify-end gap-2 border-t py-3 font-semibold">
+                                            <button
+                                                onClick={handleTolakOrder}
+                                                className="text-red-500 border border-red-500 rounded px-2 py-2 hover:bg-red-100 cursor-pointer">
+                                                Tolak
+                                            </button>
+                                            <button
+                                                onClick={handleTerimaOrder}
+                                                className="text-green-500 border border-green-500 rounded px-2 py-2 hover:bg-green-100 cursor-pointer">
+                                                Terima
+                                            </button>
+                                        </div>
+                                    )}
                             </div>
                         </div>
                     )}

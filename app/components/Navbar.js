@@ -29,7 +29,7 @@ const Header = ({ toggleSidebar }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [toggle, setToggle] = useState(false);  // store open/close
-  const [activeTab, setActiveTab] = useState(userRole === "SuperAdmin" ? "submission" : "package");
+  const [activeTab, setActiveTab] = useState(userRole === "SuperAdmin" ? "submission" : "order");
   const [notifications, setNotifications] = useState([]);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
   const [unreadCounts, setUnreadCounts] = useState({
@@ -58,18 +58,29 @@ const Header = ({ toggleSidebar }) => {
       }
     };
 
+    // 🔄 Fetch pertama kali
     fetchNotifications();
-  }, []); // kosong: jalan sekali saat mount
+
+    // 🔁 Polling setiap 10 detik
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 10000);
+
+    // 🔚 Bersihkan interval saat komponen unmount
+    return () => clearInterval(interval);
+  }, []);
 
   // 🔍 Filter notif sesuai activeTab
-  useEffect(() => {
+    useEffect(() => {
       let filtered = [];
       if (activeTab === "order") {
         filtered = notifications.filter(n => n.type === "order");
       } else if (activeTab === "stock") {
-        filtered = notifications.filter(n => n.type === "stock");
+        filtered = notifications.filter(n =>
+          n.type === "stock_low" || n.type === "stock_empty"
+        );
       } else if (activeTab === "package") {
-        filtered = []; 
+        filtered = [];
       } else if (activeTab === "submission") {
         filtered = notifications.filter(n => n.type === "store_submission");
       }
@@ -77,21 +88,23 @@ const Header = ({ toggleSidebar }) => {
     }, [activeTab, notifications]);
 
     useEffect(() => {
-    const counts = {
-      submission: notifications.filter(n => n.type === "store_submission" && !n.is_read).length,
-      order: notifications.filter(n => n.type === "order" && !n.is_read).length,
-      stock: notifications.filter(n => n.type === "stock" && !n.is_read).length
-    };
-    setUnreadCounts(counts);
+      const counts = {
+        submission: notifications.filter(n => n.type === "store_submission" && !n.is_read).length,
+        order: notifications.filter(n => n.type === "order" && !n.is_read).length,
+        stock: notifications.filter(n =>
+          (n.type === "stock_low" || n.type === "stock_empty") && !n.is_read
+        ).length
+      };
+      setUnreadCounts(counts);
 
-    let total = 0;
-    if (userRole === "SuperAdmin") {
-      total = counts.submission;
-    } else {
-      total = counts.order + counts.stock;
-    }
-    setTotalUnreadCount(total);
-  }, [notifications, userRole]);
+      let total = 0;
+      if (userRole === "SuperAdmin") {
+        total = counts.submission;
+      } else {
+        total = counts.order + counts.stock;
+      }
+      setTotalUnreadCount(total);
+    }, [notifications, userRole]);
 
   // ✅ Hitung unreadCount hanya notif yang difilter (per tab)
   const unreadCount = unreadCounts[activeTab] || 0;

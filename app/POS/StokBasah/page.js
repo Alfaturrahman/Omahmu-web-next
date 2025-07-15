@@ -530,11 +530,11 @@ function StokBasah() {
                                     item.nameBuyer,
                                     item.date,
                                     item.amount,
-                                    item.totalPrice
+                                    `Rp ${Number(item.totalPrice).toLocaleString('id-ID')}`
                                   ].map((value, idx) => (
                                     <td key={idx} className="py-3 px-4 relative">
                                       {value}
-                                      {idx !== 6 && ( // hanya tambahkan garis kalau bukan kolom terakhir
+                                      {idx !== 6 && (
                                         <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                       )}
                                     </td>
@@ -689,8 +689,11 @@ function StokBasah() {
                               <td className="px-4 py-2">{item.nama}</td>
                               <td className="px-4 py-2">{item.amount}</td>
                               <td className="px-4 py-2">{item.unit}</td>
-                              <td className="px-4 py-2">RP {item.price}</td>
-                              <td className="px-4 py-2">RP {item.total}</td>
+                              <td className="px-4 py-2">Rp {item.price.toLocaleString('id-ID')}</td>
+                              <td className="py-3 px-4 relative">
+                                {`Rp ${Number(item.unit_price).toLocaleString('id-ID')}`}
+                              </td>
+                              <td className="px-4 py-2">Rp {item.total.toLocaleString('id-ID')}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -896,9 +899,12 @@ function StokBasah() {
                               <td className="px-4 py-2">{item.item_name}</td>
                               <td className="px-4 py-2">{item.quantity}</td>
                               <td className="px-4 py-2">{item.unit}</td>
-                              <td className="px-4 py-2">Rp {item.unit_price}</td>
-                              <td className="px-4 py-2">Rp {item.sub_total}</td>
+                              <td className="py-3 px-4 relative">
+                                {`Rp ${Number(item.unit_price).toLocaleString('id-ID')}`}
+                              </td>
+                              <td className="px-4 py-2">Rp {item.sub_total.toLocaleString('id-ID')}</td>
                               <td className="px-4 py-2"> {item.kategori} </td>
+
                             </tr>
                           ))}
                         </tbody>
