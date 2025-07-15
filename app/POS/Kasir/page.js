@@ -540,9 +540,17 @@ const handleSaveEdit = async () => {
     const handlePayment = async () => {
         console.log("handlePayment called. isEditing:", isEditing, "selectedOrderForEdit:", selectedOrderForEdit);
 
+        if (!customerName.trim() || !orderDate || cart.length === 0 || !selected) {
+            Swal.fire({
+                icon: "warning",
+                title: "Data belum lengkap",
+                text: "Pastikan nama customer, tanggal pemesanan, metode pembayaran, dan item keranjang sudah diisi.",
+                confirmButtonColor: "#ECA641",
+            });
+            return; // stop proses
+        }
+
         if (isEditing && selectedOrderForEdit) {
-            // update dulu
-            await handleSaveEdit();
 
             Swal.fire({
                 icon: "success",
@@ -697,12 +705,34 @@ const handleSaveEdit = async () => {
     const clearAmount = () => {
         setAmountPaid(0);
     };
-    // Menambahkan penjumlahan pada kalkulator kasir
-    const handlePayCash = () => {
-        // Logic for cash payment
-        insertOrder();
 
-        setIsCashModalOpen(false); // Close modal after payment
+    const handlePayCash = async () => {
+        try {
+            if (isEditing && selectedOrderForEdit) {
+                // Lagi edit → cukup update order existing (dan kalau mau, update status jadi 'paid')
+                await handleSaveEdit();
+                console.log("Edited order saved successfully, marked as paid");
+            } else {
+                // Order baru → insert order
+                await insertOrder("cash");
+            }
+
+            Swal.fire({
+                icon: "success",
+                title: "Pembayaran berhasil",
+                confirmButtonColor: "#ECA641",
+            });
+        } catch (error) {
+            console.error("Gagal memproses pembayaran:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Pembayaran gagal",
+                text: error.message,
+                confirmButtonColor: "#ECA641",
+            });
+        } finally {
+            setIsCashModalOpen(false); // Tutup modal di akhir
+        }
     };
 
     const deleteLastDigit = () => {

@@ -512,7 +512,6 @@ function Riwayat() {
                                         </div>
                                     </div>
                                 </div>
-
                                 {/* Footer */}
                                 <div className="flex flex-row justify-between border-t mt-5 py-3 text-right font-semibold">
                                     <p>Total</p>

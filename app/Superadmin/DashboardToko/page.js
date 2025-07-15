@@ -41,25 +41,25 @@ function DashboardToko() {
       }, [selectedDate]);
       
     // Fetch dashboard data
-    const fetchDashboardData = async () => {
-        if (!storeId) return;
-        setLoading(true);
-        try {
-        let url = `/storeowner/dashboard/?store_id=${storeId}`;
-        if (selectedDateObj) {
-            const year = selectedDateObj.getFullYear();
-            const month = selectedDateObj.getMonth() + 1;
-            const day = selectedDateObj.getDate();
-            url += `&year=${year}&month=${month}&day=${day}`;
-        }
+   const fetchDashboardData = async () => {
+    if (!storeId) return;
+    setLoading(true);
+    try {
+        const year = selectedDate.year;
+        const month = selectedDate.month;
+        const day = selectedDate.day;
+
+        let url = `/storeowner/dashboard/?store_id=${storeId}&year=${year}&month=${month}&day=${day}`;
 
         const result = await apiService.getData(url);
+        console.log("result",result);
+        
         setDashboardData(result.data);
-        } catch (err) {
+    } catch (err) {
         console.error(err.message);
-        } finally {
+    } finally {
         setLoading(false);
-        }
+    }
     };
 
     // Fetch menu items
@@ -180,6 +180,7 @@ function DashboardToko() {
                             value={`${selectedDate.year}-${String(selectedDate.month).padStart(2, '0')}-${String(selectedDate.day).padStart(2, '0')}`}
                             onChange={(e) => {
                                 const [year, month, day] = e.target.value.split('-');
+                                console.log('Selected date changed:', { year, month, day });
                                 setSelectedDate({
                                 year: parseInt(year),
                                 month: parseInt(month),
@@ -227,7 +228,7 @@ function DashboardToko() {
                                         {item.name}
                                     </h3>
                                     <p className="text-[#ECA641] font-bold text-sm whitespace-nowrap">
-                                    Rp {typeof item.price === 'number' ? item.price.toLocaleString("id-ID") + ',00' : 'N/A'}
+                                    Rp {typeof item.price === 'number' ? item.price.toLocaleString("id-ID") : 'N/A'}
                                     </p>
                                 </div>
                             </div>

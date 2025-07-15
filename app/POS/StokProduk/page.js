@@ -231,7 +231,7 @@ const Produk = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
   
     console.log("isEditing", isEditing);
   
@@ -246,7 +246,7 @@ const Produk = () => {
     formPayload.append('product_type', formData.tipeProduk);
     formPayload.append('selling_type', formData.tipeJualan); 
     formPayload.append('description', formData.deskripsi);
-    formPayload.append('capital_price', formData.hargaModal);
+    formPayload.append('capital_price', "0");
     formPayload.append('selling_price', formData.hargaJual);
     console.log("Keterangan sebelum dikirim:", formData.keterangan);
     formPayload.append('is_active', formData.keterangan); // Mengirim string 'true' atau 'false'
@@ -553,7 +553,7 @@ const Produk = () => {
             ) : (
               filteredProducts.map((product) => (
                 <div
-                  key={product.id}
+                  key={product.product_id}
                   className="w-full max-w-xs mx-auto rounded-lg border shadow-sm overflow-hidden bg-white flex flex-col h-[290px]"
                 >
                   {/* Label stok */}
@@ -652,7 +652,7 @@ const Produk = () => {
 
                   <div className="px-3 py-3 flex justify-between items-center text-sm font-semibold text-gray-800 whitespace-nowrap overflow-hidden">
                   <div className="truncate">
-                    RP {(product.selling_price ?? 0).toLocaleString('id-ID')}
+                  Rp {Number(product.selling_price).toLocaleString('id-ID')}
                   </div>
                   {product.selling_type === 'Harian' && (
                       <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full">
@@ -818,7 +818,7 @@ const Produk = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
+                    <div className="hidden">
                         <label className="block text-sm font-medium text-black">Harga Modal</label>
                         <input
                           type="text"
