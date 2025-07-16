@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Filter, Search, FileDown, Eye, X} from "lucide-react";
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import DatePicker from "react-datepicker";
@@ -12,6 +12,8 @@ import Image from 'next/image';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
 import { jwtDecode } from "jwt-decode";
+import "react-datepicker/dist/react-datepicker.css";
+
 
 function Home() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -62,14 +64,17 @@ function Home() {
         id: item.id
     }));
 
+    console.log("data", transformedData);
+    
+
     const filteredData = transformedData.filter(item => {
         const matchDate = filterDate
-            ? item.date === format(filterDate, "dd/MM/yyyy")
+            ? format(parseISO(item.date), "dd/MM/yyyy") === format(filterDate, "dd/MM/yyyy")
             : true;
 
         const matchType = (() => {
             if (selectedCategory === "Stok Basah") {
-                return item.type === "Stok Basah";
+                return item.type === "Stock basah";
             } else if (selectedCategory === "Pengeluaran Lainnya") {
                 return selectedSubCategory ? item.type === selectedSubCategory : true;
             } else {
@@ -80,6 +85,38 @@ function Home() {
         return matchDate && matchType;
     });
 
+     async function exportPDF() {
+            const token = localStorage.getItem('token');
+            const storeId = localStorage.getItem('store_id');
+        
+            const url = `http://127.0.0.1:8000/api/storeowner/laporan_uang_keluar/?store_id=${storeId}&export_pdf=true`;
+        
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                });
+        
+                if (!response.ok) {
+                    throw new Error('Gagal mengekspor PDF');
+                }
+        
+                const blob = await response.blob();
+                const blobURL = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobURL;
+                link.download = 'laporan_uang_keluar.pdf';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(blobURL);
+            } catch (error) {
+                console.error("Error exporting PDF:", error);
+                alert("Gagal mengekspor PDF");
+            }
+        }
 
     const handleResetFilter = () => {
         setSelectedCategory("All");
@@ -181,7 +218,7 @@ function Home() {
                         <div className="flex items-center gap-2">
                             {/* Button Export */}
                             <button
-                            // onClick={""}
+                            onClick={() => exportPDF()} // Ganti "2" dengan store_id yang sesuai
                             className="cursor-pointer flex items-center px-4 py-2 bg-white border border-gray-500 rounded-lg text-black shadow-md"
                             >
                                 <FileDown className="w-5 h-5 mr-2 text-black" />
@@ -197,7 +234,7 @@ function Home() {
                                 </button>
 
                                 {isFilterOpen && (
-                                    <div className="absolute right-0 left-0 z-10 mt-2 w-64 text-black bg-white border border-gray-200 rounded-lg shadow-md">
+                                        <div className="absolute right-0 z-10 mt-2 w-64 text-black bg-white border border-gray-200 rounded-lg shadow-md">
                                         {/* Filter Tanggal dengan DatePicker */}
                                         <div className="mb-3 px-2">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">

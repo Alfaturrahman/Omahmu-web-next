@@ -11,6 +11,9 @@ import Image from 'next/image';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
 import { jwtDecode } from "jwt-decode";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { parseISO, isSameDay } from "date-fns";
 
 function StokBasah() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -32,6 +35,8 @@ function StokBasah() {
   const [dtlStokBasah, setDetailStokBasah] = useState([]);
   const dropdownRef = useRef(null);
   const itemsPerPage = 10;
+  const [filterDate, setFilterDate] = useState(null);
+  
 
   // Modal Form 1 (Tambah Stok Basah)
   const [formData, setFormData] = useState({
@@ -40,6 +45,9 @@ function StokBasah() {
     nameBuyer: "",
     image: null,
   });
+  const handleResetFilter = () => {
+      setFilterDate('');
+  };
 
   async function listStokBasah() {
     try {
@@ -365,12 +373,14 @@ function StokBasah() {
       }))
     );
   };
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString("id-ID");
+  };
   
   const filteredProducts = StokBasah.filter(item => {
-    const matchCategory =
-      selectedCategory === "All" || !selectedCategory
-        ? true
-        : item.category === selectedCategory;
+    const matchDate = filterDate
+      ? isSameDay(parseISO(item.date), filterDate)
+      : true;
 
     const matchSearch =
       searchTerm === ""
@@ -378,7 +388,7 @@ function StokBasah() {
         : item.nameBuyer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           item.totalPrice?.toLowerCase().includes(searchTerm.toLowerCase());
 
-    return matchCategory && matchSearch;
+    return matchDate && matchSearch;
   });
 
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
@@ -451,45 +461,36 @@ function StokBasah() {
               </div>
 
               <div className="relative dropdown-wrapper" ref={dropdownRef}>
-                <button
-                  className="cursor-pointer border border-gray-500 text-black flex items-center justify-center bg-white px-4 py-2 rounded-lg text-sm"
-                  onClick={() => setIsFilterOpen(!isFilterOpen)}
-                >
-                  Filter <Filter size={18} className="ml-2" />
-                </button>
-
-                {isFilterOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-40 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                    <button
-                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
-                      onClick={() => {
-                        setSelectedCategory(null);
-                        setIsFilterOpen(false);
-                      }}
-                    >
-                      Semua
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
-                      onClick={() => {
-                        setSelectedCategory("Bahan Baku");
-                        setIsFilterOpen(false);
-                      }}
-                    >
-                      Bahan Baku
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
-                      onClick={() => {
-                        setSelectedCategory("Peralatan");
-                        setIsFilterOpen(false);
-                      }}
-                    >
-                      Peralatan
-                    </button>
-                  </div>
-                )}
-              </div>
+                              <button
+                                className="cursor-pointer border border-gray-500 text-black flex items-center justify-center bg-white px-4 py-2 rounded-lg text-sm"
+                                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                              >
+                                Filter <Filter size={18} className="ml-2" />
+                              </button>
+              
+                              {isFilterOpen && (
+                                <div className="absolute top-full left-0 mt-2 w-55 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+                                  <div className="mb-4 px-2 py-2">
+                                      <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal Pesanan</label>
+                                      <DatePicker
+                                          selected={filterDate}
+                                          onChange={(date) => setFilterDate(date)}
+                                          placeholderText="00/00/0000"
+                                          dateFormat="dd/MM/yyyy"
+                                          className="w-full border rounded p-2 text-sm text-gray-500"
+                                          wrapperClassName="w-full"
+                                          popperClassName="z-50"
+                                      />
+                                      <button
+                                      onClick={handleResetFilter}
+                                      className="w-full mt-3 bg-red-100 text-red-600 hover:bg-red-200 font-semibold px-4 rounded text-sm"
+                                      >
+                                      Reset Filter
+                                      </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
 
             </div>
             <button
