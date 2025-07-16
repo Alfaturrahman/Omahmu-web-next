@@ -7,6 +7,8 @@ import '@/globals.css';
 import { X, Clock } from 'lucide-react';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
+import Swal from 'sweetalert2';
+
 
 const sampleOrders = [
   {
@@ -72,6 +74,8 @@ function Log() {
       async function fetchDetailLog(orderId) {
         try {
           const result = await apiService.getData(`/customer/detail_log/?order_id=${orderId}`);
+          console.log("result",result);
+          
           setDetailLog(result.data); // pastikan `data` berisi detail yang kamu butuhkan
         } catch (err) {
           console.error(err.message);
@@ -111,6 +115,94 @@ function Log() {
         fetchDataLog();
         fetchDetailLog();
     }, []);
+
+    const handleCancelOrder = async () => {
+    console.log('✅ handleCancelOrder DIPANGGIL');
+
+        try {
+            console.log('🔍 detailLog:', detailLog);
+
+            if (!detailLog || detailLog.length === 0 || !detailLog[0]?.get_order_json) {
+                console.error('❌ Detail pesanan tidak ditemukan untuk dibatalkan.');
+                Swal.fire('Gagal!', 'Data pesanan tidak valid untuk dibatalkan.', 'error');
+                return;
+            }
+
+            const orderToCancel = detailLog[0].get_order_json;
+            console.log('🔍 orderToCancel:', orderToCancel);
+
+            const orderId = orderToCancel.order_id;
+            const orderCode = orderToCancel.order_code;
+
+            console.log('✅ orderId:', orderId, '| orderCode:', orderCode);
+
+            if (!orderId || !orderCode) {
+                console.error('❌ order_id atau order_code tidak ditemukan dalam detail pesanan.');
+                Swal.fire('Gagal!', 'Informasi pesanan tidak lengkap untuk dibatalkan.', 'error');
+                return;
+            }
+
+            const result = await Swal.fire({
+                title: 'Batalkan Pesanan',
+                input: 'textarea',
+                inputLabel: 'Alasan Pembatalan',
+                inputPlaceholder: 'Tuliskan alasan pembatalan di sini...',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Batalkan',
+                cancelButtonText: 'Tutup',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                preConfirm: (alasan) => {
+                    console.log('📝 Alasan diinput:', alasan);
+                    if (!alasan) {
+                        Swal.showValidationMessage('Alasan tidak boleh kosong');
+                        return false;
+                    }
+                    return alasan;
+                }
+            });
+
+            console.log('✅ Swal result:', result);
+
+            if (!result.isConfirmed) {
+                console.log('⚠️ Pembatalan dibatalkan oleh user.');
+                return;
+            }
+
+            const alasan = result.value;
+            console.log('✏️ Alasan final:', alasan);
+
+            console.log('📡 Memanggil API PUT untuk membatalkan pesanan...');
+            const apiResponse = await apiService.putData(
+                `/storeowner/update_order_status_online/?order_code=${orderCode}&new_status=canceled&reason=${encodeURIComponent(alasan)}`
+            );
+            console.log('✅ API response:', apiResponse);
+
+            // Update local state
+            setSelectedOrder(prev => {
+                if (prev && prev.order_id === orderId) {
+                    console.log('🔄 Update selected order di state ke "Dibatalkan"');
+                    return { ...prev, order_status: 'Dibatalkan', remarks: alasan };
+                }
+                return prev;
+            });
+
+            console.log('🔄 Fetch data ulang...');
+            fetchDataLog();
+            setSelectedOrder(null)
+
+            Swal.fire(
+                'Pesanan Dibatalkan!',
+                `Pesanan berhasil dibatalkan dengan alasan: ${alasan}`,
+                'success'
+            );
+            console.log('✅ Selesai proses pembatalan.');
+
+        } catch (error) {
+            console.error('❌ Error saat membatalkan pesanan:', error);
+            Swal.fire('Gagal!', 'Terjadi kesalahan saat membatalkan pesanan.', 'error');
+        }
+    };
 
     const filteredOrders =
         filter === 'Semua'
@@ -193,8 +285,10 @@ function Log() {
                   <p
                     className={`text-sm font-semibold ${
                       order.status === 'Selesai'
-                        ? 'text-[#8BED52]'
-                        : 'text-[#E8EB2A]'
+                        ? 'text-[#8BED52]' // Green for Selesai
+                        : order.status === 'Sedang Dibuat'
+                        ? 'text-[#E8EB2A]' // Yellow for Sedang Dibuat
+                        : 'text-red-500' // Red for Pending (and any other status not explicitly defined)
                     }`}
                   >
                     {order.status}
@@ -324,6 +418,16 @@ function Log() {
                       ,00
                     </p>
                   </div>
+                 {detailLog[0]?.get_order_json?.order_status === 'PENDING' && (
+                      <div className="flex justify-end">
+                          <button
+                              onClick={() => handleCancelOrder()} 
+                              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md text-sm"
+                          >
+                              Batalkan Pesanan
+                          </button>
+                      </div>
+                  )}
                 </div>
               </div>
             </div>

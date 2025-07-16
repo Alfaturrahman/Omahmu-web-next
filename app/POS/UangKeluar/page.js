@@ -197,7 +197,7 @@ function Home() {
                                 </button>
 
                                 {isFilterOpen && (
-                                    <div className="absolute left-0 z-10 mt-2 w-64 text-black bg-white border border-gray-200 rounded-lg shadow-md">
+                                    <div className="absolute right-0 left-0 z-10 mt-2 w-64 text-black bg-white border border-gray-200 rounded-lg shadow-md">
                                         {/* Filter Tanggal dengan DatePicker */}
                                         <div className="mb-3 px-2">
                                             <label className="block text-sm font-medium text-gray-700 mb-1">

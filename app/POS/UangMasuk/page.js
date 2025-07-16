@@ -165,7 +165,7 @@ function Laporan() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <StatCard 
                             title="Total Pemasukan" 
-                            value={`RP ${dashboardItems?.total_pemasukan?.toLocaleString('id-ID') || 0},00`} 
+                            value={`RP ${dashboardItems?.total_pemasukan?.toLocaleString('id-ID') || 0}`} 
                         />
                         <StatCard 
                             title="Total Produk Terjual" 
@@ -173,7 +173,7 @@ function Laporan() {
                         />
                         <StatCard 
                             title="NET Profit" 
-                            value={`RP ${dashboardItems?.net_profit?.toLocaleString('id-ID') || 0},00`} 
+                            value={`RP ${dashboardItems?.net_profit?.toLocaleString('id-ID') || 0}`} 
                         />
                     </div>
 

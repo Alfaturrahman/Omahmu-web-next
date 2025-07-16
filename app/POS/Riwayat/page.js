@@ -61,6 +61,8 @@ function Riwayat() {
     async function fetchData() {
         try {
             const result = await apiService.getData('/storeowner/riwayat_pesanan/');
+            console.log("result",result);
+            
             setRiwayatDineIn(result.data.riwayat_pesanan_ditempat); // menyimpan data dine-in
             setRiwayatOnline(result.data.riwayat_pesanan_online); // menyimpan data online
         } catch (err) {
@@ -141,6 +143,8 @@ function Riwayat() {
             fetchData();
 
             Swal.fire('Diterima!', 'Pesanan sedang diproses.', 'success');
+            setShowModal(false);  
+
         } catch (error) {
             console.error(error);
             Swal.fire('Gagal!', 'Terjadi kesalahan.', 'error');
@@ -192,6 +196,8 @@ function Riwayat() {
             fetchData();
 
             Swal.fire('Pesanan Ditolak!', `Pesanan ditolak dengan alasan: ${alasan}`, 'success');
+            setShowModal(false);  
+
         } catch (error) {
             console.error(error);
             Swal.fire('Gagal!', 'Terjadi kesalahan.', 'error');
@@ -246,7 +252,7 @@ function Riwayat() {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showModal, filterDate]);
+    }, [filterDate]);
 
     const currentData = applyFilters(getData()).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     const totalPages = Math.ceil(getData().length / itemsPerPage);
@@ -389,7 +395,7 @@ function Riwayat() {
                                     className={`px-2 py-1 rounded-full text-xs font-medium ${
                                         item.order_status === 'completed'
                                         ? 'bg-green-100 text-green-600'
-                                        : item.order_status === 'pending'
+                                        : item.order_status === 'pending' || item.order_status === 'PENDING'
                                         ? 'bg-yellow-100 text-yellow-600'
                                         : item.order_status === 'in_progress'
                                         ? 'bg-orange-100 text-orange-600'
@@ -400,7 +406,7 @@ function Riwayat() {
                                     >
                                     {item.order_status === 'completed'
                                         ? 'Completed'
-                                        : item.order_status === 'pending'
+                                        : item.order_status === 'pending' || item.order_status === 'PENDING'
                                         ? 'Pending'
                                         : item.order_status === 'in_progress'
                                         ? 'In Progress'
@@ -518,7 +524,7 @@ function Riwayat() {
                                     <p>Rp {Number(detailPesanan.total_amount).toLocaleString("id-ID")}</p>
                                 </div>
                                 {detailPesanan 
-                                    && detailPesanan.order_status === "pending"
+                                    && (detailPesanan.order_status === "pending" || detailPesanan.order_status === "PENDING")
                                     && riwayatOnline.some(item => item.order_code === detailPesanan.order_code) && (
                                         <div className="flex flex-row justify-end gap-2 border-t py-3 font-semibold">
                                             <button

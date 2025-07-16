@@ -307,7 +307,7 @@ function Kasir() {
             const token = getToken(); // ambil token untuk header Authorization
 
             const tripayRes = await axios.post(
-                'https://5dbb88ef35ab.ngrok-free.app/api/storeowner/create_tripay_transaction/',
+                'https://ec14dc5f7691.ngrok-free.app/api/storeowner/create_tripay_transaction/',
                 {
                     order_id: orderId,
                     payment_method: "QRIS"
