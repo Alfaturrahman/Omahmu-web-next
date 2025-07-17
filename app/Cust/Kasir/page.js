@@ -319,7 +319,7 @@ function Kasir() {
             }
 
             const tripayRes = await axios.post(
-                'https://314e0f5fd62f.ngrok-free.app/api/storeowner/create_tripay_transaction/',
+                'https://deb11dc0e771.ngrok-free.app/api/storeowner/create_tripay_transaction/',
                 { order_id: orderId, payment_method: "QRIS" },
                 { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
             );

@@ -11,6 +11,8 @@ import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
 import { jwtDecode } from "jwt-decode";
 import axios from 'axios';
+import Flag from "react-world-flags";
+
 
 function Kasir() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -39,6 +41,8 @@ function Kasir() {
     const [countdown, setCountdown] = useState(60); // timer mundur 60 detik
     const [orderId, setOrderId] = useState(null);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [selectedCountry, setSelectedCountry] = useState("ID");
+    
 
      useEffect(() => {
         let timerInterval;
@@ -60,6 +64,13 @@ function Kasir() {
         // Cleanup kalau modal ditutup manual
         return () => clearInterval(timerInterval);
     }, [showQrisModal]);
+
+    const countryFlags = {
+        ID: { code: "+62", label: "ID" },
+        US: { code: "+1", label: "US" },
+        SG: { code: "+65", label: "SG" },
+        IN: { code: "+91", label: "IN" }
+    };
 
     const token = localStorage.getItem("token");
     let userEmail = "";
@@ -1213,6 +1224,43 @@ const handleSaveEdit = async () => {
                                 <span>Rp {total.toLocaleString("id-ID")}</span>
                             </div>
                         </div>
+
+                       {/* No WhatsApp */}
+                        <div className="flex flex-col border border-gray-300 px-4 py-2 rounded-lg text-sm w-full mt-4">
+                        <label htmlFor="noHp" className="text-gray-500 mb-1">
+                            Nomor WhatsApp
+                        </label>
+                        <div className="flex items-center">
+                            <Flag
+                            code={selectedCountry.toLowerCase()}
+                            style={{ width: 20, height: 15, marginRight: 8 }}
+                            />
+                            <select
+                            value={selectedCountry}
+                            onChange={(e) => setSelectedCountry(e.target.value)}
+                            className="mr-2 bg-transparent border-none text-black font-semibold focus:outline-none cursor-pointer"
+                            >
+                            {Object.keys(countryFlags).map((key) => (
+                                <option key={key} value={key}>
+                                {countryFlags[key].label}
+                                </option>
+                            ))}
+                            </select>
+                            <span className="text-black font-semibold mr-2">
+                            {countryFlags[selectedCountry].code}
+                            </span>
+                            <input
+                            type="number"
+                            id="noHp"
+                            name="phoneNumber"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            placeholder="Masukkan no WhatsApp anda yang aktif"
+                            className="flex-1 bg-transparent border-none text-black font-semibold focus:outline-none placeholder-[#C0C0C0] appearance-none"
+                            />
+                        </div>
+                        </div>
+
 
                         {/* Metode Pembayaran */}
                         <h3 className="text-black font-semibold mt-6 mb-2">Metode Pembayaran</h3>
