@@ -354,7 +354,7 @@ function Log() {
                       {detailLog[0]?.get_order_json?.items?.map((item, idx) => (
                         <div className="flex gap-3 mt-2 border-b py-4" key={idx}>
                           <img
-                            src={item.product_picture ? `http://localhost:8000/${item.product_picture}` : '/default-image.png'}
+                            src={item.product_picture ? `https://posvanapi-production.up.railway.app${item.product_picture}` : '/default-image.png'}
                             alt={item.product_name}
                             className="w-20 h-16 rounded object-cover"
                           />

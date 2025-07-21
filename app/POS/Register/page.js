@@ -141,7 +141,7 @@ const Register = () => {
         {/* Kiri */}
         <div className="hidden md:block w-1/2 bg-cover bg-center" style={{ backgroundImage: 'url(/login-bg.png)' }}>
           <div className="flex flex-col items-center justify-center h-full px-10">
-            <img src="/logo.jpg" alt="Logo" className="w-45 mb-20 mix-blend-multiply" />
+            <img src="/Logo.jpg" alt="Logo" className="w-45 mb-20 mix-blend-multiply" />
             <p className="text-black text-center italic text-lg mb-60 font-medium" style={{ fontFamily: "'Tiro Devanagari Sanskrit', serif" }}>
                 "Lebih dari Sekadar Tempat Makan, Angkringan OmahMu Adalah Rumah Kedua di Setiap Suapannya"
             </p>
@@ -151,7 +151,7 @@ const Register = () => {
         {/* Form */}
         <div className="w-full md:w-1/2 bg-white p-6 md:p-10 overflow-y-auto max-h-screen">
           <div className="md:hidden flex justify-center mb-4">
-            <img src="/logo.jpg" alt="Logo" className="w-28" />
+            <img src="/Logo.jpg" alt="Logo" className="w-28" />
           </div>
           <h2 className="text-center text-black text-2xl font-bold mb-2">Daftar</h2>
           <p className="text-center text-black mb-6">Selamat Datang di <span className="text-[#F6B543] font-bold">Posvana</span></p>

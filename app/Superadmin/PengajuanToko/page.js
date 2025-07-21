@@ -437,7 +437,7 @@ function DaftarPengajuanToko() {
                                             <div className="w-[5%]">:</div>
                                             <div className="w-[50%]">
                                                 <img
-                                                    src={`http://localhost:8000/media/${storeDetail.store_picture}`} // bangun URL manual
+                                                    src={`https://posvanapi-production.up.railway.app/media/${storeDetail.store_picture}`} // bangun URL manual
                                                     alt="Foto Toko"
                                                     className="w-[120px] h-auto object-cover rounded border shadow cursor-pointer"
                                                     onClick={() => handleImageClick('/Logo-Toko.png')}
@@ -458,7 +458,7 @@ function DaftarPengajuanToko() {
                                         <div key={idx} className="mb-3">
                                         <p className="text-xs font-semibold mb-1">{doc.label}</p>
                                         <a
-                                            href={`http://localhost:8000/media/${doc.file}`}
+                                            href={`https://posvanapi-production.up.railway.app/media/${doc.file}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="flex items-center border rounded px-3 py-2 bg-gray-50 text-sm hover:underline"

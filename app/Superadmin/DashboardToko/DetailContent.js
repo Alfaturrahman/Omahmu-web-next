@@ -223,7 +223,7 @@ function DashboardToko() {
                         .map((item) => (
                             <div key={item.id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
                                 <img
-                                src={item.image ? `http://localhost:8000${item.image}` : '/default-image.png'}
+                                src={item.image ? `https://posvanapi-production.up.railway.app${item.image}` : '/default-image.png'}
                                 alt={item.product_name}
                                 className="rounded-lg w-full h-40 object-cover w-full"
                                 />

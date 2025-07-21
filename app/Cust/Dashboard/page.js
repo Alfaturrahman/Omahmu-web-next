@@ -95,7 +95,7 @@ function Home() {
                      <img
                         src={
                           toko.store_picture
-                            ? `http://localhost:8000/media/${toko.store_picture}`
+                            ? `https://posvanapi-production.up.railway.app/media/${toko.store_picture}`
                             : "/Logo-Toko.png"
                         }
                         onError={(e) => {

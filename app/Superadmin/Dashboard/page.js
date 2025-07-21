@@ -157,7 +157,7 @@ function SuperadminDashboard() {
                   className="w-full sm:w-[48%] lg:w-[30%] xl:w-[22%] bg-white border border-gray-300 rounded-xl p-4 text-left"
                 >
                       <img
-                    src={`http://localhost:8000/media/${store.store_picture}`}
+                    src={`https://posvanapi-production.up.railway.app/media/${store.store_picture}`}
                     alt={store.store_name}
                     className="w-full p-3 h-60 mx-auto"
                     onError={(e) => {

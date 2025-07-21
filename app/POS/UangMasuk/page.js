@@ -55,7 +55,7 @@ function Laporan() {
             const token = localStorage.getItem('token');
             const storeId = localStorage.getItem('store_id');
         
-            const url = `http://127.0.0.1:8000/api/storeowner/laporan_keutungan/?store_id=${storeId}&export_pdf=true`;
+            const url = `https://posvanapi-production.up.railway.app/api/storeowner/laporan_keutungan/?store_id=${storeId}&export_pdf=true`;
         
             try {
                 const response = await fetch(url, {

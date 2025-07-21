@@ -484,7 +484,7 @@ function Riwayat() {
                                         {detailPesanan.items.map((item, index) => (
                                             <div key={index} className={`flex gap-3 mt-4 ${index > 0 ? "pt-2 border-t" : ""}`}>
                                                 <img
-                                                    src={`http://localhost:8000${item.product_picture}`}
+                                                    src={`https://posvanapi-production.up.railway.app${item.product_picture}`}
                                                     alt={item.product_name}
                                                     className="w-20 h-16 rounded object-cover"
                                                 />

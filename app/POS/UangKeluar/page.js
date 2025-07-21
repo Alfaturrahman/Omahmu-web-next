@@ -89,7 +89,7 @@ function Home() {
             const token = localStorage.getItem('token');
             const storeId = localStorage.getItem('store_id');
         
-            const url = `http://127.0.0.1:8000/api/storeowner/laporan_uang_keluar/?store_id=${storeId}&export_pdf=true`;
+            const url = `https://posvanapi-production.up.railway.app/api/storeowner/laporan_uang_keluar/?store_id=${storeId}&export_pdf=true`;
         
             try {
                 const response = await fetch(url, {
@@ -392,12 +392,12 @@ function Home() {
                                         <div className="flex flex-col justify-center items-start">
                                             <span className="text-sm text-gray-500 font-medium mb-2">Bukti Nota Belanja</span>
                                             <img
-                                            src={`http://localhost:8000${selectedTransaction.image}`}
+                                            src={`https://posvanapi-production.up.railway.app${selectedTransaction.image}`}
 
                                             alt="Bukti Transaksi"
                                             className="w-32 h-32 object-cover rounded-md border cursor-pointer hover:scale-105 transition"
                                             onClick={() => {
-                                                setPreviewImage(`http://localhost:8000${selectedTransaction.image}`);
+                                                setPreviewImage(`https://posvanapi-production.up.railway.app${selectedTransaction.image}`);
                                                 setIsImageModalOpen(true);
                                             }}
                                             />
@@ -499,11 +499,11 @@ function Home() {
                                             <div>
                                                 <label className="block text-sm font-semibold text-black mb-1">Upload Bukti Pengeluaran</label>
                                                 <img
-                                                    src={`http://localhost:8000${selectedTransaction.image}`}
+                                                    src={`https://posvanapi-production.up.railway.app${selectedTransaction.image}`}
                                                     alt="Bukti Transaksi"
                                                     className="w-32 h-32 object-cover rounded-md border cursor-pointer hover:scale-105 transition"
                                                     onClick={() => {
-                                                        setPreviewImage(`http://localhost:8000${selectedTransaction.image}`);
+                                                        setPreviewImage(`https://posvanapi-production.up.railway.app${selectedTransaction.image}`);
                                                         setIsImageModalOpen(true);
                                                     }}
                                                 />

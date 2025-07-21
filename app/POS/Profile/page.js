@@ -421,7 +421,7 @@ function ProfilToko() {
                             <label className="block w-full h-[250px] border-2 border-dashed border-gray-300 rounded-lg cursor-pointer relative overflow-hidden hover:border-yellow-400 transition">
                                 {previewImage ? (
                                     <img
-                                        src={`http://localhost:8000/media/${previewImage}`} // Menggunakan URL gambar dari server
+                                        src={`https://posvanapi-production.up.railway.app/media/${previewImage}`} // Menggunakan URL gambar dari server
                                         alt="Preview Foto Toko"
                                         className="w-full h-full object-cover"
                                     />

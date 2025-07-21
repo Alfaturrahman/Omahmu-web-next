@@ -616,7 +616,7 @@ const Produk = () => {
                                 productId: product.product_id,
                               });
                               if (product.product_picture) {
-                                setPreviewImage(`http://localhost:8000${product.product_picture}`);
+                                setPreviewImage(`https://posvanapi-production.up.railway.app${product.product_picture}`);
                               } else {
                                 setPreviewImage(null); // Atau gambar default
                               }
@@ -641,20 +641,18 @@ const Produk = () => {
 
                   <div className="flex justify-center mt-2">
                     <img
-                      src={`http://localhost:8000${product.product_picture}`}
+                      src={`https://posvanapi-production.up.railway.app${product.product_picture}`}
                       alt={product.product_name}
                       className="w-40 h-28 object-cover rounded"
                     />
                   </div>
 
                   <div className="px-3 pt-2 text-xs text-gray-500">#{product.product_code}</div>
-                  <span className="px-3 pt-2 text-sm font-semibold text-gray-800">{product.product_name}</span>
-
-                  <div className="px-3 py-3 flex justify-between items-center text-sm font-semibold text-gray-800 whitespace-nowrap overflow-hidden">
-                  <div className="truncate">
-                  Rp {Number(product.selling_price).toLocaleString('id-ID')}
-                  </div>
-                  {product.selling_type === 'Harian' && (
+                  <div className="flex justify-between items-center px-3 pt-2">
+                    <span className="text-sm font-semibold text-gray-800">
+                      {product.product_name}
+                    </span>
+                    {product.selling_type === 'Harian' && (
                       <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full">
                         Harian
                       </span>
@@ -664,6 +662,11 @@ const Produk = () => {
                         Permanen
                       </span>
                     )}
+                  </div>
+                  <div className="px-3 py-3 flex justify-between items-center text-sm font-semibold text-gray-800 whitespace-nowrap overflow-hidden">
+                  <div className="truncate">
+                  Rp {Number(product.selling_price).toLocaleString('id-ID')}
+                  </div>
                     <div className="flex items-center gap-x-2 flex-nowrap">
                         {/* Tombol Minus */}
                         <button

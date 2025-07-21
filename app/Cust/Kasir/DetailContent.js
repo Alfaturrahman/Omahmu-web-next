@@ -76,7 +76,7 @@ function Kasir() {
                     try {
                         const token = localStorage.getItem('token');
                         const res = await axios.get(
-                            `http://127.0.0.1:8000/api/storeowner/check_payment_status/?order_id=${orderId}`,
+                            `https://posvanapi-production.up.railway.app/api/storeowner/check_payment_status/?order_id=${orderId}`,
                             { headers: { Authorization: `Bearer ${token}` } }
                         );
     
@@ -321,7 +321,7 @@ function Kasir() {
             }
 
             const tripayRes = await axios.post(
-                'https://6cca503735ac.ngrok-free.app/api/storeowner/create_tripay_transaction/',
+                'https://posvanapi-production.up.railway.app/api/storeowner/create_tripay_transaction/',
                 { order_id: orderId, payment_method: "QRIS" },
                 { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
             );
@@ -631,7 +631,7 @@ function Kasir() {
                             .map((item) => (
                                 <div key={`${item.product_id}-${item.name}`} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
                                     <img
-                                        src={item.image ? `http://localhost:8000${item.image}` : '/default-image.png'}
+                                        src={item.image ? `https://posvanapi-production.up.railway.app${item.image}` : '/default-image.png'}
                                         alt={item.name}
                                         className="rounded-lg w-full h-40 object-cover" // Set image size with auto aspect ratio
                                     />
@@ -701,7 +701,7 @@ function Kasir() {
                             cart.map((item) => (
                                 <div key={item.id} className="flex items-center border-b pb-3 mb-3">
                                     <img
-                                            src={item.image ? `http://localhost:8000${item.image}` : '/default-image.png'}
+                                            src={item.image ? `https://posvanapi-production.up.railway.app${item.image}` : '/default-image.png'}
                                             alt={item.name}
                                             className="rounded-lg w-20 h-20 object-cover"
                                         />

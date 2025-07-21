@@ -217,7 +217,7 @@ function Kasir() {
                 try {
                     const token = localStorage.getItem('token');
                     const res = await axios.get(
-                        `http://127.0.0.1:8000/api/storeowner/check_payment_status/?order_id=${orderId}`,
+                        `https://posvanapi-production.up.railway.app/api/storeowner/check_payment_status/?order_id=${orderId}`,
                         { headers: { Authorization: `Bearer ${token}` } }
                     );
 
@@ -319,7 +319,7 @@ function Kasir() {
             const token = getToken(); // ambil token untuk header Authorization
 
             const tripayRes = await axios.post(
-                'https://ec14dc5f7691.ngrok-free.app/api/storeowner/create_tripay_transaction/',
+                'https://posvanapi-production.up.railway.app/api/storeowner/create_tripay_transaction/',
                 {
                     order_id: orderId,
                     payment_method: "QRIS"
@@ -1107,7 +1107,7 @@ const handleSaveEdit = async () => {
                                 <div key={item.product_id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
                                     {/* Menampilkan gambar dari localhost/media */}
                                     <img
-                                        src={item.product_picture ? `http://localhost:8000/${item.product_picture}` : '/default-image.png'}
+                                        src={item.product_picture ? `https://posvanapi-production.up.railway.app${item.product_picture}` : '/default-image.png'}
                                         alt={item.product_name}
                                         className="rounded-lg w-full h-40 object-cover"
                                     />
@@ -1180,7 +1180,7 @@ const handleSaveEdit = async () => {
                             cart.map((item) => (
                                 <div key={item.product_id} className="flex items-center border-b pb-3 mb-3">
                                     <img
-                                        src={item.product_picture ? `http://localhost:8000${item.product_picture}` : '/default-image.png'}
+                                        src={item.product_picture ? `https://posvanapi-production.up.railway.app${item.product_picture}` : '/default-image.png'}
                                         alt={item.product_name}
                                         className="rounded-lg w-[60px] h-[60px] object-cover"
                                     />

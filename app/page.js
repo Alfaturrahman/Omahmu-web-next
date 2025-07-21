@@ -49,7 +49,7 @@ export default function Home() {
            <header className="fixed top-0 left-0 right-0 bg-white shadow-md px-6 py-4 z-50 flex items-center justify-between">
                 {/* Logo */}
                 <div className="flex items-center">
-                    <img src="/logo.jpg" alt="Logo" className="h-14 mix-blend-multiply" />
+                    <img src="/Logo.jpg" alt="Logo" className="h-14 mix-blend-multiply" />
                 </div>
 
                 {/* Navigation + Auth Buttons (Desktop) */}
@@ -550,7 +550,7 @@ export default function Home() {
                 <div className="border-t border-black pt-6 grid grid-cols-1 md:grid-cols-3 gap-6 my-5">
                     {/* Logo dan Tagline */}
                     <div className="flex items-start gap-4">
-                    <img src="/logo.jpg" alt="Posvana Logo" className="w-40 object-contain mix-blend-multiply"/>
+                    <img src="/Logo.jpg" alt="Posvana Logo" className="w-40 object-contain mix-blend-multiply"/>
                     <div className="font-semibold text-2xl">
                         <p>Mudah, Cepat, dan</p>
                         <p>Nyaman untuk</p>

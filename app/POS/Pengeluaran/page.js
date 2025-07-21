@@ -408,11 +408,11 @@ function Pengeluaran() {
                                   item.spending,
                                   item.description,
                                   <img
-                                    src={`http://localhost:8000${item.proof_of_expenses}`}
+                                    src={`https://posvanapi-production.up.railway.app${item.proof_of_expenses}`}
                                     alt="Bukti Transaksi"
                                     className="w-32 h-32 object-cover rounded-md border cursor-pointer hover:scale-105 transition"
                                     onClick={() => {
-                                      setPreviewImage(`http://localhost:8000${item.proof_of_expenses}`);
+                                      setPreviewImage(`https://posvanapi-production.up.railway.app${item.proof_of_expenses}`);
                                       setIsImageModalOpen(true);
                                     }}
                                   />

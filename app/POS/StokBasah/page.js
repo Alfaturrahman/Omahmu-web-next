@@ -866,11 +866,11 @@ function StokBasah() {
                     <div>
                       <label className="block text-sm font-semibold text-black mb-1">Bukti Pembayaran</label>
                       <img
-                        src={`http://localhost:8000${selectedDetail.stock_entry.proof_of_payment}`}
+                        src={`https://posvanapi-production.up.railway.app${selectedDetail.stock_entry.proof_of_payment}`}
                         alt="Bukti Transaksi"
                         className="w-32 h-32 object-cover rounded-md border cursor-pointer hover:scale-105 transition"
                         onClick={() => {
-                          setPreviewImage(`http://localhost:8000${selectedDetail.stock_entry.proof_of_payment}`);
+                          setPreviewImage(`https://posvanapi-production.up.railway.app${selectedDetail.stock_entry.proof_of_payment}`);
                           setIsImageModalOpen(true);
                         }}
                       />
