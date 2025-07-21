@@ -9,6 +9,7 @@ import { ShoppingCart, X, Minus, Plus, ScanQrCode, Banknote, Search  } from 'luc
 import '@/globals.css';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
+import posthog from 'services/instrumentation-client';
 import { jwtDecode } from "jwt-decode";
 import axios from 'axios';
 import Flag from "react-world-flags";

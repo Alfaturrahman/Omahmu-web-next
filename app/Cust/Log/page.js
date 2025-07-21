@@ -105,6 +105,9 @@ function Log() {
                     detail: item // kamu bisa gunakan ini untuk offcanvas/detail view
                 };
             });
+
+            console.log("mappedData",mappedData);
+            
             setListLog(mappedData);
         } catch (err) {
             console.error(err.message);
@@ -418,7 +421,7 @@ function Log() {
                       ,00
                     </p>
                   </div>
-                 {detailLog[0]?.get_order_json?.order_status === 'PENDING' && (
+                  {detailLog[0]?.get_order_json?.order_status?.toLowerCase() === 'pending' && (
                       <div className="flex justify-end">
                           <button
                               onClick={() => handleCancelOrder()} 

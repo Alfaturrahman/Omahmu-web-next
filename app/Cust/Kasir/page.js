@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -319,7 +321,7 @@ function Kasir() {
             }
 
             const tripayRes = await axios.post(
-                'https://deb11dc0e771.ngrok-free.app/api/storeowner/create_tripay_transaction/',
+                'https://6cca503735ac.ngrok-free.app/api/storeowner/create_tripay_transaction/',
                 { order_id: orderId, payment_method: "QRIS" },
                 { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
             );
@@ -803,7 +805,7 @@ function Kasir() {
                                             onChange={() => setPreorderOption("pickup")}
                                             className="form-radio text-[#ECA641]"
                                         />
-                                        Bayar Sendiri
+                                        Ambil Sendiri
                                     </label>
                                 </div>
                                 {errors.preorderOption && <p className="text-red-500 text-sm">{errors.preorderOption}</p>}
