@@ -397,7 +397,7 @@ const Header = ({ toggleSidebar }) => {
           {isOpen && (
             <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg p-3 z-50">
              <div className="px-3 py-2 border-b">
-              <p className="text-sm text-black font-semibold">{userRole}</p>
+              <p className="text-sm text-black font-semibold">{userName}</p>
               <p className="text-xs text-gray-500">{userEmail}</p>
             </div>
 

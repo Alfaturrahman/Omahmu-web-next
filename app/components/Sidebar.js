@@ -1,18 +1,52 @@
 "use client";
 import Link from "next/link";
+import { useRef, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 import { 
   LayoutDashboard, Monitor, Package, BarChart, Utensils, History, X, Store, ReceiptText,
   ChevronDown, ChevronUp, Wallet, ShoppingBasket, Briefcase, ArrowDownCircle, ArrowUpCircle 
 } from "lucide-react";
 
+import { jwtDecode } from "jwt-decode";
+import * as apiService from 'services/authService';
+
 const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
+  const token = localStorage.getItem("token");
+  const storeId = localStorage.getItem("store_id");
   const pathname = usePathname();
   const [openDropdown, setOpenDropdown] = useState(null);
   const role_id = localStorage.getItem("role_id");  
+  const [menuItems, setMenuItems] = useState([]);
 
-  const menuItems = [
+  const featureMap = {
+    "Dashboard": {
+      name: "Dashboard",
+      path: "/POS/Dashboard",
+      icon: LayoutDashboard,
+    },
+    "Kasir": {
+      name: "Kasir",
+      path: "/POS/Kasir",
+      icon: Monitor,
+    },
+    "Produk": {
+      name: "Produk",
+      path: "/POS/StokProduk",
+      icon: Package,
+    },
+    "Daftar Menu": {
+      name: "Daftar Menu",
+      path: "/POS/Menu",
+      icon: Utensils,
+    },
+    "Riwayat Pesanan": {
+      name: "Riwayat Pesanan",
+      path: "/POS/Riwayat",
+      icon: History,
+    },
+  };
+
+  const menuItemss = [
     {
       role: 1, // Superadmin
       items: [
@@ -56,7 +90,87 @@ const Sidebar = ({ isOpen, isCollapsed, toggleSidebar }) => {
     },
   ];
 
-  const currentMenu = menuItems.find((menu) => menu.role === parseInt(role_id));
+  const getSidebarFeatures = async () => {
+    try {
+      const res = await apiService.getData(`/storeowner/check_fitur/?store_id=${storeId}`);
+      const fitur = res.data;
+
+      const sidebar = [];
+
+      // Cek dan kelompokkan submenu Laporan
+      const laporanSubmenu = [];
+      if (fitur.some((f) => f.feature_name === "Uang Masuk")) {
+        laporanSubmenu.push({
+          name: "Uang Masuk",
+          path: "/POS/UangMasuk",
+          icon: ArrowDownCircle,
+        });
+      }
+      if (fitur.some((f) => f.feature_name === "Uang Keluar")) {
+        laporanSubmenu.push({
+          name: "Uang Keluar",
+          path: "/POS/UangKeluar",
+          icon: ArrowUpCircle,
+        });
+      }
+      if (laporanSubmenu.length > 0) {
+        sidebar.push({
+          name: "Laporan",
+          icon: BarChart,
+          submenu: laporanSubmenu,
+        });
+      }
+
+      // Cek dan kelompokkan submenu Pengeluaran
+      const pengeluaranSubmenu = [];
+      if (fitur.some((f) => f.feature_name === "Stok Basah")) {
+        pengeluaranSubmenu.push({
+          name: "Stok Basah",
+          path: "/POS/StokBasah",
+          icon: ShoppingBasket,
+        });
+      }
+      if (fitur.some((f) => f.feature_name === "Pengeluaran Lainnya")) {
+        pengeluaranSubmenu.push({
+          name: "Pengeluaran Lainnya",
+          path: "/POS/Pengeluaran",
+          icon: Briefcase,
+        });
+      }
+      if (pengeluaranSubmenu.length > 0) {
+        sidebar.push({
+          name: "Pengeluaran",
+          icon: Wallet,
+          submenu: pengeluaranSubmenu,
+        });
+      }
+
+      // Fitur lain langsung ditambahkan
+      fitur.forEach((item) => {
+        const mapped = featureMap[item.feature_name];
+        if (mapped) sidebar.push(mapped);
+      });
+
+      console.log("sidebar",sidebar);
+      
+      setMenuItems(sidebar);
+    } catch (error) {
+      console.error("Gagal mengambil fitur sidebar:", error);
+    }
+  };
+
+  useEffect(() => {
+      if (role_id === "2" && storeId) {
+        getSidebarFeatures();
+      }
+    }, [role_id, storeId]);
+
+
+  const currentMenu =
+  role_id === "2"
+    ? { items: menuItems } // dari backend
+    : menuItemss.find((menu) => menu.role === parseInt(role_id)); // dari array statis
+
   if (!currentMenu) {
     return <div className="p-4">Akses tidak ditemukan</div>;
   }
