@@ -163,16 +163,18 @@ function Kasir() {
 
             const result = await apiService.getData(`/storeowner/daftar_menu/?store_id=${storeId}`);
     
-            const formatted = result.data.map((item) => ({
-                id: item.product_id,
-                productCode: item.product_code,
-                name: item.product_name,
-                stock: item.stock,
-                price: Number(item.selling_price),
-                image: item.product_picture,
-                category: item.product_type,
-                favorite: item.is_favorit || false
-            }));
+            const formatted = result.data
+                .filter(item => item.stock > 0) // hanya ambil yang stoknya > 0
+                .map((item) => ({
+                    id: item.product_id,
+                    productCode: item.product_code,
+                    name: item.product_name,
+                    stock: item.stock,
+                    price: Number(item.selling_price),
+                    image: item.product_picture,
+                    category: item.product_type,
+                    favorite: item.is_favorit || false
+                }));
     
             setListMenu(formatted);
         } catch (err) {

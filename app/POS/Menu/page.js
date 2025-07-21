@@ -90,7 +90,7 @@ function Menu() {
                             />
                             <div className="flex items-center justify-between mt-2">
                             <h3 className="font-semibold text-sm text-black flex items-center">
-                                {item.favorite_status && <span className="text-yellow-400 mr-1">⭐</span>}
+                                {item.is_favorit && <span className="text-yellow-400 mr-1">⭐</span>}
                                 {item.product_name}
                             </h3>
                             <p className="text-[#ECA641] font-bold text-sm whitespace-nowrap">

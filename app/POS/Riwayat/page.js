@@ -254,8 +254,13 @@ function Riwayat() {
         };
     }, [filterDate]);
 
-    const currentData = applyFilters(getData()).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-    const totalPages = Math.ceil(getData().length / itemsPerPage);
+    const filteredData = applyFilters(getData());
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const currentData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+    );
+
 
     return (
     <div className="h-screen flex flex-col bg-white">
@@ -545,13 +550,38 @@ function Riwayat() {
 
                     {/* Pagination */}
                     <div className="mt-auto pt-6 flex flex-col sm:flex-row justify-between items-center gap-2 text-gray-600">
-                        <span>Menampilkan {currentPage * itemsPerPage - itemsPerPage + 1} hingga {Math.min(currentPage * itemsPerPage, getData().length)} dari {getData().length} entri</span>
+                        <span>
+                        Menampilkan {filteredData.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} hingga {Math.min(currentPage * itemsPerPage, filteredData.length)} dari {filteredData.length} entri
+                        </span>
                         <div className="flex gap-2">
                         <button className={`px-4 py-2 rounded-md ${currentPage === 1 ? 'cursor-not-allowed bg-gray-300' : 'bg-[#ECA641] text-white'}`} onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}>&lt;
                         </button>
-                        {[...Array(totalPages)].map((_, i) => (
-                            <button key={i} className={`px-4 py-2 rounded-md ${currentPage === i + 1 ? 'bg-[#ECA641] text-white' : 'bg-gray-300'}`} onClick={() => setCurrentPage(i + 1)}>{i + 1}</button>
-                        ))}
+                        {(() => {
+                            const maxButtons = 6;
+                            let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+                            let endPage = startPage + maxButtons - 1;
+
+                            if (endPage > totalPages) {
+                                endPage = totalPages;
+                                startPage = Math.max(1, endPage - maxButtons + 1);
+                            }
+
+                            const pageButtons = [];
+                            for (let i = startPage; i <= endPage; i++) {
+                                pageButtons.push(
+                                <button
+                                    key={i}
+                                    className={`px-4 py-2 rounded-md ${
+                                    currentPage === i ? 'bg-[#ECA641] text-white' : 'bg-gray-300'
+                                    }`}
+                                    onClick={() => setCurrentPage(i)}
+                                >
+                                    {i}
+                                </button>
+                                );
+                            }
+                            return pageButtons;
+                            })()}
                         <button className={`px-4 py-2 rounded-md ${currentPage === totalPages ? 'cursor-not-allowed bg-gray-300' : 'bg-[#ECA641] text-white'}`} onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}>&gt;
                         </button>
                         </div>

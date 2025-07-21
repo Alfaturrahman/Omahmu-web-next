@@ -20,8 +20,7 @@ const Header = ({ toggleSidebar }) => {
     userEmail = decoded.email;
     userRole = decoded.role_name;
     userRoleId = decoded.role_id;
-    
-  }
+  }  
 
   const pathname = usePathname();
   const router = useRouter();
@@ -29,6 +28,7 @@ const Header = ({ toggleSidebar }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [toggle, setToggle] = useState(false);  // store open/close
+  const [profile, setProfile] = useState(null);
   const [activeTab, setActiveTab] = useState(userRole === "SuperAdmin" ? "submission" : "order");
   const [notifications, setNotifications] = useState([]);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
@@ -43,6 +43,33 @@ const Header = ({ toggleSidebar }) => {
   const notifRef = useRef(null);
   const dropdownRef = useRef(null);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        let result;
+        if (userRole === "store_owner") {
+          result = await apiService.getData(`/storeowner/profile/${storeId}/`);
+        } else if (userRole === "customer") {
+          result = await apiService.getData(`/customer/profile_cust/`);
+        }
+        setProfile(result);
+      } catch (error) {
+        console.error("Gagal ambil profil:", error);
+      }
+    };
+
+    if (storeId && userRole) {
+      fetchProfile();
+    }
+  }, [storeId, userRole]);
+
+  const userName =
+    userRole === "store_owner"
+      ? profile?.data?.store_name
+      : userRole === "customer"
+      ? profile?.data?.custname_name
+      : "Super Admin";
+    
   // 🔔 Fetch notifications saat notif dibuka
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -353,7 +380,7 @@ const Header = ({ toggleSidebar }) => {
         </div>
 
         <span className="text-[11px] md:text-[13px] lg:text-[15px] text-black font-semibold">
-          {userRole}
+          {userName}
         </span>
 
         {/* Avatar dan Dropdown */}
