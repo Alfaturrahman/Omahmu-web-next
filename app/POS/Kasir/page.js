@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
 import Image from 'next/image';
@@ -9,7 +9,10 @@ import { ShoppingCart, X, Minus, Plus, ScanQrCode, Banknote, Search  } from 'luc
 import '@/globals.css';
 import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
+import posthog from 'services/instrumentation-client';
 import { jwtDecode } from "jwt-decode";
+import axios from 'axios';
+import Flag from "react-world-flags";
 
 
 function Kasir() {
@@ -20,15 +23,55 @@ function Kasir() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [selected, setSelected] = useState(null);
     const [showQrisModal, setShowQrisModal] = useState(false);
+    const [qrPaymentUrl, setQrPaymentUrl] = useState("");
+    const [paymentExpiredAt, setPaymentExpiredAt] = useState(null);
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
+    const [showBayarNantiModal, setShowBayarNantiModal] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
     const [amountPaid, setAmountPaid] = useState(0);
     const [listAntrian, setListAntrian] = useState([]);
     const [listMenu, setListMenu] = useState([]);
     const [customerName, setCustomerName] = useState("");
     const [orderDate, setOrderDate] = useState("");
+    const [selectedOrderForEdit, setSelectedOrderForEdit] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+
     const [phoneNumber, setPhoneNumber] = useState("");
     const [deliveryAddress, setDeliveryAddress] = useState("");
     const [remarks, setRemarks] = useState("");
+    const [countdown, setCountdown] = useState(60); // timer mundur 60 detik
+    const [orderId, setOrderId] = useState(null);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [selectedCountry, setSelectedCountry] = useState("ID");
+    
+
+     useEffect(() => {
+        let timerInterval;
+        if (showQrisModal) {
+        setCountdown(300); // reset timer ke 60 detik setiap buka modal
+
+        timerInterval = setInterval(() => {
+            setCountdown((prev) => {
+            if (prev <= 1) {
+                clearInterval(timerInterval); // berhenti kalau sudah 0
+                setShowQrisModal(false);     // auto tutup modal
+                return 0;
+            }
+            return prev - 1;
+            });
+        }, 1000); // setiap 1 detik
+        }
+
+        // Cleanup kalau modal ditutup manual
+        return () => clearInterval(timerInterval);
+    }, [showQrisModal]);
+
+    const countryFlags = {
+        ID: { code: "+62", label: "ID" },
+        US: { code: "+1", label: "US" },
+        SG: { code: "+65", label: "SG" },
+        IN: { code: "+91", label: "IN" }
+    };
 
     const token = localStorage.getItem("token");
     let userEmail = "";
@@ -43,6 +86,13 @@ function Kasir() {
         userRoleId = decoded.role_id;
     
       }
+
+
+    useEffect(() => {
+    const today = new Date();
+    const formatted = today.toISOString().split('T')[0]; // hasil: '2025-07-06'
+    setOrderDate(formatted);
+    }, []);
 
     async function fetchDataAntrian() {
             try {
@@ -68,12 +118,16 @@ function Kasir() {
         try {
     
             const storeId = localStorage.getItem('store_id');
+            const paymentMethodForDb = paymentMethodMap[selected]; // <--
+            console.log(paymentMethodForDb);
+            
+
             const payload = {
                 customer_name: customerName,
                 date: orderDate,
                 total_amount: total, // total yang sudah termasuk pajak (kalau ada)
                 order_status: "in_progress", // asumsi order langsung completed
-                payment_method: selected, // "cash" atau "qris"
+                payment_method: paymentMethodForDb, // <--- pakai value mapped
                 is_pre_order: false, // default
                 is_delivered: false, // default
                 is_dine_in: true, // misal kamu asumsi dine in (makan di tempat)
@@ -103,6 +157,9 @@ function Kasir() {
                 return;
             }
 
+            console.log("CART:", cart);
+            console.log("PAYLOAD:", payload);
+
             const response = await apiService.postData(`/storeowner/insert_order/?store_id=${storeId}`, payload);
     
             Swal.fire({
@@ -115,7 +172,6 @@ function Kasir() {
             // Reset form setelah sukses
             closeCart();
             setCustomerName("");
-            setOrderDate("");
             setPhoneNumber("");
             setDeliveryAddress("");
             setRemarks("");
@@ -145,13 +201,288 @@ function Kasir() {
             });
             return;
         }
-        handlePayment();
+
+        if (isEditing) {
+            handleSaveEdit();
+        } else {
+            handlePayment();
+        }
     };
-    
-    const handleBayarQRIS = () => {
-        insertOrder();
+
+    useEffect(() => {
+        let interval;
+
+        if (showQrisModal && orderId) {
+            interval = setInterval(async () => {
+                try {
+                    const token = localStorage.getItem('token');
+                    const res = await axios.get(
+                        `http://127.0.0.1:8000/api/storeowner/check_payment_status/?order_id=${orderId}`,
+                        { headers: { Authorization: `Bearer ${token}` } }
+                    );
+
+                    const status = res?.data?.data?.status;
+                    console.log('Cek status pembayaran:', status);
+
+                    if (res?.data?.data?.status === 'in_progress') {
+                        clearInterval(interval);
+                        setShowQrisModal(false);
+                        closeCart();
+                        // Reset form setelah sukses
+                        setCustomerName("");
+                        setPhoneNumber("");
+                        setDeliveryAddress("");
+                        setRemarks("");
+                        setSelected(null);
+                        fetchDataAntrian();
+                        fetchDataMenu();
+
+                        // Tampilkan modal cantik pakai Swal
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Pembayaran Berhasil!',
+                            text: 'Pesanan kamu sudah dibuat dan pembayaran berhasil.',
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#ECA641'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Gagal cek status pembayaran', error);
+                }
+            }, 5000); // cek tiap 5 detik
+        }
+
+        return () => clearInterval(interval);
+    }, [showQrisModal, orderId]);
+
+
+    const handleBayarQRIS = async () => {
+        try {
+            const storeId = localStorage.getItem('store_id');
+            const paymentMethodForDb = paymentMethodMap[selected];
+
+            if (!storeId) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Store ID tidak ditemukan",
+                    text: "Silakan login ulang.",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+                return;
+            }
+
+            // 1️⃣ Insert order ke backend pakai helper
+            const payload = {
+                customer_name: customerName,
+                date: orderDate,
+                total_amount: total,
+                order_status: "in_progress",
+                payment_method: paymentMethodForDb,
+                is_pre_order: false,
+                is_delivered: false,
+                is_dine_in: true,
+                remarks,
+                pickup_date: null,
+                pickup_time: null,
+                role_id: userRoleId,
+                reference_id: storeId,
+                no_hp: phoneNumber || null,
+                delivery_address: deliveryAddress,
+                order_items: cart.map(item => ({
+                    product_id: item.product_id,
+                    selling_price: item.selling_price,
+                    product_type: item.product_type,
+                    item: item.quantity,
+                })),
+            };
+
+            console.log("Payload insert_order:", payload);
+
+            const orderResponse = await apiService.postData(`/storeowner/insert_order/?store_id=${storeId}`, payload);
+            console.log('orderResponse:', orderResponse);
+
+            const orderData = orderResponse?.data;
+            const orderId = orderData?.order_id;
+
+            if (!orderId) {
+                throw new Error("order_id tidak diterima dari backend");
+            }
+
+            setOrderId(orderId);  // ✅ simpan ke state supaya useEffect bisa pakai
+
+            console.log('Order berhasil dibuat, order_id:', orderId);
+
+            // 2️⃣ Create transaksi di Tripay pakai axios langsung
+            const getToken = () => localStorage.getItem('token');
+
+            const token = getToken(); // ambil token untuk header Authorization
+
+            const tripayRes = await axios.post(
+                'https://ec14dc5f7691.ngrok-free.app/api/storeowner/create_tripay_transaction/',
+                {
+                    order_id: orderId,
+                    payment_method: "QRIS"
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    }
+                }
+            );
+
+            console.log('tripayRes:', tripayRes);
+
+            const tripayData = tripayRes.data;
+
+            if (tripayData?.data?.payment_url) {
+                setQrPaymentUrl(tripayData.data.qr_url);
+                setPaymentExpiredAt(tripayData.data.expired_at);
+                setShowQrisModal(true);
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal Membuat Transaksi Tripay",
+                    text: tripayData?.message || "Terjadi kesalahan",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+            }
+
+        } catch (err) {
+            console.error('Error:', err);
+            Swal.fire({
+                icon: "error",
+                title: "Gagal Membuat Pesanan / Transaksi",
+                text: err?.response?.data?.message || err.message || 'Terjadi kesalahan',
+                confirmButtonText: "OK",
+                confirmButtonColor: "#ECA641",
+            });
+        }
     };
-        
+
+   const handleDetail = async (order) => {
+    console.log("==== handleDetail ====");
+    console.log("WALAWE order:", order);
+
+    setSelectedOrderForEdit(order);
+    setIsCartOpen(true);
+    setIsEditing(true);
+
+    try {
+        // panggil API detail
+        const res = await apiService.getData(`/storeowner/riwayat_detail_pesanan/?order_id=${order.order_id}`);
+        const detail = res.data[0].get_order_json;
+
+        console.log(">> DETAIL API RESPONSE:", detail);
+        console.log(">> DETAIL ITEMS:", detail.items);
+        (detail.items || []).forEach((item, idx) => {
+            console.log(`Item[${idx}] from API:`, item);
+        });
+
+        // mapping cart
+        const mappedCart = (detail.items || [])
+            .filter(item => item.product_id) // filter hanya yang punya product_id
+            .map((item) => ({
+                product_id: item.product_id,
+                product_name: item.product_name,
+                selling_price: parseInt(item.price, 10),
+                quantity: item.quantity,
+                product_type: item.product_type,
+                product_picture: item.product_picture || "/placeholder.png"
+            }));
+
+        console.log(">> CART TO SET:", mappedCart);
+
+        setCart(mappedCart);
+
+        setCustomerName(detail.customer_name || "");
+        setOrderDate(detail.order_date || "");
+        setPhoneNumber(detail.no_hp || "");
+        setDeliveryAddress(detail.delivery_address || "");
+        setRemarks(detail.remarks || "");
+        setSelected(detail.payment_method?.toLowerCase().replace(" ", "") || "");
+
+    } catch (err) {
+        console.error("Error fetching order detail:", err.message);
+        setCart([]); // fallback kalau gagal
+    }
+};
+
+const handleSaveEdit = async () => {
+    if (!selectedOrderForEdit) return;
+
+    try {
+        const storeId = localStorage.getItem('store_id');
+
+        console.log("==== handleSaveEdit ====");
+        console.log(">> CART BEFORE SAVE:", cart);
+        cart.forEach((item, idx) => {
+            console.log(`Item[${idx}] in cart before save:`, item);
+        });
+
+        // validasi: pastikan semua ada product_id
+        const invalidItem = cart.find(item => !item.product_id);
+        if (invalidItem) {
+            console.error("INVALID ITEM FOUND:", invalidItem);
+            Swal.fire({
+                icon: "error",
+                title: "Data item tidak lengkap",
+                text: "Ada item dengan product_id kosong. Mohon cek ulang.",
+                confirmButtonColor: "#ECA641",
+            });
+            return;
+        }
+
+        const payload = {
+            customer_name: customerName,
+            date: orderDate,
+            total_amount: total,
+            payment_method: paymentMethodMap[selected],
+            order_status: "in_progress",
+            is_pre_order: false,
+            is_delivered: false,
+            is_dine_in: true,
+            remarks: remarks,
+            pickup_date: null,
+            pickup_time: null,
+            role_id: userRoleId,
+            reference_id: storeId,
+            no_hp: phoneNumber || null,
+            delivery_address: deliveryAddress,
+            order_items: cart.map(item => ({
+                product_id: item.product_id,
+                selling_price: item.selling_price,
+                product_type: item.product_type,
+                item: item.quantity,
+            })),
+        };
+
+        console.log(">> PAYLOAD TO SAVE:", payload);
+
+        await apiService.putData(`/storeowner/update_order/?store_id=${storeId}&order_id=${selectedOrderForEdit.order_id}`, payload);
+
+        Swal.fire({
+            icon: "success",
+            title: "Perubahan Disimpan",
+            confirmButtonColor: "#ECA641",
+        });
+
+        fetchDataAntrian();
+        closeCart();
+        setIsEditing(false);
+        setSelectedOrderForEdit(null);
+    } catch (err) {
+        console.error("Error saving edited order:", err.message);
+        Swal.fire({
+            icon: "error",
+            title: "Gagal menyimpan perubahan",
+            confirmButtonColor: "#ECA641",
+        });
+    }
+};
+
     useEffect(() => {
         fetchDataAntrian();
         fetchDataMenu();
@@ -212,20 +543,94 @@ function Kasir() {
         });
     };
 
-    const handlePayment = () => {
-        if (selected === "qris") {
-            setShowQrisModal(true);
-        } else if (selected === "cash") {
-            setIsCashModalOpen(true);
-        } else {
+    const showModalBayar = (order) => {
+        setSelectedOrder(order);
+        setSelected("Bayar Nanti");
+        setShowBayarNantiModal(true);
+    };
+
+    const handlePayment = async () => {
+        console.log("handlePayment called. isEditing:", isEditing, "selectedOrderForEdit:", selectedOrderForEdit);
+
+        if (!customerName.trim() || !orderDate || cart.length === 0 || !selected) {
             Swal.fire({
-                icon: "info",
-                title: "Metode pembayaran belum tersedia",
-                confirmButtonText: "OK",
+                icon: "warning",
+                title: "Data belum lengkap",
+                text: "Pastikan nama customer, tanggal pemesanan, metode pembayaran, dan item keranjang sudah diisi.",
                 confirmButtonColor: "#ECA641",
             });
+            return; // stop proses
+        }
+
+        if (isEditing && selectedOrderForEdit) {
+
+            Swal.fire({
+                icon: "success",
+                title: "Perubahan disimpan, siap bayar!",
+                confirmButtonColor: "#ECA641",
+            }).then(() => {
+                if (selected === "qris") {
+                    setShowQrisModal(true);
+                } else if (selected === "cash") {
+                    setIsCashModalOpen(true);
+                } else if (selected === "bayarNanti") {
+                    Swal.fire({
+                        icon: "info",
+                        title: "Perhatian",
+                        text: "Transaksi ini akan dicatat sebagai 'Bayar Nanti'. Mohon pastikan untuk menagihnya di waktu yang sesuai.",
+                        confirmButtonText: "Oke, Mengerti",
+                        confirmButtonColor: "#ECA641",
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            await handleSaveEdit(); // Pastikan update terakhir (opsional)
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        icon: "info",
+                        title: "Metode pembayaran belum tersedia",
+                        confirmButtonText: "OK",
+                        confirmButtonColor: "#ECA641",
+                    });
+                }
+            });
+        } else {
+            // Order baru
+            if (selected === "qris") {
+                setShowQrisModal(true);
+                handleBayarQRIS();
+            } else if (selected === "cash") {
+                setIsCashModalOpen(true);
+            } else if (selected === "bayarNanti") {
+                Swal.fire({
+                    icon: "info",
+                    title: "Perhatian",
+                    text: "Transaksi ini akan dicatat sebagai 'Bayar Nanti'. Mohon pastikan untuk menagihnya di waktu yang sesuai.",
+                    confirmButtonText: "Oke, Mengerti",
+                    confirmButtonColor: "#ECA641",
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        insertOrder("Bayar Nanti");
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: "info",
+                    title: "Metode pembayaran belum tersedia",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+            }
         }
     };
+
+
+    const paymentMethodMap = {
+        qris: "qris",
+        cash: "cash",
+        bayarNanti: "Bayar Nanti",
+    };
+
 
     const toggleSidebar = () => {
         if (window.innerWidth < 1024) {
@@ -236,20 +641,38 @@ function Kasir() {
     };
 
     const categories = ["Semua", "Makanan", "Minuman", "Favorit"];
+    const filteredMenu = useMemo(() => {
+        if (activeCategory === "Semua") return listMenu;
+        if (activeCategory === "Favorit") return listMenu.filter(item => item.favorite);
+        return listMenu.filter(item => item.product_type === activeCategory);
+    }, [activeCategory, listMenu]);
+
 
     const addToCart = (item) => {
+        const mappedItem = {
+            product_id: item.product_id || item.id,   // ambil product_id kalau sudah ada, kalau tidak pakai id
+            product_name: item.product_name || item.name,
+            selling_price: item.selling_price || item.price,
+            product_type: item.product_type,
+            product_picture: item.product_picture || item.picture || "/placeholder.png",
+            quantity: 1,
+        };
+
         setCart((prevCart) => {
-            const existingItem = prevCart.find((cartItem) => cartItem.product_id === item.product_id);
+            const existingItem = prevCart.find((cartItem) => cartItem.product_id === mappedItem.product_id);
             if (existingItem) {
                 return prevCart.map((cartItem) =>
-                    cartItem.product_id === item.product_id ? { ...cartItem, quantity: cartItem.quantity + 1 } : cartItem
+                    cartItem.product_id === mappedItem.product_id
+                        ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                        : cartItem
                 );
             }
-            return [...prevCart, { ...item, quantity: 1 }];
+            return [...prevCart, mappedItem];
         });
-    
+
         setIsCartOpen(true);
     };
+
     
     const updateQuantity = (product_id, type) => {
         setCart((prevCart) => {
@@ -279,12 +702,10 @@ function Kasir() {
 
     useEffect(() => {
         if (!isCashModalOpen) {
-            // Reset inputan saat modal ditutup
             setAmountPaid(0);
         }
     }, [isCashModalOpen]);
     
-
     // Menghitung subtotal, pajak, dan total
     const subtotal = cart.reduce((acc, item) => acc + (item.selling_price || 0) * item.quantity, 0);
     const total = subtotal;
@@ -296,12 +717,34 @@ function Kasir() {
     const clearAmount = () => {
         setAmountPaid(0);
     };
-    // Menambahkan penjumlahan pada kalkulator kasir
-    const handlePayCash = () => {
-        // Logic for cash payment
-        insertOrder();
 
-        setIsCashModalOpen(false); // Close modal after payment
+    const handlePayCash = async () => {
+        try {
+            if (isEditing && selectedOrderForEdit) {
+                // Lagi edit → cukup update order existing (dan kalau mau, update status jadi 'paid')
+                await handleSaveEdit();
+                console.log("Edited order saved successfully, marked as paid");
+            } else {
+                // Order baru → insert order
+                await insertOrder("cash");
+            }
+
+            Swal.fire({
+                icon: "success",
+                title: "Pembayaran berhasil",
+                confirmButtonColor: "#ECA641",
+            });
+        } catch (error) {
+            console.error("Gagal memproses pembayaran:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Pembayaran gagal",
+                text: error.message,
+                confirmButtonColor: "#ECA641",
+            });
+        } finally {
+            setIsCashModalOpen(false); // Tutup modal di akhir
+        }
     };
 
     const deleteLastDigit = () => {
@@ -310,7 +753,6 @@ function Kasir() {
             return updated === "" ? 0 : parseInt(updated, 10);
         });
     };
-    
     return (
         <div className="h-screen flex flex-col bg-white overflow-hidden">
             {/* Header */}
@@ -329,42 +771,98 @@ function Kasir() {
                         Antrian Pesanan
                     </h2>
 
-                    {/* Scrollable area */}
                     <div
                         className={`relative overflow-x-auto py-3 no-scrollbar transition-all duration-300 
-                        ${isCollapsed ? "max-w-[90vw]" : "max-w-[90vw] md:max-w-[95vw] lg:max-w-[80vw]"}
-                        `}
+                        ${isCollapsed ? "max-w-[90vw]" : "max-w-[90vw] md:max-w-[95vw] lg:max-w-[80vw]"}`}
                     >
                         <div className="flex space-x-3 md:space-x-4 w-max flex-nowrap">
                         {listAntrian.length > 0 ? (
-                            listAntrian.map((order, index) => (
-                            <div
-                                key={index}
-                                className="bg-white border border-gray-300 p-3 md:p-4 rounded-lg shadow-md text-center min-w-[140px] md:min-w-[180px] flex-shrink-0"
-                            >
+                            listAntrian.map((order) => {
+                            const isBayarNanti = (order.payment_method ?? "").toLowerCase() === "bayar nanti";
+
+                            return (
+                                <div
+                                key={order.order_id}
+                                className={`p-3 md:p-4 rounded-lg shadow-md text-center min-w-[140px] md:min-w-[180px] flex-shrink-0 bg-white ${
+                                    isBayarNanti ? "border-2 border-[#ECA641]" : "border border-gray-300"
+                                }`}
+                                style={isBayarNanti ? { backgroundColor: "rgba(246, 181, 67, 0.3)" } : {}}
+                                >
                                 <p className="font-semibold text-black text-sm md:text-base">
-                                No Antrian #{order.no_antrian}
+                                    No Antrian #{order.no_antrian ?? "-"}
                                 </p>
                                 <p className="text-xs md:text-sm text-black">
-                                Total Item {order.total_item_belanja}x
+                                    Total Item {order.total_item_belanja ?? 0}x
                                 </p>
-                                <button
-                                onClick={() => showModal(order.order_id)}  // Menambahkan order_id ke dalam fungsi
-                                className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer"
-                                >
-                                Selesai
-                                </button>
-                                <p className="text-xs text-black mt-2">{order.waktu_lalu}</p>
-                            </div>
-                            ))
+
+                                {isBayarNanti ? (
+                                    <button
+                                    onClick={() => handleDetail(order)}
+                                    className="border border-[#ECA641] text-white bg-[#ECA641] px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer"
+                                    >
+                                    Detail
+                                    </button>
+                                ) : (
+                                    <button
+                                    onClick={() => showModal(order.order_id)}
+                                    className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer"
+                                    >
+                                    Selesai
+                                    </button>
+                                )}
+
+                                <p className="text-xs text-black mt-2">{order.waktu_lalu ?? ""}</p>
+                                </div>
+                            );
+                            })
                         ) : (
-                            <div className="text-gray-500 text-center w-full">
-                            Belum ada antrian.
-                            </div>
+                            <div className="text-gray-500 text-center w-full">Belum ada antrian.</div>
                         )}
                         </div>
                     </div>
                     </div>
+
+                    {/* Antrian Pesanan Online */}
+                    <div className="mb-6">
+                    <h2 className="text-lg md:text-xl font-semibold text-black mb-3">
+                        Antrian Pesanan Online
+                    </h2>
+
+                    <div
+                        className={`relative overflow-x-auto py-3 no-scrollbar transition-all duration-300 
+                        ${isCollapsed ? "max-w-[90vw]" : "max-w-[90vw] md:max-w-[95vw] lg:max-w-[80vw]"}`}
+                    >
+                        <div className="flex space-x-3 md:space-x-4 w-max flex-nowrap">
+                        {listAntrian.filter(order => order.is_online_order).length > 0 ? (
+                            listAntrian
+                            .filter(order => order.is_online_order)
+                            .map((order) => (
+                                <div
+                                key={order.order_id}
+                                className="border border-gray-300 bg-white p-3 md:p-4 rounded-lg shadow-md text-center min-w-[140px] md:min-w-[180px] flex-shrink-0"
+                                >
+                                <p className="font-semibold text-black text-sm md:text-base">
+                                    No Antrian #{order.no_antrian ?? "-"}
+                                </p>
+                                <p className="text-xs md:text-sm text-black">
+                                    Total Item {order.total_item_belanja ?? 0}x
+                                </p>
+                                <button
+                                    onClick={() => showModal(order.order_id)}
+                                    className="bg-[#ECA641] text-white px-3 w-full py-1 md:px-4 md:py-2 rounded text-xs md:text-sm cursor-pointer"
+                                >
+                                    Selesai
+                                </button>
+                                <p className="text-xs text-black mt-2">{order.waktu_lalu ?? ""}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-gray-500 text-center w-full">Belum ada antrian online.</div>
+                        )}
+                        </div>
+                    </div>
+                    </div>
+
                     
                     {/* Kategori Menu */}
                     <div className="mb-6">
@@ -405,34 +903,62 @@ function Kasir() {
                     </div>
 
                     {showQrisModal && (
-                        <div className="fixed inset-0 backdrop-brightness-50 z-50 flex items-center justify-center">
-                            <div className="bg-white p-6 rounded-lg shadow-lg text-center w-90">
-                                <h2 className="text-lg text-black font-semibold">Pembayaran</h2>
-                                <img src="/qr.png" alt="QRIS Code" className="mx-auto my-4 w-30 h-30" />
-                                <p className="text-gray-600">Batas Pembayaran: 00.30</p>
-                                <hr className="my-2" />
-                                <p className="text-gray-600">Total Transaksi</p>
-                                <h3 className="text-xl font-bold text-black">Rp {total.toLocaleString("id-ID")}</h3>
-                                {/* Tombol Konfirmasi Pembayaran */}
-                                <button
-                                    className="mt-4 bg-green-500 text-white py-2 px-4 rounded"
-                                    onClick={() => {
-                                        handleBayarQRIS()
-                                        // Menutup modal setelah konfirmasi pembayaran
-                                        setShowQrisModal(false);
-                                    }}
-                                >
-                                    Konfirmasi Pembayaran
-                                </button>
-                                <button
-                                    className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
-                                    onClick={() => setShowQrisModal(false)}
-                                >
-                                    Tutup
-                                </button>
+                    <div className="fixed inset-0 backdrop-brightness-50 z-50 flex items-center justify-center">
+                        <div className="bg-white p-6 rounded-lg shadow-lg text-center w-90">
+                        <h2 className="text-lg text-black font-semibold">Pembayaran</h2>
+
+                        {/* Ganti src jadi qrPaymentUrl */}
+                        {qrPaymentUrl ? (
+                            <iframe
+                            src={qrPaymentUrl}
+                            title="QRIS Payment"
+                            className="mx-auto my-4 w-100 h-96 rounded"
+                            allowFullScreen
+                            />
+                        ) : (
+                            <p className="text-gray-500">Loading QR...</p>
+                        )}
+                         <p className="text-gray-600 mb-2">
+                            Waktu tersisa: {countdown} detik
+                            </p>
+
+                        {/* Batas pembayaran */}
+                        {paymentExpiredAt && (
+                            <p className="text-gray-600 mb-2">
+                            Batas Pembayaran:{" "}
+                            {new Date(paymentExpiredAt * 1000).toLocaleTimeString("id-ID")}
+                            </p>
+                        )}
+
+                        <hr className="my-2" />
+                        <p className="text-gray-600">Total Transaksi</p>
+                        <h3 className="text-xl font-bold text-black">Rp {total.toLocaleString("id-ID")}</h3>
+
+                        {/* Tombol tutup */}
+                        <button
+                            className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
+                            onClick={() => setShowQrisModal(false)}
+                        >
+                            Tutup
+                        </button>
+                        </div>
+                    </div>
+                    )}
+
+                    {showSuccessModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+                            <div className="bg-white p-6 rounded-xl shadow text-center">
+                            <h2 className="text-lg font-semibold text-green-600">Pembayaran Berhasil!</h2>
+                            <p className="text-gray-600 mt-2">Pesanan berhasil dibuat dan dibayar.</p>
+                            <button
+                                onClick={() => setShowSuccessModal(false)}
+                                className="mt-4 bg-green-500 text-white py-2 px-4 rounded"
+                            >
+                                Tutup
+                            </button>
                             </div>
                         </div>
-                    )}
+                        )}
 
                     {/* Cash Payment Modal */}
                     {isCashModalOpen && (
@@ -452,15 +978,15 @@ function Kasir() {
                             <div className="mt-2 mb-6 space-y-3 text-base">
                                 <div className="flex justify-between border-b pb-2 text-sm">
                                 <span className="font-semibold text-gray-700">Total Pembayaran</span>
-                                <span className="font-semibold text-gray-800">Rp {total.toLocaleString("id-ID")}</span>
+                                <span className="font-semibold text-gray-800">{total.toLocaleString("id-ID")} K</span>
                                 </div>
                                 <div className="flex justify-between border-b pb-2 text-sm">
                                 <span className="font-semibold text-gray-700">Jumlah Dibayar</span>
-                                <span className="text-gray-800">Rp {amountPaid.toLocaleString("id-ID")}</span>
+                                <span className="text-gray-800">{amountPaid.toLocaleString("id-ID")} K</span>
                                 </div>
                                 <div className="flex justify-between border-b pb-2 text-sm">
                                 <span className="font-semibold text-gray-700">Kembalian</span>
-                                <span className="text-gray-800">Rp {(amountPaid - total).toLocaleString("id-ID")}</span>
+                                <span className="text-gray-800">{(amountPaid - total).toLocaleString("id-ID")} K</span>
                                 </div>
                             </div>
 
@@ -501,6 +1027,73 @@ function Kasir() {
                         </div>
                     )}
 
+                    {/* Bayar Nanti Payment Modal */}
+                    {showBayarNantiModal && selectedOrder && (
+                        <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-lg p-6 w-[90vw] max-w-md shadow-lg relative">
+                                <button
+                                    className="absolute top-2 right-3 text-gray-500 hover:text-black"
+                                    onClick={() => setShowBayarNantiModal(false)}
+                                >
+                                    <X size={24} />
+                                </button>
+
+                                <h2 className="text-black text-lg font-bold mb-2">Detail Pesanan</h2>
+                                <p className="text-sm text-gray-600 mb-1">
+                                    <strong>Nama Customer:</strong> {selectedOrder.customerName || "-"}
+                                </p>
+                                <p className="text-sm text-gray-600 mb-1">
+                                    <strong>Tanggal Pesanan:</strong> {selectedOrder.orderDate || "-"}
+                                </p>
+
+                                {/* List Pesanan */}
+                                <ul className="mb-4 text-sm text-gray-800 list-disc pl-5 space-y-1">
+                                    {selectedOrder.items?.map((item, i) => (
+                                        <li key={i}>
+                                            {item.name} x{item.qty} - Rp {item.price.toLocaleString("id-ID")}
+                                        </li>
+                                    ))}
+                                </ul>
+
+                                {/* Total Harga */}
+                                <p className="font-semibold text-black text-sm mb-4">
+                                    Total Harga: Rp{" "}
+                                    {selectedOrder.items
+                                        ?.reduce((acc, curr) => acc + curr.price * curr.qty, 0)
+                                        .toLocaleString("id-ID")}
+                                </p>
+
+                                {/* Tombol Metode Pembayaran */}
+                                <div className="flex justify-between gap-2">
+                                    <button
+                                        onClick={() => {
+                                            setSelected("cash");
+                                            setShowBayarNantiModal(false);
+                                            setTimeout(() => {
+                                            setIsCashModalOpen(true);
+                                            }, 150);
+                                        }}
+                                        className="cursor-pointer border border-[#F6B85D] hover:bg-[#F6B85D] text-[#F9870B] font-semibold px-4 py-2 rounded w-1/2"
+                                    >
+                                        Bayar Cash
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setSelected("qris");
+                                            setShowBayarNantiModal(false);
+                                            setTimeout(() => {
+                                            setShowQrisModal(true);
+                                            }, 150);
+                                        }}
+                                        className="cursor-pointer border border-[#F6B85D] hover:bg-[#F6B85D] text-[#F9870B] font-semibold px-4 py-2 rounded w-1/2"
+                                    >
+                                        Qris
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Daftar Menu */}
                     <div className={`grid gap-4 transition-all duration-300 ${
                         isCartOpen
@@ -508,6 +1101,7 @@ function Kasir() {
                             : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 pr-0"  // Normal grid dengan ukuran kolom responsif
                     }`}>
                         {listMenu
+                            .filter(item => item.stock > 0) 
                             .filter((item) => activeCategory === "Semua" || item.product_type === activeCategory || (activeCategory === "Favorit" && item.favorite_status))
                             .map((item) => (
                                 <div key={item.product_id} className="bg-white border border-gray-300 rounded-lg shadow-lg p-4">
@@ -632,6 +1226,43 @@ function Kasir() {
                             </div>
                         </div>
 
+                       {/* No WhatsApp */}
+                        <div className="flex flex-col border border-gray-300 px-4 py-2 rounded-lg text-sm w-full mt-4">
+                        <label htmlFor="noHp" className="text-gray-500 mb-1">
+                            Nomor WhatsApp
+                        </label>
+                        <div className="flex items-center">
+                            <Flag
+                            code={selectedCountry.toLowerCase()}
+                            style={{ width: 20, height: 15, marginRight: 8 }}
+                            />
+                            <select
+                            value={selectedCountry}
+                            onChange={(e) => setSelectedCountry(e.target.value)}
+                            className="mr-2 bg-transparent border-none text-black font-semibold focus:outline-none cursor-pointer"
+                            >
+                            {Object.keys(countryFlags).map((key) => (
+                                <option key={key} value={key}>
+                                {countryFlags[key].label}
+                                </option>
+                            ))}
+                            </select>
+                            <span className="text-black font-semibold mr-2">
+                            {countryFlags[selectedCountry].code}
+                            </span>
+                            <input
+                            type="number"
+                            id="noHp"
+                            name="phoneNumber"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            placeholder="Masukkan no WhatsApp anda yang aktif"
+                            className="flex-1 bg-transparent border-none text-black font-semibold focus:outline-none placeholder-[#C0C0C0] appearance-none"
+                            />
+                        </div>
+                        </div>
+
+
                         {/* Metode Pembayaran */}
                         <h3 className="text-black font-semibold mt-6 mb-2">Metode Pembayaran</h3>
                         <div className="flex gap-4">
@@ -651,15 +1282,41 @@ function Kasir() {
                                 <ScanQrCode size={24} />
                                 <span>Qris</span>
                             </button>
+
+                            {/* Button Bayar Nanti */}
+                                <button
+                                    className={`cursor-pointer min-w-max px-3 py-2 border border-[#ECA641] rounded-lg flex flex-col items-center justify-center gap-1 transition-all ${selected === "bayarNanti" ? "bg-[#F6B85D]/50 text-[#F9870B]" : "text-[#ECA641]"}`}
+                                    onClick={() => setSelected("bayarNanti")}
+                                >
+                                    <ScanQrCode size={24} />
+                                    <span className="whitespace-nowrap">Bayar Nanti</span>
+                                </button>
                         </div>
 
                         {/* Tombol Bayar */}
-                        <button
-                            onClick={handleBayarSekarang}
-                            className="mt-6 w-full bg-[#ECA641] text-white py-3 rounded-lg font-semibold"
-                        >
-                            Bayar Sekarang
-                        </button>
+                            {selectedOrderForEdit ? (
+                                <div className="flex gap-3 mt-6">
+                                    <button
+                                    onClick={handleSaveEdit}
+                                    className="w-1/2 bg-gray-300 text-black py-3 rounded-lg font-semibold"
+                                    >
+                                    Simpan
+                                    </button>
+                                    <button
+                                    onClick={handlePayment}
+                                    className="w-1/2 bg-[#ECA641] text-white py-3 rounded-lg font-semibold"
+                                    >
+                                    Bayar Sekarang
+                                    </button>
+                                </div>
+                                ) : (
+                                <button
+                                    onClick={handlePayment}
+                                    className="cursor-pointer mt-6 w-full bg-[#ECA641] text-white py-3 rounded-lg font-semibold"
+                                >
+                                    Bayar Sekarang
+                                </button>
+                            )}
                     </div>
                 </div>
             </div>

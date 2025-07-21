@@ -26,6 +26,8 @@ function SuperadminDashboard() {
     async function fetchData() {
       try {
         const result = await apiService.getData('/superadmin/dashboard_data_store/');
+        console.log("result",result);
+        
         setToko(result.data.List_toko_terdaftar);
         setJumlahToko({
           total: result.data.jumlah_toko_terdaftar,
@@ -157,19 +159,15 @@ function SuperadminDashboard() {
                       <img
                     src={`http://localhost:8000/media/${store.store_picture}`}
                     alt={store.store_name}
-                    className="w-full p-3 h-auto mx-auto"
+                    className="w-full p-3 h-60 mx-auto"
                     onError={(e) => {
                       e.target.onerror = null;
-                      e.target.src = "/Logo-Toko.png"; // fallback lokal
+                      e.target.src = "/Logo-Toko.png";
                     }}
                   />
                   <h3 className="mt-4 font-semibold text-black text-base md:text-lg">
                     {store.store_name}
                   </h3>
-
-                    <div className="text-gray-500 text-sm mt-1 mb-4">
-                    Pemilik: {store.name_owner}
-                  </div>
 
                     <div className="flex items-center text-gray-500 text-sm mt-1">
                     <svg
@@ -186,17 +184,28 @@ function SuperadminDashboard() {
                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    Aktif: {store.start_date?.split('T')[0]} – {store.end_date?.split('T')[0]}
+                    {store.start_date?.split('T')[0]} – {store.end_date?.split('T')[0]}
                   </div>
 
-                      <div className="flex justify-end">
-                      <button
-                        onClick={() => router.push(`/Superadmin/DashboardToko?store_id=${store.store_id}`)}
-                        className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded"
-                      >
-                        Pantau Toko
-                      </button>
-                    </div>
+                  <div className="flex items-center text-sm mb-4 mt-1">
+                    <span
+                      className={`h-3 w-3 rounded-full mr-2 ${
+                        store.is_active ? 'bg-green-500' : 'bg-red-500'
+                      }`}
+                    ></span>
+                    <span className={store.is_active ? 'text-green-600' : 'text-red-600'}>
+                      {store.is_active ? 'Aktif' : 'Tidak Aktif'}
+                    </span>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => router.push(`/Superadmin/DashboardToko?store_id=${store.store_id}`)}
+                      className="bg-[#F6B543] hover:bg-[#eca641] text-white font-semibold px-4 py-2 cursor-pointer rounded"
+                    >
+                      Pantau Toko
+                    </button>
+                </div>
                 </div>
               ))}
             </div>

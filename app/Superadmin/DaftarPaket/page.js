@@ -96,6 +96,7 @@ function DaftarPaket() {
     }
 
     const handleEdit = (paket) => {
+      setOpenMenuIndex(null);
       const fiturSelected = (paket.features || [])
       .filter(fitur => fitur.is_active) // hanya fitur yang aktif
       .map(fitur => {
@@ -172,13 +173,6 @@ function DaftarPaket() {
             fitur: selectedOptions ? selectedOptions.map(option => option.value) : []
         }));
     };
-    
-    const formattedPrice = new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(Number(formData.harga));
   
     const handleSubmit = async () => {
       const newErrors = {};
@@ -199,7 +193,7 @@ function DaftarPaket() {
         const payload = {
           package_name: formData.nama,
           duration: Number(formData.durasi),
-          price: formattedPrice,
+          price: Number(formData.harga),
           description: formData.deskripsi,
           features: formData.fitur,
         };
@@ -266,13 +260,15 @@ function DaftarPaket() {
                 <h1 className="text-base md:text-md lg:text-lg font-semibold text-black">
                     Paket Langganan POS
                 </h1>
-
                 <button
-                    onClick={openModal}
-                    className="flex items-center justify-center gap-2 bg-[#ECA641] hover:bg-[#d69739] text-white px-4 py-2 rounded-lg shadow-lg w-full sm:w-fit"
-                    >
-                    <Plus size={18} />
-                    Tambah Paket
+                  onClick={() => {
+                    openModal();
+                    setOpenMenuIndex(null);
+                  }}
+                  className="flex items-center justify-center gap-2 bg-[#ECA641] hover:bg-[#d69739] text-white px-4 py-2 rounded-lg shadow-lg w-full sm:w-fit"
+                >
+                  <Plus size={18} />
+                  Tambah Paket
                 </button>
             </div>
 
@@ -422,12 +418,17 @@ function DaftarPaket() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-5 pb-10">
             {paketList.map((paket, index) => {
               // Mengonversi harga ke angka
-              const formattedPrice = paket.price 
-                ? paket.price.replace(/[^0-9,-]+/g, '').replace(',', '.').replace('.', '') // Menghapus simbol dan mengubah format
+             const rawPrice = paket.price 
+                ? paket.price.replace(/[^0-9]/g, '') // hanya ambil digit, hilangkan koma/titik
+                : null;
+
+              console.log("rawPrice", rawPrice);
+
+              const price = rawPrice && !isNaN(rawPrice)
+                ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(rawPrice))
                 : 'Harga Tidak Tersedia';
-                
-              // Format harga menggunakan Intl
-              const price = !isNaN(formattedPrice) ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(formattedPrice)) : 'Harga Tidak Tersedia';
+
+              console.log("price", price);
 
               return (
                 <div key={paket.package_id} className="relative rounded-xl p-6 shadow overflow-hidden bg-white border-gray-300 border">

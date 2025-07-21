@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,6 +14,8 @@ import withAuth from 'hoc/withAuth';
 import * as apiService from 'services/authService';
 import { useSearchParams } from 'next/navigation';
 import { jwtDecode } from "jwt-decode";
+import axios from 'axios';
+
 
 function Kasir() {
     const searchParams = useSearchParams();
@@ -35,13 +39,96 @@ function Kasir() {
     const [remarks, setRemarks] = useState("");
     const [customerName, setCustomerName] = useState("");
     const [orderDate, setOrderDate] = useState("");
+    const [orderId, setOrderId] = useState(null);
     const [isCashModalOpen, setIsCashModalOpen] = useState(false);
+    const [qrPaymentUrl, setQrPaymentUrl] = useState("");
+    const [paymentExpiredAt, setPaymentExpiredAt] = useState(null);
+    const [countdown, setCountdown] = useState(60); // timer mundur 60 detik
+    const [phoneNumber, setPhoneNumber] = useState("");
+    
+
+    useEffect(() => {
+            let timerInterval;
+            if (showQrisModal) {
+            setCountdown(300); // reset timer ke 60 detik setiap buka modal
+    
+            timerInterval = setInterval(() => {
+                setCountdown((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timerInterval); // berhenti kalau sudah 0
+                    setShowQrisModal(false);     // auto tutup modal
+                    return 0;
+                }
+                return prev - 1;
+                });
+            }, 1000); // setiap 1 detik
+            }
+    
+            // Cleanup kalau modal ditutup manual
+            return () => clearInterval(timerInterval);
+        }, [showQrisModal]);
+
+    useEffect(() => {
+            let interval;
+    
+            if (showQrisModal && orderId) {
+                interval = setInterval(async () => {
+                    try {
+                        const token = localStorage.getItem('token');
+                        const res = await axios.get(
+                            `http://127.0.0.1:8000/api/storeowner/check_payment_status/?order_id=${orderId}`,
+                            { headers: { Authorization: `Bearer ${token}` } }
+                        );
+    
+                        const status = res?.data?.data?.status;
+                        console.log('Cek status pembayaran:', status);
+    
+                        if (status === 'in_progress' || status === 'PENDING') {
+                            clearInterval(interval);
+                            setShowQrisModal(false);
+                            closeCart();
+                            // Reset form setelah sukses
+                            setCustomerName("");
+                            setPhoneNumber("");
+                            setDeliveryAddress("");
+                            setRemarks("");
+                            setSelected(null);
+                            fetchDataMenu();
+    
+                            // Tampilkan modal cantik pakai Swal
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Pembayaran Berhasil!',
+                                text: 'Pesanan kamu sudah dibuat dan pembayaran berhasil.',
+                                confirmButtonText: 'OK',
+                                confirmButtonColor: '#ECA641'
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Gagal cek status pembayaran', error);
+                    }
+                }, 5000); // cek tiap 5 detik
+            }
+    
+            return () => clearInterval(interval);
+        }, [showQrisModal, orderId]);
+
+    const getTodayDate = () => {
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    };
 
     const [formData, setFormData] = useState({
         phoneNumber: "",
         deliveryAddress: "",
+        orderDate: getTodayDate(),
     });
     
+    useEffect(() => {
+    const today = new Date();
+    const formatted = today.toISOString().split('T')[0]; // hasil: '2025-07-06'
+    setOrderDate(formatted);
+    }, []);
 
      const token = localStorage.getItem("token");
       const store_id = localStorage.getItem("store_id");
@@ -84,7 +171,7 @@ function Kasir() {
                 price: Number(item.selling_price),
                 image: item.product_picture,
                 category: item.product_type,
-                favorite: item.favorite_status || false
+                favorite: item.is_favorit || false
             }));
     
             setListMenu(formatted);
@@ -119,6 +206,8 @@ function Kasir() {
     
         if (selected === "qris") {
             setShowQrisModal(true); // Modal QRIS muncul
+            handleBayarQRIS();
+
         } else if (selected === "cash") {
             setIsCashModalOpen(true); // Modal Cash muncul
         } else {
@@ -132,7 +221,138 @@ function Kasir() {
     };
 
     const handleConfirmBayar = () => {
-        insertOrder();
+        // insertOrder();
+    };
+    const paymentMethodMap = {
+        qris: "qris",
+        cash: "cash",
+        bayarNanti: "Bayar Nanti",
+    };
+
+    const handleBayarQRIS = async () => {
+        try {
+            // ✅ Validasi awal
+            if (!selected) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Pilih metode pembayaran",
+                    text: "Silakan pilih metode pembayaran sebelum melanjutkan.",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+                return;
+            }
+
+            if (!customerName || !orderDate) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Data pesanan belum lengkap",
+                    text: "Nama customer dan tanggal pemesanan wajib diisi.",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+                return;
+            }
+
+            if (!storeId) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Store ID tidak ditemukan",
+                    text: "Silakan login ulang.",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+                return;
+            }
+
+            if (cart.length === 0) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Keranjang kosong",
+                    text: "Tambahkan item ke keranjang sebelum melakukan pembayaran.",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+                return;
+            }
+
+            // 1️⃣ Siapkan payload order
+            const payload = {
+                customer_name: customerName,
+                date: orderDate,
+                total_amount: total,
+                order_status: "in_progress",
+                payment_method: selected,
+                is_pre_order: true,
+                is_delivered: preorderOption === "diantar",
+                is_dine_in: orderType === "dinein",
+                remarks: catatan,
+                pickup_date: pickupDate,
+                pickup_time: pickupDate && pickupTime ? `${pickupDate} ${pickupTime}:00` : null,
+                role_id: userRoleId ?? null,
+                reference_id: userId ?? null,
+                no_hp: formData.phoneNumber || null,
+                delivery_address: preorderOption === "diantar" ? deliveryAddress : null,
+                order_items: cart.map((item) => ({
+                    product_id: item.id,
+                    selling_price: item.price,
+                    product_type: item.category,
+                    item: item.quantity,
+                })),
+            };
+
+            console.log("🚀 Payload insert_order:", payload);
+
+            // 2️⃣ Insert order ke backend
+            const orderResponse = await apiService.postData(`/storeowner/insert_order/?store_id=${storeId}`, payload);
+
+            const orderId = orderResponse?.data?.order_id;
+            if (!orderId) {
+                throw new Error("order_id tidak diterima dari backend");
+            }
+
+            console.log("✅ Order berhasil dibuat, order_id:", orderId);
+            setOrderId(orderId); // Simpan ke state jika diperlukan
+
+            // 3️⃣ Buat transaksi di Tripay
+            const token = localStorage.getItem('token');
+            if (!token) {
+                throw new Error("Token tidak ditemukan. Silakan login ulang.");
+            }
+
+            const tripayRes = await axios.post(
+                'https://6cca503735ac.ngrok-free.app/api/storeowner/create_tripay_transaction/',
+                { order_id: orderId, payment_method: "QRIS" },
+                { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+            );
+
+            const tripayData = tripayRes.data;
+
+            if (tripayData?.data?.qr_url) {
+                setQrPaymentUrl(tripayData.data.qr_url);
+                setPaymentExpiredAt(tripayData.data.expired_at);
+                setShowQrisModal(true);
+                console.log("✅ QRIS transaction created:", tripayData.data);
+            } else {
+                console.error("❌ Gagal membuat transaksi Tripay:", tripayData);
+                Swal.fire({
+                    icon: "error",
+                    title: "Gagal Membuat Transaksi",
+                    text: tripayData?.message || "Terjadi kesalahan saat membuat transaksi.",
+                    confirmButtonText: "OK",
+                    confirmButtonColor: "#ECA641",
+                });
+            }
+        } catch (err) {
+            console.error("❌ Error handleBayarQRIS:", err);
+            Swal.fire({
+                icon: "error",
+                title: "Gagal Membuat Pesanan / Transaksi",
+                text: err?.response?.data?.message || err.message || 'Terjadi kesalahan tidak diketahui',
+                confirmButtonText: "OK",
+                confirmButtonColor: "#ECA641",
+            });
+        }
     };
 
     const insertOrder = async () => {
@@ -174,7 +394,7 @@ function Kasir() {
                 return;
             }
     
-            const response = await apiService.postData(`/storeowner/insert_order/?store_id=${storeId}`, payload);
+            const response = await apiService.postData(`/customer/insert_order/?store_id=${storeId}`, payload);
     
             Swal.fire({
                 icon: "success",
@@ -358,32 +578,46 @@ function Kasir() {
                     </div>
 
                     {showQrisModal && (
-                        <div className="fixed inset-0 backdrop-brightness-50 z-50 flex items-center justify-center">
-                            <div className="bg-white p-6 rounded-lg shadow-lg text-center w-90">
-                                <h2 className="text-lg text-black font-semibold">Pembayaran</h2>
-                                <img src="/qr.png" alt="QRIS Code" className="mx-auto my-4 w-30 h-30" />
-                                <p className="text-gray-600">Batas Pembayaran: 00.30</p>
-                                <hr className="my-2" />
-                                <p className="text-gray-600">Total Transaksi</p>
-                                <h3 className="text-xl font-bold text-black">Rp {total.toLocaleString("id-ID")}</h3>
+                    <div className="fixed inset-0 backdrop-brightness-50 z-50 flex items-center justify-center">
+                        <div className="bg-white p-6 rounded-lg shadow-lg text-center w-90">
+                        <h2 className="text-lg text-black font-semibold">Pembayaran</h2>
 
-                                {/* Tombol Konfirmasi */}
-                                <button
-                                    className="mt-4 bg-[#ECA641] text-white py-2 px-4 rounded"
-                                    onClick={handleConfirmBayar}
-                                >
-                                    Konfirmasi Pembayaran
-                                </button>
+                        {/* Ganti src jadi qrPaymentUrl */}
+                        {qrPaymentUrl ? (
+                            <iframe
+                            src={qrPaymentUrl}
+                            title="QRIS Payment"
+                            className="mx-auto my-4 w-100 h-96 rounded"
+                            allowFullScreen
+                            />
+                        ) : (
+                            <p className="text-gray-500">Loading QR...</p>
+                        )}
+                         <p className="text-gray-600 mb-2">
+                            Waktu tersisa: {countdown} detik
+                            </p>
 
-                                {/* Tombol Tutup */}
-                                <button
-                                    className="mt-2 bg-red-500 text-white py-2 px-4 rounded"
-                                    onClick={() => setShowQrisModal(false)}
-                                >
-                                    Tutup
-                                </button>
-                            </div>
+                        {/* Batas pembayaran */}
+                        {paymentExpiredAt && (
+                            <p className="text-gray-600 mb-2">
+                            Batas Pembayaran:{" "}
+                            {new Date(paymentExpiredAt * 1000).toLocaleTimeString("id-ID")}
+                            </p>
+                        )}
+
+                        <hr className="my-2" />
+                        <p className="text-gray-600">Total Transaksi</p>
+                        <h3 className="text-xl font-bold text-black">Rp {total.toLocaleString("id-ID")}</h3>
+
+                        {/* Tombol tutup */}
+                        <button
+                            className="mt-4 bg-red-500 text-white py-2 px-4 rounded"
+                            onClick={() => setShowQrisModal(false)}
+                        >
+                            Tutup
+                        </button>
                         </div>
+                    </div>
                     )}
 
                     {/* Daftar Menu */}
@@ -408,7 +642,7 @@ function Kasir() {
                                         </h3>
                                         <div className="flex justify-between items-end mt-2">
                                             <p className="text-gray-500 text-xs mt-1">Stok: {item.stock}</p>
-                                            <p className="text-[#ECA641] font-bold text-sm ml-auto">Rp {item.price.toLocaleString("id-ID")},00</p>
+                                            <p className="text-[#ECA641] font-bold text-sm ml-auto">Rp {item.price.toLocaleString("id-ID")}</p>
                                         </div>
                                     </div>
                                     <button
@@ -454,7 +688,7 @@ function Kasir() {
                                     min={new Date().toISOString().split('T')[0]} // hanya bisa pilih dari hari ini ke depan
                                     onChange={(e) => setOrderDate(e.target.value)}
                                     className="bg-transparent border-none text-black font-semibold text-sm focus:outline-none text-right"
-                                    />
+                                />
                             </div>
                         </div>
 
@@ -571,7 +805,7 @@ function Kasir() {
                                             onChange={() => setPreorderOption("pickup")}
                                             className="form-radio text-[#ECA641]"
                                         />
-                                        Bayar Sendiri
+                                        Ambil Sendiri
                                     </label>
                                 </div>
                                 {errors.preorderOption && <p className="text-red-500 text-sm">{errors.preorderOption}</p>}

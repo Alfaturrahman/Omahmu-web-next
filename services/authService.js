@@ -115,3 +115,25 @@ export const deleteData = async (endpoint) => {
     throw new Error(error.response?.data?.message || 'Gagal menghapus data');
   }
 };
+
+// Fungsi PATCH dengan token
+export const patchData = async (endpoint, payload = {}, config = {}) => {
+  try {
+    const token = getToken();
+
+    const isFormData = payload instanceof FormData;
+
+    const response = await api.patch(endpoint, payload, {
+      ...config,
+      headers: {
+        ...(config.headers || {}),
+        Authorization: `Bearer ${token}`,
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('PATCH Error:', error);
+    throw new Error(error.response?.data?.message || 'Gagal mengupdate data (PATCH)');
+  }
+};

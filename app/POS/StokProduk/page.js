@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Navbar';
-import { Search, Filter, Plus, MoreVertical, Package, Utensils, Beer, X, UploadCloud } from 'lucide-react';
+import { Search, Filter, Minus, Plus, MoreVertical, Package, Utensils, Beer, X, UploadCloud } from 'lucide-react';
 import Swal from 'sweetalert2';
 import * as apiService from 'services/authService';
 import withAuth from 'hoc/withAuth';
@@ -15,6 +15,7 @@ const Produk = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedTipe, setSelectedTipe] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [errors, setErrors] = useState({});
   const [activeDropdown, setActiveDropdown] = useState(null);
@@ -35,7 +36,8 @@ const Produk = () => {
     stok: '',
     namaProduk: '',
     tipeProduk: '',
-    hargaModal: '',
+    tipeJualan: '',
+    keterangan: '',
     hargaJual: '',
     deskripsi: '',
     image: null,
@@ -45,8 +47,15 @@ const Produk = () => {
   const fetchProducts = async () => {
     try {
       const storeId = localStorage.getItem('store_id');
+      
+      // 1️⃣ Panggil API check_product_stock (biar backend update status & kirim notif)
+      await apiService.getData(`/storeowner/check_product_stock?store_id=${storeId}`);
+      
+      // 2️⃣ Baru fetch list produk terbaru
       const response = await apiService.getData(`/storeowner/daftar_produk/?store_id=${storeId}`);
-      setProducts(response.data); // Sesuaikan dengan format API kamu
+      console.log("wew", response.data);
+      
+      setProducts(response.data);
     } catch (error) {
       console.error("Gagal mengambil produk:", error);
     }
@@ -66,10 +75,57 @@ const Produk = () => {
     }
   };
 
+  const disableProductsWithZeroStock = async (productList) => {
+    try {
+      for (const product of productList) {
+        if (product.stock === 0 && product.is_active) {
+          await apiService.putData(`/storeowner/update_status/?product_id=${product.product_id}&is_active=false`);
+        }
+      }
+    } catch (error) {
+      console.error('Gagal nonaktifkan produk dengan stok habis:', error.message);
+    }
+  };
+
   useEffect(() => {
-    fetchProducts();
-    fetchDashboardProducts();
+    const storeId = localStorage.getItem('store_id');
+
+    const loadData = async () => {
+      try {
+        await apiService.getData(`/storeowner/check_product_stock/?store_id=${storeId}`);
+        const response = await apiService.getData(`/storeowner/daftar_produk/?store_id=${storeId}`);
+        console.log("wew", response.data);
+        setProducts(response.data);
+        await disableProductsWithZeroStock(response.data);
+        await fetchDashboardProducts();
+      } catch (error) {
+        console.error("Gagal load data:", error);
+      }
+    };
+
+    // Jalankan pertama kali
+    loadData();
+
+    // Jalankan ulang setiap 1 menit
+    const interval = setInterval(() => {
+      loadData();
+    }, 60000); // 60.000 ms = 60 detik
+
+    // Bersihkan interval saat komponen di-unmount
+    return () => clearInterval(interval);
   }, []);
+
+   const updateStock = async (productId, newStock) => {
+    try {
+      await apiService.putData(`/storeowner/update_stock/?product_id=${productId}&new_stock=${newStock}`);
+      setProducts(prev =>
+        prev.map(p => p.product_id === productId ? { ...p, stock: newStock } : p)
+      );
+    } catch (error) {
+      console.error("Gagal update stok:", error.message);
+    }
+  };
+
 
   const handleDelete = async (product) => {
     Swal.fire({
@@ -112,9 +168,21 @@ const Produk = () => {
   const filteredProducts = products.filter((product) => {
     const matchSearch = product.product_name.toLowerCase().includes(searchTerm.toLowerCase());
     const matchCategory = selectedCategory ? product.product_type === selectedCategory : true;
-    return matchSearch && matchCategory;
+    const matchTipe = selectedTipe ? product.selling_type === selectedTipe : true;
+    return matchSearch && matchCategory && matchTipe;
   });
   
+  const handleStockChange = (id, newStock) => {
+    const parsedStock = parseInt(newStock, 10);
+      if (!isNaN(parsedStock) && parsedStock >= 0) {
+        setProducts((prevProducts) =>
+          prevProducts.map((product) =>
+            product.id === id ? { ...product, stock: parsedStock } : product
+          )
+      );
+    }
+  };
+
   const validateForm = () => {
     let formErrors = {};
     let isValid = true;
@@ -132,6 +200,14 @@ const Produk = () => {
       isValid = false;
     }
     
+    if (!formData.tipeJualan) {
+      formErrors.tipeJualan = 'Tipe Jualan harus dipilih';
+      isValid = false;
+    }
+    if (!formData.keterangan) {
+      formErrors.keterangan = 'Keterangan harus dipilih';
+      isValid = false;
+    }
     if (!formData.hargaModal) {
       formErrors.hargaModal = 'Harga Modal tidak boleh kosong';
       isValid = false;
@@ -155,7 +231,7 @@ const Produk = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateForm()) return;
+    // if (!validateForm()) return;
   
     console.log("isEditing", isEditing);
   
@@ -168,8 +244,9 @@ const Produk = () => {
     formPayload.append('stock', formData.stok);
     formPayload.append('product_name', formData.namaProduk);
     formPayload.append('product_type', formData.tipeProduk);
+    formPayload.append('selling_type', formData.tipeJualan); 
     formPayload.append('description', formData.deskripsi);
-    formPayload.append('capital_price', formData.hargaModal);
+    formPayload.append('capital_price', "0");
     formPayload.append('selling_price', formData.hargaJual);
     console.log("Keterangan sebelum dikirim:", formData.keterangan);
     formPayload.append('is_active', formData.keterangan); // Mengirim string 'true' atau 'false'
@@ -279,20 +356,34 @@ const Produk = () => {
 
   const toggleActive = async (id) => {
     try {
-      const product = products.find(p => p.product_id === id); 
+      const product = products.find(p => p.product_id === id);
       if (!product) return;
-  
+
       const updatedStatus = !product.is_active; // false -> true, true -> false
-  
+
+      // Cek stok
+      if (updatedStatus && product.stock === 0) {
+        // Artinya user mau aktifkan produk, tapi stoknya 0
+        Swal.fire({
+          icon: "warning",
+          title: "Tidak bisa aktifkan produk",
+          text: "Stok produk ini habis. Silakan tambah stok terlebih dahulu.",
+          confirmButtonColor: "#ECA641"
+        });
+        return;
+      }
+
       const statusString = updatedStatus ? 'true' : 'false';
-  
+
       await apiService.putData(`/storeowner/update_status/?product_id=${id}&is_active=${statusString}`);
 
-      fetchDashboardProducts();
+      // Update state lokal
       setProducts(prev =>
         prev.map(p => (p.product_id === id ? { ...p, is_active: updatedStatus } : p))
       );
-  
+
+      // Refresh data dari server
+      fetchDashboardProducts();
       fetchProducts();
     } catch (error) {
       console.error('Gagal update status:', error.message);
@@ -329,7 +420,6 @@ const Produk = () => {
     };
   }, []);
   
-
   return (
     <div className="h-screen flex flex-col bg-white">
       <Header toggleSidebar={toggleSidebar} />
@@ -384,18 +474,23 @@ const Produk = () => {
                 </button>
 
                 {isFilterOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-40 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+                  <div className="absolute top-full left-0 mt-2 w-44 bg-white border border-gray-300 rounded-xl shadow-xl z-10 overflow-hidden text-sm">
+                    {/* Kategori */}
+                    <div className="px-4 py-2 border-b text-gray-500 font-semibold text-xs tracking-wide">
+                      KATEGORI
+                    </div>
                     <button
-                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black"
                       onClick={() => {
                         setSelectedCategory(null);
+                        setSelectedTipe(null);
                         setIsFilterOpen(false);
                       }}
                     >
                       Semua
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black"
                       onClick={() => {
                         setSelectedCategory("Makanan");
                         setIsFilterOpen(false);
@@ -404,7 +499,7 @@ const Produk = () => {
                       Makanan
                     </button>
                     <button
-                      className="w-full text-left px-4 py-2 text-black hover:bg-gray-100"
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black"
                       onClick={() => {
                         setSelectedCategory("Minuman");
                         setIsFilterOpen(false);
@@ -412,8 +507,32 @@ const Produk = () => {
                     >
                       Minuman
                     </button>
+
+                    {/* Divider */}
+                    <div className="px-4 py-2 border-b mt-1 text-gray-500 font-semibold text-xs tracking-wide">
+                      TIPE JUALAN
+                    </div>
+                    <button
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black"
+                      onClick={() => {
+                        setSelectedTipe("Permanen");
+                        setIsFilterOpen(false);
+                      }}
+                    >
+                      Permanen
+                    </button>
+                    <button
+                      className="w-full text-left px-4 py-2 hover:bg-gray-100 text-black"
+                      onClick={() => {
+                        setSelectedTipe("Harian");
+                        setIsFilterOpen(false);
+                      }}
+                    >
+                      Harian
+                    </button>
                   </div>
                 )}
+
               </div>
 
             </div>
@@ -434,19 +553,22 @@ const Produk = () => {
             ) : (
               filteredProducts.map((product) => (
                 <div
-                  key={product.id}
-                  className="w-full max-w-xs mx-auto rounded-lg border shadow-sm overflow-hidden bg-white flex flex-col"
+                  key={product.product_id}
+                  className="w-full max-w-xs mx-auto rounded-lg border shadow-sm overflow-hidden bg-white flex flex-col h-[290px]"
                 >
-                  <div className="flex justify-end pt-2">
-                    {product.stock === 0 && (
+                  {/* Label stok */}
+                  <div className="flex justify-end pt-2 h-7"> {/* ⬅️ Tetapkan tinggi tetap */}
+                    {product.stock === 0 ? (
                       <div className="bg-red-500 text-white text-[10px] font-bold px-3 py-[2px] pl-5 rounded-bl-xl relative">
                         STOK HABIS
                       </div>
-                    )}
-                    {product.stock > 0 && product.stock <= 10 && (
+                    ) : product.stock > 0 && product.stock <= 10 ? (
                       <div className="bg-yellow-500 text-white text-[10px] font-bold px-3 py-[2px] pl-5 rounded-bl-xl relative">
                         STOK TIPIS
                       </div>
+                    ) : (
+                      // Dummy label tak terlihat untuk menjaga tinggi tetap
+                      <div className="invisible text-[10px] font-bold px-3 py-[2px] pl-5">.</div>
                     )}
                   </div>
 
@@ -485,6 +607,7 @@ const Produk = () => {
                                 stok: product.stock,
                                 namaProduk: product.product_name,
                                 tipeProduk: product.product_type,
+                                tipeJualan: product.selling_type,
                                 keterangan: product.is_active,
                                 hargaModal: product.capital_price,
                                 hargaJual: product.selling_price,
@@ -525,13 +648,69 @@ const Produk = () => {
                   </div>
 
                   <div className="px-3 pt-2 text-xs text-gray-500">#{product.product_code}</div>
-                  <div className="px-3 flex justify-between items-center">
-                    <span className="text-sm font-semibold text-gray-800">{product.product_name}</span>
-                    <span className="text-xs text-gray-500">Stok: {product.stock}</span>
-                  </div>
+                  <span className="px-3 pt-2 text-sm font-semibold text-gray-800">{product.product_name}</span>
 
-                  <div className="px-3 pb-3 text-right text-sm font-semibold text-gray-800">
-                    RP {product.selling_price.toLocaleString('id-ID')},00
+                  <div className="px-3 py-3 flex justify-between items-center text-sm font-semibold text-gray-800 whitespace-nowrap overflow-hidden">
+                  <div className="truncate">
+                  Rp {Number(product.selling_price).toLocaleString('id-ID')}
+                  </div>
+                  {product.selling_type === 'Harian' && (
+                      <span className="bg-blue-100 text-blue-700 text-[10px] px-1.5 py-0.5 rounded-full">
+                        Harian
+                      </span>
+                    )}
+                    {product.selling_type === 'Permanen' && (
+                      <span className="bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded-full">
+                        Permanen
+                      </span>
+                    )}
+                    <div className="flex items-center gap-x-2 flex-nowrap">
+                        {/* Tombol Minus */}
+                        <button
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            const newStock = Math.max(product.stock - 1, 0); // pastikan ga negatif
+                            updateStock(product.product_id, newStock);
+                          }}
+                          disabled={product.stock <= 0}
+                          className={`cursor-pointer rounded-lg w-6 h-6 flex items-center justify-center text-xs transition
+                            ${product.stock > 0 
+                              ? "bg-[#ECA641] text-white" 
+                              : "bg-white text-[#ECA641] border border-[#CAC4D0]"}`}
+                        >
+                          −
+                        </button>
+
+                        {/* Input Angka */}
+                        <div className="flex items-center flex-nowrap">
+                          <span className='text-xs text-gray-500 w-10 text-center'>Stok : </span>
+                          <input
+                            type="number"
+                            min="0"
+                            value={product.stock}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value, 10);
+                              if (!isNaN(value) && value >= 0) {
+                                updateStock(product.product_id, value);
+                              }
+                            }}
+                            className="w-12 text-center text-xs text-gray-700 border border-gray-300 rounded-md py-1 px-2 focus:outline-none focus:ring-1 focus:ring-[#ECA641] no-spinner"
+                          />
+                        </div>
+
+                        {/* Tombol Plus */}
+                        <button
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            const newStock = product.stock + 1;
+                            updateStock(product.product_id, newStock);
+                          }}
+                          className="cursor-pointer bg-[#ECA641] text-white rounded-lg w-6 h-6 flex items-center justify-center text-xs"
+                        >
+                          +
+                        </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -592,20 +771,37 @@ const Produk = () => {
                       />
                       {errors.namaProduk && <p className="text-red-500 text-sm">{errors.namaProduk}</p>}
                     </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-black">Tipe Produk</label>
+                        <select
+                          className={`w-full border ${errors.tipeProduk ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                          value={formData.tipeProduk}
+                          onChange={(e) => setFormData({ ...formData, tipeProduk: e.target.value })}
+                        >
+                          <option>Pilih Salah Satu</option>
+                          <option>Makanan</option>
+                          <option>Minuman</option>
+                        </select>
+                        {errors.tipeProduk && <p className="text-red-500 text-sm">{errors.tipeProduk}</p>}
+                      </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-black">Tipe Produk</label>
-                      <select
-                        className={`w-full border ${errors.tipeProduk ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
-                        value={formData.tipeProduk}
-                        onChange={(e) => setFormData({ ...formData, tipeProduk: e.target.value })}
-                      >
-                        <option>Pilih Salah Satu</option>
-                        <option>Makanan</option>
-                        <option>Minuman</option>
-                      </select>
-                      {errors.tipeProduk && <p className="text-red-500 text-sm">{errors.tipeProduk}</p>}
+                      <div>
+                        <label className="block text-sm font-medium text-black">Tipe Jualan</label>
+                        <select
+                          className={`w-full border ${errors.tipeJualan ? 'border-red-500' : 'border-gray-300'} text-black rounded-md px-4 py-2`}
+                          value={formData.tipeJualan}
+                          onChange={(e) => setFormData({ ...formData, tipeJualan: e.target.value })}
+                        >
+                          <option>Pilih Salah Satu</option>
+                          <option>Harian</option>
+                          <option>Permanen</option>
+                        </select>
+                        {errors.tipeJualan && <p className="text-red-500 text-sm">{errors.tipeJualan}</p>}
+                      </div>
                     </div>
+                    
 
                     <div>
                       <label className="block text-sm font-medium text-black">Keterangan</label>
@@ -622,7 +818,7 @@ const Produk = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
+                    <div className="hidden">
                         <label className="block text-sm font-medium text-black">Harga Modal</label>
                         <input
                           type="text"

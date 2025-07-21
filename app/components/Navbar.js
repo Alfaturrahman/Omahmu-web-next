@@ -1,24 +1,15 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { Menu, Bell, User, LogOut, Lock, Moon, Sun, PackageCheck, AlertTriangle  } from "lucide-react";
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from "next/navigation";
+import { Menu, Bell, User, LogOut, Lock, Moon, Sun, PackageCheck, AlertTriangle } from "lucide-react";
 import { jwtDecode } from "jwt-decode";
 import * as apiService from 'services/authService';
+// import { toast } from 'your-toast-lib'; // kalau pakai toast
 
 const Header = ({ toggleSidebar }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname();
-  const router = useRouter()
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role_id');
-    router.push('/Login');
-  };
   const token = localStorage.getItem("token");
-  const store_id = localStorage.getItem("store_id");
-
+  const storeId = localStorage.getItem("store_id");
 
   let userEmail = "";
   let userRole = "";
@@ -26,96 +17,176 @@ const Header = ({ toggleSidebar }) => {
 
   if (token) {
     const decoded = jwtDecode(token);
-
     userEmail = decoded.email;
     userRole = decoded.role_name;
     userRoleId = decoded.role_id;
-
+    
   }
-  const [toggle, setToggle] = useState(false);
-  const storeId = store_id; 
+
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const [isOpen, setIsOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("order");
+  const [toggle, setToggle] = useState(false);  // store open/close
+  const [activeTab, setActiveTab] = useState(userRole === "SuperAdmin" ? "submission" : "order");
+  const [notifications, setNotifications] = useState([]);
+  const [filteredNotifications, setFilteredNotifications] = useState([]);
+  const [unreadCounts, setUnreadCounts] = useState({
+    package: 0,
+    submission: 0,
+    order: 0,
+    stock: 0
+  });
+  const [totalUnreadCount, setTotalUnreadCount] = useState(0);
+
   const notifRef = useRef(null);
+  const dropdownRef = useRef(null);
 
-  const notifications = {
-    order: [
-      {
-        type: "order",
-        code: "ORD123456",
-        items: 3,
-        date: "03 Mei 2025",
-        status: "Baru",
-      },
-      {
-        type: "order",
-        code: "ORD654321",
-        items: 1,
-        date: "02 Mei 2025",
-        status: "Diproses",
-      },
-    ],
-    stock: [
-      {
-        type: "stock",
-        product: "Tinta Printer Canon",
-        remaining: 2,
-      },
-      {
-        type: "stock",
-        product: "Kertas A4 70gr",
-        remaining: 0,
-      },
-    ],
-  };
-  
-  const filteredNotifications = notifications[activeTab] || [];
+  // 🔔 Fetch notifications saat notif dibuka
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const result = await apiService.getData('/superadmin/get_notifications/');
+        if (result.status_code === 200) {
+          setNotifications(result.data);
+        } else if (result.status_code === 401) {
+          handleLogout();
+        }
+      } catch (error) {
+        console.error("Gagal fetch notifikasi:", error);
+      }
+    };
 
-  const handleToggleStore = async () => {
+    // 🔄 Fetch pertama kali
+    fetchNotifications();
+
+    // 🔁 Polling setiap 10 detik
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 10000);
+
+    // 🔚 Bersihkan interval saat komponen unmount
+    return () => clearInterval(interval);
+  }, []);
+
+  // 🔍 Filter notif sesuai activeTab
+    useEffect(() => {
+      let filtered = [];
+      if (activeTab === "order") {
+        filtered = notifications.filter(n => n.type === "order");
+      } else if (activeTab === "stock") {
+        filtered = notifications.filter(n =>
+          n.type === "stock_low" || n.type === "stock_empty"
+        );
+      } else if (activeTab === "package") {
+        filtered = [];
+      } else if (activeTab === "submission") {
+        filtered = notifications.filter(n => n.type === "store_submission");
+      }
+      setFilteredNotifications(filtered);
+    }, [activeTab, notifications]);
+
+    useEffect(() => {
+      const counts = {
+        submission: notifications.filter(n => n.type === "store_submission" && !n.is_read).length,
+        order: notifications.filter(n => n.type === "order" && !n.is_read).length,
+        stock: notifications.filter(n =>
+          (n.type === "stock_low" || n.type === "stock_empty") && !n.is_read
+        ).length
+      };
+      setUnreadCounts(counts);
+
+      let total = 0;
+      if (userRole === "SuperAdmin") {
+        total = counts.submission;
+      } else {
+        total = counts.order + counts.stock;
+      }
+      setTotalUnreadCount(total);
+    }, [notifications, userRole]);
+
+  // ✅ Hitung unreadCount hanya notif yang difilter (per tab)
+  const unreadCount = unreadCounts[activeTab] || 0;
+
+  // ✅ Mark notification as read
+  const handleMarkAsRead = async (notifId) => {
     try {
-      const newStatus = !toggle;
-      await apiService.putData(
-        `/storeowner/update_open_status/?store_id=${storeId}&is_open=${newStatus}`
+      await apiService.patchData(`/superadmin/mark_notification_read/${notifId}`);
+      setNotifications(prev =>
+        prev.map(n => (n.id === notifId ? { ...n, is_read: true } : n))
       );
-      setToggle(newStatus);
-      toast.success(`Toko berhasil ${newStatus ? 'dibuka' : 'ditutup'}`);
     } catch (error) {
-      toast.error("Gagal memperbarui status toko");
-      console.error(error);
+      console.error("Gagal menandai notif:", error);
     }
   };
 
+  // 🏪 Toggle store open/close
+  const handleToggleStore = async () => {
+    try {
+      const newStatus = !toggle;
+      await apiService.putData(`/storeowner/update_open_status/?store_id=${storeId}&is_open=${newStatus}`);
+      setToggle(newStatus);
+      // toast.success(`Toko berhasil ${newStatus ? 'dibuka' : 'ditutup'}`);
+    } catch (error) {
+      console.error("Gagal memperbarui status toko:", error);
+      // toast.error("Gagal memperbarui status toko");
+    }
+  };
+
+  // 🏪 Fetch status toko saat load
   useEffect(() => {
     const fetchStoreStatus = async () => {
       try {
         const result = await apiService.getData(`/storeowner/profile/${storeId}/`);
-        setToggle(result.data.is_open);
+        setToggle(result?.data?.is_open);
       } catch (error) {
         console.error("Gagal ambil status toko:", error);
       }
     };
-    fetchStoreStatus();
+    if (storeId) {
+      fetchStoreStatus();
+    }
   }, [storeId]);
 
+  // 📌 Tutup dropdown saat klik luar
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
         setIsNotifOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // 🚪 Logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role_id');
+    router.push('/Login');
+  };
+
+  // 📄 Dynamic page title
   const getPageTitle = (path) => {
     const pageTitles = {
       "/POS/Dashboard": "Dashboard",
       "/POS/Kasir": "Kasir",
-      "/POS/Produk": "Produk",
-      "/POS/Laporan": "Laporan Keuntungan",
+      "/POS/StokProduk": "Stok Produk",
+      "/POS/StokBasah": "Stok Basah",
+      "/POS/UangMasuk": "Laporan Uang Masuk",
+      "/POS/UangKeluar": "Laporan Uang Keluar",
+      "/POS/Pengeluaran": "Pengeluaran Lainnya",
       "/POS/Menu": "Menu",
       "/POS/Riwayat": "Riwayat Pesanan",
       "/Superadmin/Dashboard": "Dashboard",
@@ -129,21 +200,6 @@ const Header = ({ toggleSidebar }) => {
     };
     return pageTitles[path] || "Halaman Tidak Diketahui";
   };
-
-  const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   return (
     <header className="flex justify-between items-center px-6 py-3 bg-[#fdf6ed] shadow-md">
@@ -161,79 +217,120 @@ const Header = ({ toggleSidebar }) => {
           <div className="relative" ref={notifRef}>
             <button onClick={() => setIsNotifOpen(!isNotifOpen)} className="relative">
               <Bell className="text-black cursor-pointer w-6 h-6" />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold min-w-[13px] min-h-[13px] flex items-center justify-center rounded-full">
-                {notifications.length}
-              </span>
+              {totalUnreadCount > 0 && (
+                <span className="absolute top-0 right-0 bg-red-500 text-white text-xs px-1 rounded-full">
+                  {totalUnreadCount}
+                </span>
+              )}
             </button>
 
             {isNotifOpen && (
               <div className="absolute right-0 mt-2 w-80 bg-white shadow-xl rounded-lg z-50 overflow-hidden border border-gray-200 animate-fade-in">
                 {/* Tabs */}
                 <div className="flex border-b text-sm font-medium">
-                  <button
-                    onClick={() => setActiveTab("order")}
-                    className={`w-1/2 py-2 ${
-                      activeTab === "order"
-                        ? "border-b-2 border-[#F6B543] text-[#F6B543]"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    Pesan Online
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("stock")}
-                    className={`w-1/2 py-2 ${
-                      activeTab === "stock"
-                        ? "border-b-2 border-[#F6B543] text-[#F6B543]"
-                        : "text-gray-500"
-                    }`}
-                  >
-                    Produk
-                  </button>
+                  {userRole === "SuperAdmin" ? (
+                    <>
+                      <button
+                        onClick={() => setActiveTab("submission")}
+                        className={`w-1/2 py-2 flex items-center justify-center gap-1 ${
+                          activeTab === "submission"
+                            ? "border-b-2 border-[#F6B543] text-[#F6B543]"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        <span>Pengajuan</span>
+                        {unreadCounts.submission > 0 && (
+                          <span className="bg-red-500 text-white text-[10px] px-1 rounded-full">
+                            {unreadCounts.submission}
+                          </span>
+                        )}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setActiveTab("order")}
+                        className={`w-1/2 py-2 flex items-center justify-center gap-1 ${
+                          activeTab === "order"
+                            ? "border-b-2 border-[#F6B543] text-[#F6B543]"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        <span>Pesan Online</span>
+                        {unreadCounts.order > 0 && (
+                          <span className="bg-red-500 text-white text-[10px] px-1 rounded-full">
+                            {unreadCounts.order}
+                          </span>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={() => setActiveTab("stock")}
+                        className={`w-1/2 py-2 flex items-center justify-center gap-1 ${
+                          activeTab === "stock"
+                            ? "border-b-2 border-[#F6B543] text-[#F6B543]"
+                            : "text-gray-500"
+                        }`}
+                      >
+                        <span>Produk</span>
+                        {unreadCounts.stock > 0 && (
+                          <span className="bg-red-500 text-white text-[10px] px-1 rounded-full">
+                            {unreadCounts.stock}
+                          </span>
+                        )}
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 {/* Tab Content */}
                 <ul className="max-h-64 overflow-y-auto divide-y divide-gray-100">
                   {filteredNotifications.length > 0 ? (
-                    filteredNotifications.map((notif, idx) => (
-                      <li
-                        key={idx}
-                        className="px-4 py-3 text-sm text-gray-800 hover:bg-gray-50 transition"
-                      >
-                        {notif.type === "order" ? (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-orange-600">
-                              <PackageCheck className="w-4 h-4" />
-                              <span className="font-medium">Pesanan Baru</span>
+                    filteredNotifications
+                      .map((notif) => (
+                        <li
+                          key={notif.id}
+                          onClick={() => handleMarkAsRead(notif.id)}
+                          className={`px-4 py-3 text-sm hover:bg-gray-50 transition cursor-pointer ${
+                            !notif.is_read ? "font-semibold" : "text-gray-800"
+                          }`}
+                        >
+                          {["package_created", "package_updated", "package_deleted"].includes(notif.type) ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-purple-600">
+                                <PackageCheck className="w-4 h-4" />
+                                <span className="font-medium">{notif.title}</span>
+                              </div>
+                              <div className="text-xs text-gray-600">{notif.message}</div>
+                              <div className="text-xs text-gray-500">
+                                {new Date(notif.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
+                              </div>
                             </div>
-                            <div className="text-xs text-gray-600">Kode: {notif.code}</div>
-                            <div className="text-xs text-gray-600">
-                              {notif.items} item • {notif.date}
+                          ) : notif.type === "order" ? (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-orange-600">
+                                <PackageCheck className="w-4 h-4" />
+                                <span className="font-medium">{notif.title}</span>
+                              </div>
+                              <div className="text-xs text-gray-600">{notif.message}</div>
+                              <div className="text-xs text-gray-500">
+                                {new Date(notif.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
+                              </div>
                             </div>
-                            <div className="text-xs text-green-600 font-medium">
-                              Status: {notif.status}
+                          ) : (
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 text-red-600">
+                                <AlertTriangle className="w-4 h-4" />
+                                <span className="font-medium">{notif.title}</span>
+                              </div>
+                              <div className="text-xs text-gray-600">{notif.message}</div>
+                              <div className="text-xs text-gray-500">
+                                {new Date(notif.created_at).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' })}
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-red-600">
-                              <AlertTriangle className="w-4 h-4" />
-                              <span className="font-medium">
-                                {notif.remaining === 0 ? "Stok Habis" : "Stok Menipis"}
-                              </span>
-                            </div>
-                            <div className="text-xs text-gray-600">{notif.product}</div>
-                            <div
-                              className={`text-xs font-semibold ${
-                                notif.remaining === 0 ? "text-red-500" : "text-yellow-500"
-                              }`}
-                            >
-                              Sisa: {notif.remaining} unit
-                            </div>
-                          </div>
-                        )}
-                      </li>
-                    ))
+                          )}
+                        </li>
+                      ))
                   ) : (
                     <li className="px-4 py-3 text-gray-500 text-sm">Tidak ada notifikasi</li>
                   )}
@@ -241,7 +338,6 @@ const Header = ({ toggleSidebar }) => {
               </div>
             )}
           </div>
-
           {/* Toggle Switch */}
           {(userRoleId === 2) && (
             <label className="relative inline-flex items-center cursor-pointer">
@@ -257,7 +353,7 @@ const Header = ({ toggleSidebar }) => {
         </div>
 
         <span className="text-[11px] md:text-[13px] lg:text-[15px] text-black font-semibold">
-          Angkringan OmahMu
+          {userRole}
         </span>
 
         {/* Avatar dan Dropdown */}
@@ -298,6 +394,7 @@ const Header = ({ toggleSidebar }) => {
                   Profil
                 </button>
                 )}
+                {(userRoleId === 2 || userRoleId === 3) && (
                 <button
                   onClick={() => router.push('/POS/GantiSandi')}
                   className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 text-black rounded-lg cursor-pointer"
@@ -305,6 +402,7 @@ const Header = ({ toggleSidebar }) => {
                   <Lock className="w-4 h-4 mr-2" />
                   Ganti Kata Sandi
                 </button>
+                )}
 
                 <button onClick={handleLogout} className="flex items-center w-full px-3 py-2 text-sm hover:bg-gray-100 rounded-lg text-red-500 cursor-pointer">
                   <LogOut className="w-4 h-4 mr-2" />

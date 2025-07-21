@@ -1,32 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Legend, Tooltip, ResponsiveContainer, Label  } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Legend, Tooltip, ResponsiveContainer } from 'recharts';
+import { Ban } from 'lucide-react'; // optional: icon library, atau pakai emoji/svgs
 
 const COLORS = ['#ECA641', '#BFBFBF'];
 
 export default function AdvancedCharts({ data }) {
-  const [currentWeek, setCurrentWeek] = useState(0); // Mulai dari minggu ke-0
+  const [currentWeek, setCurrentWeek] = useState(0);
 
   function formatTanggal(tanggalString) {
     const date = new Date(tanggalString);
     const tanggal = String(date.getDate()).padStart(2, '0');
     return `${tanggal}`;
   }
-  
-  // Handle pie chart data
+
+  // Pie data
   const pieRawData = data?.dashboard_presentase || [];
   const pieData = pieRawData.map(item => ({
     name: item.product_type,
-    value: parseFloat(item.persentase), // Store it as a number for the Pie chart
-    percentage: `${parseFloat(item.persentase).toFixed(2)}%` // For displaying with %
+    value: parseFloat(item.persentase),
+    percentage: `${parseFloat(item.persentase).toFixed(2)}%`
   }));
 
-  // Handle bar chart data
+  // Bar data
   const allBarData = [];
   if (data?.dashboard_daily) {
     const temp = {};
-
     data.dashboard_daily.forEach(item => {
       if (!temp[item.tanggal]) {
         temp[item.tanggal] = { tanggal: formatTanggal(item.tanggal), makanan: 0, minuman: 0 };
@@ -37,31 +37,25 @@ export default function AdvancedCharts({ data }) {
         temp[item.tanggal].minuman = item.jumlah_terjual;
       }
     });
-
     allBarData.push(...Object.values(temp));
   }
 
-  // Split data per minggu
   const itemsPerPage = 7;
   const totalWeeks = Math.ceil(allBarData.length / itemsPerPage);
-
   const startIdx = currentWeek * itemsPerPage;
   const endIdx = startIdx + itemsPerPage;
   const currentBarData = allBarData.slice(startIdx, endIdx);
 
-  // Cek apakah semua penjualan 0
   const isEmpty = currentBarData.every(item => item.makanan === 0 && item.minuman === 0);
-
-  // Menangani grafik kosong
   const emptyBarData = currentBarData.length > 0 ? currentBarData : [{ tanggal: '', makanan: 0, minuman: 0 }];
 
   return (
     <div className="flex flex-col md:flex-row lg:flex-col items-center justify-center gap-6">
       
-      {/* Grafik Batang */}
-      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[260px]">
+      {/* Bar Chart */}
+      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[260px] relative">
         <h3 className="text-center text-black font-bold mb-4">Penjualan Terlaris</h3>
-        <div className="w-full h-full">
+        <div className="w-full h-full relative">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={emptyBarData}>
               <XAxis dataKey="tanggal" />
@@ -72,10 +66,19 @@ export default function AdvancedCharts({ data }) {
               <Bar dataKey="minuman" fill="#BFBFBF" />
             </BarChart>
           </ResponsiveContainer>
+
+          {/* {isEmpty && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 rounded-lg">
+              <div className="mb-2">
+                <span className="text-gray-400 text-4xl">📊</span>
+              </div>
+              <p className="text-gray-500 text-sm font-medium">Tidak ada data penjualan</p>
+            </div>
+          )} */}
         </div>
 
-          {/* Navigasi Minggu */}
-          <div className="flex justify-center items-center gap-4 mb-2">
+        {/* Navigasi Minggu */}
+        <div className="flex justify-center items-center gap-4 mt-2">
           <button
             className="px-2 py-1 bg-gray-300 text-black rounded disabled:opacity-50"
             onClick={() => setCurrentWeek(prev => prev - 1)}
@@ -94,45 +97,50 @@ export default function AdvancedCharts({ data }) {
             &gt;
           </button>
         </div>
-
       </div>
 
-      {/* Grafik Pie (Produk Terlaris) */}
-      <div className="bg-[#FFF4E8] rounded-lg p-4 shadow-lg flex flex-col items-center justify-center w-full h-[285px]">
-        <h2 className="text-center text-black font-bold mb-4">Produk Terlaris</h2>
-        <div className="w-full h-[200px]">
+      {/* Pie Chart */}
+      <div className="bg-[#FFF4E8] rounded-2xl p-4 shadow-lg flex flex-col items-center justify-center w-full max-w-full h-[285px] relative">
+        <h2 className="text-center text-black font-bold text-lg mb-4">Produk Terlaris</h2>
+        <div className="flex-1 w-full relative">
           <ResponsiveContainer width="100%" height="100%">
-          <PieChart width={400} height={400}>
-            <Pie
-              data={pieData}
-              cx="50%"
-              cy="50%"
-              outerRadius={70}
-              dataKey="value"
-              label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(2)}%`} // Show label outside slice
-            >
-              {pieData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-
-            <Tooltip
-              formatter={(value, name, props) => [`${value}%`, name]}
-              labelFormatter={() => ''}
-            />
-          </PieChart>
+            <PieChart>
+              <Pie
+                data={pieData}
+                cx="50%"
+                cy="50%"
+                outerRadius="70%"
+                dataKey="value"
+                label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip
+                formatter={(value, name) => [`${value}%`, name]}
+                labelFormatter={() => ''}
+              />
+            </PieChart>
           </ResponsiveContainer>
+
+          {pieData.length === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/50 rounded-2xl">
+              <span className="text-gray-400 text-4xl mb-2">🥧</span>
+              <p className="text-gray-500 text-sm font-medium">Tidak ada data</p>
+            </div>
+          )}
         </div>
 
-        {/* Custom Legend */}
-        <div className="flex justify-center gap-4 mt-2">
+        {/* Legend */}
+        <div className="flex flex-wrap justify-center gap-2 mt-2">
           {pieData.map((entry, index) => (
             <div key={index} className="flex items-center">
               <span
-                className="w-4 h-4 inline-block rounded-full mr-2"
+                className="w-3 h-3 rounded-full mr-2"
                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
               ></span>
-              <span className="text-sm text-black">{entry.name}</span>
+              <span className="text-xs text-black">{entry.name}</span>
             </div>
           ))}
         </div>

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { loginUser } from '../../services/authService'; // Import the loginUser function
 import '@/globals.css';
 import Swal from 'sweetalert2';
+import posthog from '../../services/instrumentation-client'; // ⬅️ tambahkan ini di atas
+
 
 const LoginPage = () => {
     const router = useRouter();
@@ -15,86 +17,86 @@ const LoginPage = () => {
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        
-        let formErrors = { email: '', password: '' };
-        let isValid = true;
+    e.preventDefault();
     
-        if (!email) {
-            formErrors.email = 'Email tidak boleh kosong';
-            isValid = false;
-        } else if (!/\S+@\S+\.\S+/.test(email)) {
-            formErrors.email = 'Email tidak valid';
-            isValid = false;
-        }
-    
-        if (!password) {
-            formErrors.password = 'Password tidak boleh kosong';
-            isValid = false;
-        }
-        
-    
-        if (!isValid) {
-            setErrors(formErrors);
-            setSuccessMessage('');
-        } else {
-            setErrors({ email: '', password: '' });
-            setLoading(true);
-    
-            try {
-                // Send login data to the API
-                const response = await loginUser({ email, password });
-                console.log(response.data);
-    
-                const token = response.data.token;
-                const role_id = response.data.user.role_id;
-                const reference_id = response.data.user.reference_id;
-    
-                console.log("role yang dilempar", role_id);
-    
-                localStorage.setItem('token', token);
-                localStorage.setItem('role_id', role_id);
-                localStorage.setItem('store_id', reference_id);
-    
-                setLoading(false);
-                setSuccessMessage('Login berhasil!'); // <-- hanya muncul kalau berhasil login
-    
-                // Redirect based on role_id
-                if (role_id === 1) {
-                    router.push('/Superadmin/Dashboard');
-                } else if (role_id === 2) {
-                    router.push('/POS/Kasir');
-                } else if (role_id === 3) {
-                    router.push('/Cust/Dashboard');
-                } else {
-                    router.push('/');
-                }
-            } catch (error) {
-                setLoading(false);
-                setSuccessMessage(''); // pastikan kosongkan jika error
-                if (error.response?.data?.message) {
-                    // Show error message using SweetAlert
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Login gagal',
-                        text: error.response.data.message || 'Terjadi kesalahan, coba lagi.',
-                        confirmButtonColor: '#ECA641',
-                    });
-                } else {
-                    // Show a generic error message
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Login gagal',
-                        text: 'Terjadi kesalahan, coba lagi.',
-                        confirmButtonColor: '#ECA641',
-                    });
-                }
-            } finally {
-                setEmail('');
-                setPassword('');
+    let formErrors = { email: '', password: '' };
+    let isValid = true;
+
+    if (!email) {
+        formErrors.email = 'Email tidak boleh kosong';
+        isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+        formErrors.email = 'Email tidak valid';
+        isValid = false;
+    }
+
+    if (!password) {
+        formErrors.password = 'Password tidak boleh kosong';
+        isValid = false;
+    }
+
+    if (!isValid) {
+        setErrors(formErrors);
+        setSuccessMessage('');
+    } else {
+        setErrors({ email: '', password: '' });
+        setLoading(true);
+
+        try {
+            const response = await loginUser({ email, password });
+            console.log(response.data);
+
+            const token = response.data.token;
+            const role_id = response.data.user.role_id;
+            const reference_id = response.data.user.reference_id;
+            const user_id = response.data.user.id; // ⬅️ Pastikan ini tersedia dari API kamu
+
+            // Simpan ke localStorage
+            localStorage.setItem('token', token);
+            localStorage.setItem('role_id', role_id);
+            localStorage.setItem('store_id', reference_id);
+
+            // 🔥 Identifikasi user ke PostHog
+            posthog.identify(user_id?.toString() || email, {
+                email,
+                role_id,
+                store_id: reference_id,
+            });
+
+            posthog.capture('user_logged_in', {
+                role_id,
+                store_id: reference_id,
+            });
+
+            setLoading(false);
+            setSuccessMessage('Login berhasil!');
+
+            // Redirect sesuai role
+            if (role_id === 1) {
+                router.push('/Superadmin/Dashboard');
+            } else if (role_id === 2) {
+                router.push('/POS/Kasir');
+            } else if (role_id === 3) {
+                router.push('/Cust/Dashboard');
+            } else {
+                router.push('/');
             }
+        } catch (error) {
+            setLoading(false);
+            setSuccessMessage('');
+            Swal.fire({
+                icon: 'error',
+                title: 'Login gagal',
+                text: error.response?.data?.message || 'Terjadi kesalahan, coba lagi.',
+                confirmButtonColor: '#ECA641',
+            });
+        } finally {
+            setEmail('');
+            setPassword('');
         }
-    };
+    }
+};
+
     
     return (
         <div className="flex items-center justify-center min-h-screen bg-[#FFF4E8] p-4">

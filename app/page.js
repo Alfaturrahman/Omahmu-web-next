@@ -481,10 +481,11 @@ export default function Home() {
                             </li>
                         ))}
                         </ul>
-
-                        <button className="w-full bg-[#F6B543] hover:bg-[#e6a730] transition text-white font-semibold py-2 rounded-lg">
-                        Pilih Paket
-                        </button>
+                        <a href="/Role">
+                            <button className="w-full bg-[#F6B543] hover:bg-[#e6a730] transition text-white font-semibold py-2 rounded-lg">
+                            Pilih Paket
+                            </button>
+                        </a>
                     </div>
                     </div>
 
@@ -506,10 +507,11 @@ export default function Home() {
                             </li>
                         ))}
                         </ul>
-
-                        <button className="w-full bg-[#F6B543] hover:bg-[#e6a730] transition text-white font-semibold py-2 rounded-lg">
-                        Pilih Paket
-                        </button>
+                        <a href="/Role">
+                            <button className="w-full bg-[#F6B543] hover:bg-[#e6a730] transition text-white font-semibold py-2 rounded-lg">
+                            Pilih Paket
+                            </button>
+                        </a>
                     </div>
                     </div>
                 </div>

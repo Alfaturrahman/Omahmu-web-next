@@ -7,6 +7,7 @@ import Header from '@/components/Navbar';
 import * as apiService from 'services/authService';
 import withAuth from 'hoc/withAuth';
 import DatePicker from "react-datepicker";
+import Swal from 'sweetalert2';
 import "react-datepicker/dist/react-datepicker.css";
 
 function Riwayat() {
@@ -20,6 +21,7 @@ function Riwayat() {
     const [filterDate, setFilterDate] = useState(null);
     const [filterOrderStatus, setFilterOrderStatus] = useState('');
     const [filterTransactionStatus, setFilterTransactionStatus] = useState('');
+    const [selectedOrder, setSelectedOrder] = useState(null)
     const filterRef = useRef(null);
     const modalRef = useRef(null);
     const [riwayatDineIn, setRiwayatDineIn] = useState([]);
@@ -28,9 +30,20 @@ function Riwayat() {
     const [selectedPesananId, setSelectedPesananId] = useState(null);
     
     const handleOpenModal = (idPesanan) => {
-        setSelectedPesananId(idPesanan);  
-        setShowModal(true);  
+        // Cari di data
+        const allOrders = [...riwayatDineIn, ...riwayatOnline];
+        const order = allOrders.find(item => item.order_id === idPesanan);
+
+        if (order) {
+            setSelectedOrder(order);
+        } else {
+            console.warn('Order not found for idPesanan:', idPesanan);
+        }
+
+        setSelectedPesananId(idPesanan);
+        setShowModal(true);
     };
+
     
     const handleCloseModal = () => {
         setShowModal(false);  
@@ -48,6 +61,8 @@ function Riwayat() {
     async function fetchData() {
         try {
             const result = await apiService.getData('/storeowner/riwayat_pesanan/');
+            console.log("result",result);
+            
             setRiwayatDineIn(result.data.riwayat_pesanan_ditempat); // menyimpan data dine-in
             setRiwayatOnline(result.data.riwayat_pesanan_online); // menyimpan data online
         } catch (err) {
@@ -64,7 +79,8 @@ function Riwayat() {
 
             // Jaga-jaga jika items null, fallback jadi array kosong
             detail.items = detail.items || [];
-
+            console.log("detail",detail);
+            
             setDetailPesanan(detail);
             setShowModal(true);
 
@@ -75,10 +91,14 @@ function Riwayat() {
 
     useEffect(() => {
         fetchData();
+        }, []); // hanya sekali saat mount
+
+        useEffect(() => {
         if (selectedPesananId) {
-            fetchDetailData(selectedPesananId);  // Panggil fetchDetailData saat ID pesanan berubah
+            fetchDetailData(selectedPesananId);
         }
-      }, [selectedPesananId]);
+        }, [selectedPesananId]);
+
 
     const handleTabClick = (tab) => {
         setActiveTab(tab);
@@ -88,6 +108,102 @@ function Riwayat() {
     const getData = () => {
         return activeTab === 'dinein' ? riwayatDineIn : riwayatOnline;
     };
+
+   const handleTerimaOrder = async () => {
+        try {
+            const confirm = await Swal.fire({
+                title: 'Apakah Anda yakin?',
+                text: 'Pesanan akan diproses!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Ya, Terima!',
+                cancelButtonText: 'Batal'
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            // Pastikan order_code ada
+            if (!selectedOrder?.order_code) {
+                console.error('order_code tidak ada di selectedOrder');
+                Swal.fire('Gagal!', 'Data pesanan tidak valid.', 'error');
+                return;
+            }
+
+            // Panggil API
+            await apiService.putData(
+                `/storeowner/update_order_status_online/?order_code=${selectedOrder.order_code}&new_status=in_progress`
+            );
+
+            // Update state lokal
+            setSelectedOrder(prev => ({ ...prev, order_status: 'in_progress' }));
+
+            // Refresh data
+            fetchData();
+
+            Swal.fire('Diterima!', 'Pesanan sedang diproses.', 'success');
+            setShowModal(false);  
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Gagal!', 'Terjadi kesalahan.', 'error');
+        }
+    };
+
+
+    const handleTolakOrder = async () => {
+        try {
+            const result = await Swal.fire({
+                title: 'Tolak Pesanan',
+                input: 'textarea',
+                inputLabel: 'Alasan Penolakan',
+                inputPlaceholder: 'Tuliskan alasan penolakan di sini...',
+                showCancelButton: true,
+                confirmButtonText: 'Tolak',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                preConfirm: (alasan) => {
+                    if (!alasan) {
+                        Swal.showValidationMessage('Alasan tidak boleh kosong');
+                        return false;
+                    }
+                    return alasan;
+                }
+            });
+
+            if (!result.isConfirmed) return;
+
+            const alasan = result.value;
+
+            // Pastikan order_id ada
+            if (!selectedOrder?.order_id) {
+                console.error('order_id tidak ada di selectedOrder');
+                Swal.fire('Gagal!', 'Data pesanan tidak valid.', 'error');
+                return;
+            }
+
+            // Panggil API
+            await apiService.putData(
+            `/storeowner/update_order_status_online/?order_code=${selectedOrder.order_code}&new_status=canceled&reason=${encodeURIComponent(alasan)}`
+            );
+
+            // Update state lokal
+            setSelectedOrder(prev => ({ ...prev, order_status: 'Ditolak', remarks: alasan }));
+
+            // Refresh data
+            fetchData();
+
+            Swal.fire('Pesanan Ditolak!', `Pesanan ditolak dengan alasan: ${alasan}`, 'success');
+            setShowModal(false);  
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Gagal!', 'Terjadi kesalahan.', 'error');
+        }
+    };
+
 
     // Mengaplikasikan filter pada data
     const applyFilters = (data) => {
@@ -136,7 +252,7 @@ function Riwayat() {
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
-    }, [showModal], [filterDate]);
+    }, [filterDate]);
 
     const currentData = applyFilters(getData()).slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
     const totalPages = Math.ceil(getData().length / itemsPerPage);
@@ -148,12 +264,12 @@ function Riwayat() {
             <Sidebar isOpen={isSidebarOpen} isCollapsed={isCollapsed} toggleSidebar={toggleSidebar} />
 
             <div className="flex-1 flex flex-col p-4 sm:p-3 overflow-auto">
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4 cursorp">
                     {/* Tombol Pesan di Tempat */}
                     <button
                         className={`px-4 py-2 font-medium ${
                         activeTab === 'dinein'
-                            ? 'border-b-2 border-yellow-500 text-yellow-600'
+                            ? 'border-b-2 border-yellow-500 text-yellow-600 cursor-pointer'
                             : 'text-gray-600'
                         }`}
                         onClick={() => handleTabClick('dinein')}
@@ -165,7 +281,7 @@ function Riwayat() {
                     <button
                         className={`px-4 py-2 font-medium ${
                         activeTab === 'online'
-                            ? 'border-b-2 border-yellow-500 text-yellow-600'
+                            ? 'border-b-2 border-yellow-500 text-yellow-600 cursor-pointer'
                             : 'text-gray-600'
                         }`}
                         onClick={() => handleTabClick('online')}
@@ -276,14 +392,28 @@ function Riwayat() {
                                     <td className="py-3 px-4 relative">{item.date}<span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span></td>
                                     <td className="py-3 px-4 relative">
                                     <span
-                                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                            item.order_status === 'completed'
-                                            ? 'bg-green-100 text-green-600'
-                                            : 'bg-orange-100 text-orange-600'
-                                        }`}
-                                        >
-                                        {item.order_status === 'completed' ? 'Completesd' : 'In Progress'}
-                                        </span>
+                                    className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        item.order_status === 'completed'
+                                        ? 'bg-green-100 text-green-600'
+                                        : item.order_status === 'pending' || item.order_status === 'PENDING'
+                                        ? 'bg-yellow-100 text-yellow-600'
+                                        : item.order_status === 'in_progress'
+                                        ? 'bg-orange-100 text-orange-600'
+                                        : item.order_status === 'canceled'
+                                        ? 'bg-red-100 text-red-600'
+                                        : ''
+                                    }`}
+                                    >
+                                    {item.order_status === 'completed'
+                                        ? 'Completed'
+                                        : item.order_status === 'pending' || item.order_status === 'PENDING'
+                                        ? 'Pending'
+                                        : item.order_status === 'in_progress'
+                                        ? 'In Progress'
+                                        : item.order_status === 'canceled'
+                                        ? 'Canceled'
+                                        : ''}
+                                    </span>
                                         <span className="absolute right-0 top-1/2 transform -translate-y-1/2 w-[2px] h-3 bg-gray-300"></span>
                                     </td>
                                     <td className="py-3 px-4 relative">
@@ -388,12 +518,27 @@ function Riwayat() {
                                         </div>
                                     </div>
                                 </div>
-
                                 {/* Footer */}
                                 <div className="flex flex-row justify-between border-t mt-5 py-3 text-right font-semibold">
                                     <p>Total</p>
                                     <p>Rp {Number(detailPesanan.total_amount).toLocaleString("id-ID")}</p>
                                 </div>
+                                {detailPesanan 
+                                    && (detailPesanan.order_status === "pending" || detailPesanan.order_status === "PENDING")
+                                    && riwayatOnline.some(item => item.order_code === detailPesanan.order_code) && (
+                                        <div className="flex flex-row justify-end gap-2 border-t py-3 font-semibold">
+                                            <button
+                                                onClick={handleTolakOrder}
+                                                className="text-red-500 border border-red-500 rounded px-2 py-2 hover:bg-red-100 cursor-pointer">
+                                                Tolak
+                                            </button>
+                                            <button
+                                                onClick={handleTerimaOrder}
+                                                className="text-green-500 border border-green-500 rounded px-2 py-2 hover:bg-green-100 cursor-pointer">
+                                                Terima
+                                            </button>
+                                        </div>
+                                    )}
                             </div>
                         </div>
                     )}
